@@ -1,0 +1,425 @@
+<!--[if IE]>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<![endif]-->
+<html>
+<head>
+<!--meta http-equiv="Content-Type" content="text/html; charset=utf-8" /-->
+<title>User Login</title>
+<style type="text/css">
+* {
+	padding:0;
+	border:0;
+	margin:0;
+}
+html {
+	height:100%;
+}
+body {
+	margin:0;
+	padding:0;
+	width:100%;
+	height:100%;
+	background:url(../images/login1_bg.jpg) no-repeat center center;
+	font-family: Tahoma, Arial, "宋体", Helvetica, sans-serif;
+}
+
+input {
+	font-family:Tahoma,Arial,"宋体",Helvetica,sans-serif;
+}
+
+/*去掉按钮虚线边框*/
+button::-moz-focus-inner, input[type="reset"]::-moz-focus-inner, input[type="button"]::-moz-focus-inner, input[type="submit"]::-moz-focus-inner, input[type="file"] > input[type="button"]::-moz-focus-inner { 
+	border:none;
+}
+
+.container {
+	position:absolute;
+	width:800px;
+	height:500px;
+	top:50%;
+	left:50%;
+	margin-top:-300px;
+	margin-left:-400px;
+}
+
+.logoConn {
+	position:absolute;
+	width:400px;
+	height:127px;
+	top:20px;
+	left:200px;
+	background-image:url(../images/login1_logo.png);
+	background-repeat:no-repeat;
+}
+
+.inputConn {
+	position:absolute;
+	width:800px;
+	height:90px;
+	top:200px;
+	left:0px;
+	
+}
+
+.copyrightConn {
+	color: #145FA4;
+    font-size: 16px;
+    font-weight: 400;
+    height: 50px;
+    left: 0;
+    line-height: 50px;
+    position: absolute;
+    text-align: center;
+    top: 400px;
+    width: 800px;
+}
+
+.modelText {
+	position:absolute;
+	width:50px;
+	height:40px;
+	top:0px;
+	left:32px;
+	text-align:center;
+	font-size:14px;
+	color:#FFFFFF;
+	padding-left:3px;
+}
+
+.inputTextConn {
+	height: 70px;
+    line-height: 70px;
+    margin-left: 120px;
+    margin-top: 8px;
+    width: 650px;
+}
+
+#textusername {
+	position:absolute;
+	width:230px;
+	height:35px;
+	line-height:35px;
+	font-size:20px;
+	color:#95A1AC;
+	top:29px;
+	left:120px;
+	z-index:999;
+	padding-left:10px;
+	font-size:15px;
+}
+
+#username {
+	position:absolute;
+	width:230px;
+	height:35px;
+	line-height:35px;
+	font-size:20px;
+	color:#000000;
+	top:29px;
+	left:120px;
+	z-index:99;
+	padding-left:10px;
+	font-size:15px;
+}
+
+#textpwd {
+	position:absolute;
+	width:230px;
+	height:35px;
+	line-height:35px;
+	top:29px;
+	left:390px;
+	font-size:20px;
+	color:#95A1AC;
+	z-index:999;
+	padding-left:10px;
+	font-size:15px;
+}
+
+#password {
+	position:absolute;
+	width:230px;
+	height:35px;
+	line-height:35px;
+	top:29px;
+	left:390px;
+	font-size:20px;
+	color:#000000;
+	z-index:99;
+	padding-left:10px;
+	font-size:15px;
+}
+
+#submitbtn{
+	position:absolute;
+	width:100px;
+	height:41px;
+	right:40px;
+	top:25px;
+	background-image: url(../images/login1_btn.gif);
+	cursor:pointer;
+	vertical-align:middle;
+	outline:none;
+	font-size:18px;
+	color:#FFFFFF;
+	font-family: Tahoma,Arial,"宋体",Helvetica,sans-serif
+} 
+
+.btnspaceing {
+	letter-spacing:10px;
+	padding-left:10px;
+}
+
+.US_btnspaceing {
+	letter-spacing:0px;
+	padding-left:0px;
+}
+
+</style>
+
+<!--link media="screen" rel="stylesheet" type="text/css" href="../ValidationEngine/css/validationEngine.jquery.css" /-->
+<style type="text/css">
+/* Z-INDEX */
+.formError { z-index: 9990; }
+.formError .formErrorContent { z-index: 991; }
+.formError .formErrorArrow { z-index: 996; }
+
+.formErrorInsideDialog.formError { z-index: 5000; }
+.formErrorInsideDialog.formError .formErrorContent { z-index: 5001; }
+.formErrorInsideDialog.formError .formErrorArrow { z-index: 5006; }
+
+.inputContainer {
+	position: relative;
+	float: left;
+}
+
+.formError {
+	position: absolute;
+	top: 300px;
+	left: 300px;
+	display: block;
+	cursor: pointer;
+}
+
+.ajaxSubmit {
+	padding: 20px;
+	background: #55ea55;
+	border: 1px solid #999;
+	display: none
+}
+
+.formError .formErrorContent {
+	width: 100%;
+	background: #FFFFFF;
+	position:relative;
+	color: #EE0101;
+	width: 150px;
+	font-size: 12px;
+	border: 2px solid #ddd;
+	box-shadow: 0 0 6px #FF0000;
+	-moz-box-shadow: 0 0 6px #FF0000;
+	-webkit-box-shadow: 0 0 6px #FF0000;
+	padding: 4px 10px 4px 10px;
+	border-radius: 6px;
+	-moz-border-radius: 6px;
+	-webkit-border-radius: 6px;
+}
+
+.greenPopup .formErrorContent {
+	background: #33be40;
+}
+
+.blackPopup .formErrorContent {
+	background: #393939;
+	color: #FFF;
+}
+
+.formError .formErrorArrow {
+	width: 15px;
+	margin: -2px 0 0 13px;
+	position:relative;
+}
+body[dir='rtl'] .formError .formErrorArrow,
+body.rtl .formError .formErrorArrow {
+	margin: -2px 13px 0 0;
+}
+
+.formError .formErrorArrowBottom {
+	box-shadow: none;
+	-moz-box-shadow: none;
+	-webkit-box-shadow: none;
+	margin: 0px 0 0 12px;
+	top:2px;
+}
+
+.formError .formErrorArrow div {
+	border-left: 2px solid #ddd;
+	border-right: 2px solid #ddd;
+	box-shadow: 0 2px 3px #FF0000;
+	-moz-box-shadow: 0 2px 3px #FF0000;
+	-webkit-box-shadow: 0 2px 3px #FF0000;
+	font-size: 0px;
+	height: 1px;
+	background: #FFFFFF;
+	margin: 0 auto;
+	line-height: 0;
+	font-size: 0;
+	display: block;
+}
+
+.formError .formErrorArrowBottom div {
+	box-shadow: none;
+	-moz-box-shadow: none;
+	-webkit-box-shadow: none;
+}
+
+.greenPopup .formErrorArrow div {
+	background: #33be40;
+}
+
+.blackPopup .formErrorArrow div {
+	background: #393939;
+	color: #FFF;
+}
+
+.formError .formErrorArrow .line10 {
+	width: 15px;
+	border: none;
+}
+
+.formError .formErrorArrow .line9 {
+	width: 13px;
+	border: none;
+}
+
+.formError .formErrorArrow .line8 {
+	width: 11px;
+}
+
+.formError .formErrorArrow .line7 {
+	width: 9px;
+}
+
+.formError .formErrorArrow .line6 {
+	width: 7px;
+}
+
+.formError .formErrorArrow .line5 {
+	width: 5px;
+}
+
+.formError .formErrorArrow .line4 {
+	width: 3px;
+}
+
+.formError .formErrorArrow .line3 {
+	width: 1px;
+	border-left: 2px solid #ddd;
+	border-right: 2px solid #ddd;
+	border-bottom: 0 solid #ddd;
+}
+
+.formError .formErrorArrow .line2 {
+	width: 3px;
+	border: none;
+	background: #ddd;
+}
+
+.formError .formErrorArrow .line1 {
+	width: 1px;
+	border: none;
+	background: #ddd;
+}
+</style>
+<script type="text/javascript" src="../JS/jquery.min.js" ></script>
+<script type="text/javascript" src="../JS/jquery.cookies.2.2.0.min.js" ></script>
+<script type="text/javascript" src="../ValidationEngine/js/jquery.validationEngine.js"></script>
+<script type="text/javascript" src="../JS/utils.js" ></script>
+<script type="text/javascript">
+function submitForm() {
+	var validate = validateFormByID('loginform');
+	if(validate) {
+		jQuery('#loginform').submit();
+	} else {
+		return false;
+	}
+}
+
+jQuery(function() {
+	//表单验证
+	initFormValidation();
+	
+	//用户名和密码框获取焦点和失去焦点事件
+	jQuery('#textusername').focus(function() {
+		var jQueryThis= jQuery(this);
+		if(jQuery.trim(jQueryThis.val())==jQuery.trim('$login.username$')) {
+			jQuery('#textusername').css({'z-index':'99'});
+			jQuery('#username').css({'z-index':'999'});
+			jQuery('#username').focus();
+		}
+	});
+	
+	jQuery('#username').blur(function() {
+		var jQueryThis= jQuery(this);
+		if(!jQueryThis.val()) {
+			jQuery('#textusername').css({'z-index':'999'});
+			jQuery('#username').css({'z-index':'99'});
+		}
+	});
+	
+	jQuery('#textpwd').focus(function() {
+		var jQueryThis= jQuery(this);
+		if(jQuery.trim(jQueryThis.val())==jQuery.trim('$login.password$')) {
+			jQuery('#textpwd').css({'z-index':'99'});
+			jQuery('#password').css({'z-index':'999'});
+			jQuery('#password').focus();
+		}
+	});
+	
+	jQuery('#password').blur(function() {
+		var jQueryThis= jQuery(this);
+		if(!jQueryThis.val()) {
+			jQuery('#textpwd').css({'z-index':'999'});
+			jQuery('#password').css({'z-index':'99'});
+		}
+	});
+	
+	//初始化按钮的单击和键盘事件
+	jQuery('#submitbtn').click(submitForm);
+	jQuery('#username, #password').keydown(function(evt) {
+		if(evt.keyCode == 13) {
+			submitForm();
+		}
+	});
+
+});
+</script>
+
+</head>
+
+<body>
+<div class="container">
+<form id="loginform" name="loginform" action="encoder.cgi" method="post">
+	<div class="logoConn"></div>
+	<div class="inputConn">
+		<div class="modelText">ENC<div style="width:1px;height:7px;"></div>2000</div>
+		<div class="inputTextConn">
+			<input type="hidden" name="actioncode" value="120">
+			<input id="textusername" name="textusername" type="text" value="$login.username$"/>
+			<input id="username" class="validate[required]" name="username" type="text"/>
+			<input id="textpwd" name="textpwd" type="text" value="$login.password$"/>
+			<input id="password" class="validate[required]" name="password" type="password"/>
+			<input id="submitbtn" class="$image_prex$btnspaceing" type="button" value="$login.button$"/>
+		</div>
+	</div>
+	<div class="copyrightConn">$ini.companyname$</div>
+</form>
+</div>
+</body>
+</html>
+
+
+
+
+
+

@@ -1,0 +1,78 @@
+        <form enctype="multipart/form-data" id="wmform" action="encoder.cgi" method="post" target="upload">
+          <table width="753" height="327" border="0">
+            <tr>
+              <td width="148" height="54" class="$image_prex$itemnametd">&nbsp;</td>
+              <td width="565"><h5>$sysupgrade.title$</h5></td>
+            </tr>
+            <tr>
+              <td height="54" class="$image_prex$itemnametd">&nbsp;</td>
+              <td>
+              	$sysupgrade.file$
+              	<input type="file" name="file" />
+				<input type="hidden" name="actioncode" value="110">
+				<input id="submitBtn" type="button" style="margin-left:70px;margin-top:-10px;" class="$image_prex$click_btn" value="$sysupgrade.upgrade$" />			  </td>
+            </tr>
+			<tr>
+              <td height="10" colspan="2">
+				<div style="width:410px; height:1px; margin-left:155px; background-color:#186FCA;"></div>
+			  </td>
+            </tr>
+            <tr>
+              <td height="50" class="$image_prex$itemnametd">&nbsp;</td>
+              <td><h5>$resetdefault.title$</h5></td>
+            </tr>
+			 <tr>
+              <td height="54" class="$image_prex$itemnametd">&nbsp;</td>
+              <td><div class="$image_prex$resetdefault"><h6>$sysupgrade.note$</h6><font style="font-size:12px;">$sysupgrade.notecontent1$$sysupgrade.notecontent2$</font></div></td>
+            </tr>
+            <tr>
+              <td height="35">&nbsp;</td>
+              <td>
+                <input style="margin-left:0px;" id="restoreBtn" type="button" class="click_btn_long" value="$resetdefault.restore$" />              </td>
+            </tr>
+          </table>
+        </form>
+		<iframe name="upload" style="display:none"></iframe>
+<script>
+jQuery(function() {
+	jQuery("input[type=file]").filestyle({ 
+	     image: "../fileStyle/css/choose-file.png",
+	     imageheight : 22,
+	     imagewidth : 52,
+	     width : 180
+	 });
+	
+	jQuery('#submitBtn').click(function() {
+		jQuery('#wmform').submit();
+		openUploading();
+	});
+	
+	jQuery('#restoreBtn').click(function() {
+		art.dialog({
+			title: '$resetdefault.confirm$',
+			okValue: '$resetdefault.ok$',
+			cancelValue: '$resetdefault.cancel$',
+			lock: true,
+			fixed: true,
+		    background: '#600', // ����ɫ
+		    opacity: 0.87,	// ͸����
+		    content: "$resetdefault.restoreconfirm$",
+		    ok: function() {
+				var data = {"actioncode": "418"};
+				jQueryAjaxCmd({
+					"data": data,
+					success: function(ret) {}
+				});
+				//window.location.href = "encoder.cgi";
+				window.setTimeout('window.location.href = "encoder.cgi"', 1000);
+		    },
+		    cancel: true
+		});
+	});
+	
+	initFormValidation();
+	
+	
+	
+});
+</script> 

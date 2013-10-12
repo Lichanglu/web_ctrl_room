@@ -1,0 +1,16 @@
+<li><a href="#" actionCode="304" id="menua">$leftmenu.videosource$</a></li>
+<li><a href="#" actionCode="308" id="menue">$leftmenu.titlelogo$</a></li>
+
+<script type="text/javascript">
+jQuery('#nav li a').click(function() {
+	var actionCode = jQuery(this).attr('actionCode');
+	closeAllPrompt();
+	if(actionCode) {
+		jQueryAjaxHtml({
+			data: {"actioncode": actionCode}
+		});
+	}
+});
+
+leftMenu.init('nav', 1);
+</script>

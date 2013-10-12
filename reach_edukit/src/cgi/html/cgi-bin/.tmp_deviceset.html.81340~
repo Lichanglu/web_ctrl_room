@@ -1,0 +1,44 @@
+        <form enctype="multipart/form-data" id="wmform" method="post" target="upload">
+        <table>
+        	<tr>
+        		<td>
+        		  <table width="500" height="100" border="0">
+		            <tr>
+		              <td width="35%" height="54" class="$image_prex$itemnametd">$deviceset.devicenamelbl$</td>
+		              <td width="65%">
+		                <input name="devicenamelbl" id="devicenamelbl" type="text" readonly="readonly" class="show_label" style="width: 250px;"/>
+		              </td>
+		            </tr>
+		            <tr>
+		              <td height="44" class="$image_prex$itemnametd">&nbsp;</td>
+		              <td style="color: red;"><input id="devicename" class="inputtext1 validate[required, maxSize[20]]" name="devicename" type="text" style="width: 160px;"/>$deviceset.notice$</td>
+		            </tr>
+					
+					<tr>
+					<td>&nbsp;</td>
+					  <td height="67">
+						<input id="setBtn" type="button" class="$image_prex$click_btn" value="$btn.save$" style="padding-left: 0; margin-left: 0;"/>
+					  </td>
+					</tr>
+		          </table>
+        		</td>
+        	</tr>
+        </table>
+		<input type="hidden" name="actioncode" value="433">
+        </form>
+		<iframe name="upload" style="display:none"></iframe>
+<script>
+jQuery(function() {
+	initFormValidation();
+	
+	jQuery('#setBtn').click(function() {
+		if (!validateFormByID('wmform')){
+			return true;
+		}
+		jQuery('#wmform').submit();
+	});
+	
+	//initDHCPCheckBox();
+	
+});
+</script> 

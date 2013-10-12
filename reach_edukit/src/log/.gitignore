@@ -1,0 +1,10 @@
+*.o
+*_config
+mkuppkg
+*.elf
+update
+.svn
+vssver.scc
+version.h
+build_info.h
+*.a

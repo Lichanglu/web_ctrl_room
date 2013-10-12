@@ -1,0 +1,78 @@
+        <form enctype="multipart/form-data" id="wmform_outputRTSPSet">
+          <table width="420" height="270" border="0">
+            <tr style="display:none;">
+              <td height="36" class="$image_prex$itemnametd">&nbsp;</td>
+              <td><h5>RTSP Set</h5></td>
+              <td></td>
+            </tr>
+						<tr>
+              <td height="40" class="$image_prex$itemnametd">$outputrtspset.serverport$</td>
+              <td colspan="2">
+              <input id="serverPort" class="inputtext validate[required, custom[integer]]" type="text" name="serverPort" />
+			  		</td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">&nbsp;</td>
+              <td colspan="2"><font style="color:#FF0000; font-size:12px;">$outputrtspset.warning$</font></td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputrtspset.active$</td>
+              <td colspan="2">
+              <input id="active" style="margin-right:5px;" class="inputtext validate[required, custom[integer]]" type="text" name="rtspActive" />$outputrtspset.second$</td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputrtspset.mtu$</td>
+              <td colspan="2">
+              <input id="rtspMtu" class="inputtext validate[required, custom[integer]]" type="text" name="rtspMtu" /></td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputrtspset.input$</td>
+              <td colspan="2">
+              	<select id="inputStream" style="border:1px solid #186FCA; width:151px;" name="inputStream" onchange="inputChangeReq()">
+                <option value="1">$output.input$1</option>
+                <option value="2">$output.input$2</option>
+              	</select>
+              </td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputrtspset.quality$</td>
+              <td>HIGH</td>
+              <td>LOW</td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputrtspset.streammode$</td>
+              <td>
+              	<select id="streamMode" style="border:1px solid #186FCA; width:151px;" name="streamMode">
+                <option value="0">unicast</option>
+                <option value="1">multicast</option>
+              </select></td>
+              <td>
+              	<select id="streamMode2" style="border:1px solid #186FCA; width:151px;" name="streamMode2">
+                <option value="0">unicast</option>
+                <option value="1">multicast</option>
+              </select></td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputrtspset.multiIP$</td>
+              <td><input id="rtspMultiIP" class="validate[required, custom[ipv4]] inputtext" type="text" name="rtspMultiIP" /></td>
+              <td><input id="rtspMultiIP2" class="validate[required, custom[ipv4]] inputtext" type="text" name="rtspMultiIP2" /></td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputrtspset.multiport$</td>
+              <td><input id="rtspMultiPort" class="validate[required, custom[integer]] inputtext" type="text" name="rtspMultiPort" /></td>
+              <td><input id="rtspMultiPort2" class="validate[required, custom[integer]] inputtext" type="text" name="rtspMultiPort2" /></td>
+            </tr>
+			<!-- 
+			<tr>
+              <td class="$image_prex$itemnametd">$outputrtspset.sdp$</td>
+              <td colspan="2"><a href="encoder.cgi?actioncode=420" target="_self">$outputrtspset.download$</a></td>
+            </tr>
+			-->
+          </table>
+        </form>
+
+<script>
+jQuery(function() {
+	initFormValidation();
+});
+</script> 

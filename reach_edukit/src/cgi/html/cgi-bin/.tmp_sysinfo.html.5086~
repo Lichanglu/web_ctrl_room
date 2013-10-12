@@ -1,0 +1,100 @@
+<form id="wmform">
+  <table height="366" border="0" class="sysinfo_table">
+    <tr>
+      <td colspan="2" style="text-align:center; padding-left:45px;"><h5>$sysinfo.title$</h5></td>
+    </tr>
+    <tr>
+      <td width="399" class="$image_prex$itemnametd">$sysinfo.seriesno$</td>
+      <td width="360"><input readOnly name="serialNO" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td width="399" class="$image_prex$itemnametd">$sysinfo.model$</td>
+      <td width="360"><input readOnly name="deviceModelNO" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.softwareversion$</td>
+      <td><input style="width:300px;" readOnly name="softwareVersion" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.compiledtime$</td>
+      <td><input style="width:300px;"  readOnly name="compiledTime" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.webversion$</td>
+      <td><input readOnly name="webVersion" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.ip1$</td>
+      <td><input readOnly name="IPAddress" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.mask1$</td>
+      <td><input readOnly name="submask" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.ip2$</td>
+      <td><input readOnly name="IPAddress1" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.mask2$</td>
+      <td><input readOnly name="submask1" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.gateway$</td>
+      <td><input readOnly name="networkGate" type="text" class="show_label"/></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.mac$</td>
+      <td><input readOnly name="maAdress" type="text" class="show_label" /></td>
+    </tr>
+	<tr class="serialTd" style="display: none;">
+      <td width="399" class="$image_prex$itemnametd">$sysinfo.seriesno$</td>
+      <td><input name="serialNumber" id="serialNumber" type="text"  class="inputtext validate[required]" /></td>
+    </tr>
+	<tr class="serialTd" style="display: none;">
+		<td width="399"></td>
+		<td><input id="btnSetSerialNo" type="button" class="$image_prex$click_btn" value="$sysinfo.set$" /></td>
+	</tr>
+    <tr class="refreshTd" style="display: none;">
+      <td colspan="2" style="text-align:center;padding-left:95px;"><input id="refreshBtn" class="$image_prex$click_btn" type="button" value="$sysinfo.refresh$" /></td>
+    </tr>
+  </table>
+</form>
+<script>
+jQuery(function() {
+	initFormValidation();
+	
+	var user = jQuery.cookies.get("user");
+	if(user == "ReachWebAdmin"){
+		jQuery(":input[name='serialNumber']").css({"background": "#ffffff"});
+		jQuery(".serialTd").css({"display": "table-row"});
+	}else{
+		jQuery(".refreshTd").css({"display": "table-row"});
+	}
+	jQuery("#btnSetSerialNo").click(function(){
+		var serialNumber = jQuery("#serialNumber").val();
+		var validate = validateFormByID('wmform');
+		if(validate) {
+			var data = {"actioncode": "423", "serialNumber": serialNumber};
+			jQueryAjaxCmd({
+				"data": data,
+				success: function(ret) {
+					alert("$savesucess$");
+				}
+			});
+			
+		} else {
+			return false;
+		}
+	});
+
+	jQuery('#refreshBtn').click(function() {
+		jQuery('#nav_sysinfo').click();
+	});
+	
+});
+</script>
+
+
+
+

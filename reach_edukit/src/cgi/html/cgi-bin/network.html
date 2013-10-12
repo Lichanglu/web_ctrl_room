@@ -1,0 +1,83 @@
+        <form enctype="multipart/form-data" id="wmform">
+          <table width="753" height="267" border="0">
+            <tr>
+              <td width="28%" height="54" class="$image_prex$itemnametd">$network.dhcp$</td>
+              <td width="72%">
+                <input id="dhcp" type="checkbox" name="dhcp"/>
+                <label for="dhcp">$network.enable$</label>
+              </td>
+            </tr>
+            <tr>
+              <td height="44" class="$image_prex$itemnametd">$network.ip$</td>
+              <td><input id="IPAddress" class="inputtext ipset validate[required, custom[ipv4]]" name="IPAddress" type="text" /></td>
+            </tr>
+            <tr>
+              <td height="48" class="$image_prex$itemnametd">$network.mask$</td>
+              <td>
+                <input id="subMask" class="inputtext ipset validate[required, custom[ipv4]]" name="subMask" type="text" />
+              </td>
+            </tr>
+			 <tr>
+              <td height="42" class="$image_prex$itemnametd">$network.gateway$</td>
+              <td>
+                <input id="gateWay" class="inputtext ipset validate[required, custom[ipv4]]" name="gateWay" type="text" />
+              </td>
+            </tr>
+            <tr>
+              <td height="67" colspan="2" style="padding-left:160px;">
+                <input id="refreshBtn" type="button" class="$image_prex$click_btn" value="$network.refresh$" />
+                <input id="setBtn" type="button" class="$image_prex$click_btn" value="$network.save$" />
+              </td>
+            </tr>
+          </table>
+        </form>
+<script>
+function setTextDisabledByDHCP() {
+	if(jQuery('#dhcp').is(':checked')) {
+		jQuery('#wmform .ipset').removeClass('inputtext').addClass('inputtext2').prop('disabled', true);
+	} else {
+		jQuery('#wmform .ipset').removeClass('inputtext2').addClass('inputtext').prop('disabled', false);
+	}
+}
+jQuery(function() {
+//	formBeautify();
+	initFormValidation();
+	jQuery('#dhcp').change(setTextDisabledByDHCP).change();
+	
+	jQuery('#refreshBtn').click(function() {
+		jQuery('#menua').click();
+	});
+	
+	jQuery('#setBtn').click(function() {
+		art.dialog({
+			title: '$network.confirm$',
+			okValue: '$network.ok$',
+			cancelValue: '$network.cancel$',
+			lock: true,
+			fixed: true,
+		    background: '#600', // ±³¾°É«
+		    opacity: 0.87,	// Í¸Ã÷¶È
+		    content: "$network.networksetfirm$",
+		    ok: function() {
+				var validate = validateFormByID('wmform');
+				if (validate) {
+					var data = {"actioncode": "406"};
+					var params = getFormItemValue('wmform');
+					if(params) {
+						jQuery.extend(data, params);
+						jQueryAjaxCmd({
+							"data": data,
+							success: function(ret) {}
+						});
+						window.setTimeout('window.location.href = "encoder.cgi"', 1000);
+					}
+				} else {
+					return true;
+				}
+		    },
+		    cancel: true
+		});
+	});
+	
+});
+</script> 

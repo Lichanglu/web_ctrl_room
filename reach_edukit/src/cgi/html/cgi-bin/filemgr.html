@@ -1,0 +1,193 @@
+<form id="wmform">
+<div style="width: 900px; height: 35px; padding: 5px 10px; text-align: center;">
+$filemgr.filename$ &nbsp; <input type="text" name="txtSearch" id="txtSearch" style="width: 240px; padding: 2px;" />
+<input id="searchBtn" type="button" class="click_btn" value="$filemgr.search$" />	
+</div>
+<table class="tablesorter">
+	<thead>
+		<tr style="text-align:center; padding: 2px; height: 35px;">
+			<th class="remove sorter-false">$filemgr.filename$</th>
+			<th>$filemgr.date$</th>
+			<th>$filemgr.size$</th>
+			<th class="remove sorter-false">$filemgr.op$</th>
+		</tr>
+	</thead>
+	<tbody id="filelist"></tbody>
+</table>
+
+<!-- pager -->
+<div id="pager" class="pager">
+    <img src="../images/icons/first.png" class="first"/>
+    <img src="../images/icons/prev.png" class="prev"/>
+    <span class="pagedisplay"></span>
+    <img src="../images/icons/next.png" class="next"/>
+    <img src="../images/icons/last.png" class="last"/>
+    $paper.gotopage$ <select class="gotoPage" title="Select page number" style="width: 50px;"></select> $paper.page$
+</div>
+
+</form>
+<script>
+var user;
+
+jQuery(function(){
+	initFormValidation();
+	user = jQuery.cookies.get("user");
+	buildHTML(formData, user);
+	jQuery('.remove-me').remove();
+	initPaper();
+	
+  jQuery("#searchBtn").click(function(){
+  	var filename = jQuery("#txtSearch").val();
+  	var tempData = new Array();
+  	jQuery.each(formData, function(i, itemTr){
+  		if(itemTr && itemTr.courseName && itemTr.courseName.indexOf(filename) >= 0){
+  			tempData.push(itemTr);
+  		}
+  	});
+  	jQuery("#filelist").html("");
+  	//去掉tablesorter控件，重新初始化tablesorter
+  	if (tempData.length == 0) {
+		jQuery('.pagedisplay').html('0 $paper.to$ 0 (0)');
+		jQuery('.gotoPage').html('');
+		return false;
+	}
+	
+  	jQuery("table").trigger("destroy");
+	buildHTML(tempData, user);
+	jQuery('.remove-me').remove();
+	initPaper();
+  });
+});
+
+function initPaper(){
+	var pagerOptions = {
+
+    container: jQuery(".pager"),
+    ajaxUrl: null,
+    customAjaxUrl: function(table, url) { return url; },
+    ajaxProcessing: function(ajax){
+      if (ajax && ajax.hasOwnProperty('data')) {
+        // return [ "data", "total_rows" ];
+        return [ ajax.total_rows, ajax.data ];
+      }
+    },
+    output: '{startRow} $paper.to$ {endRow} ({totalRows})',
+    updateArrows: true,
+    page: 0,
+    size: 10,
+    fixedHeight: true,
+    removeRows: false,
+
+    cssNext: '.next', 
+    cssPrev: '.prev', 
+    cssFirst: '.first', 
+    cssLast: '.last', 
+    cssGoto: '.gotoPage', 
+
+    cssPageDisplay: '.pagedisplay', 
+    cssPageSize: '.pagesize', 
+
+    cssDisabled: 'disabled', 
+    cssErrorRow: 'tablesorter-errorRow'
+
+  };
+
+  jQuery("table")
+    .tablesorter({
+      theme: 'blue',
+      widthFixed: true,
+      widgets: ['zebra'],
+      headers: {
+      	1: { sortInitialOrder: "desc" }
+      }
+    })
+    .bind('pagerChange pagerComplete pagerInitialized pageMoved', function(e, c){
+      var msg = '"</span> event triggered, ' + (e.type === 'pagerChange' ? 'going to' : 'now on') +
+        ' page <span class="typ">' + (c.page + 1) + '/' + c.totalPages + '</span>';
+      jQuery('#display')
+        .append('<li><span class="str">"' + e.type + msg + '</li>')
+        .find('li:first').remove();
+    })
+    .tablesorterPager(pagerOptions);
+		jQuery("table").find('th:eq(1)').trigger('sort');	
+}
+
+function buildHTML(dataArray, user){
+	if(dataArray && typeof dataArray == 'object') {
+		for(var i=0; i<dataArray.length; i++) {
+			var item = dataArray[i];
+			if(item) {
+				var courseName = item['courseName'];
+				var createDate = item['createDate'];
+				var size = item['size'];
+				
+				var trInnerStr = '<tr style="text-align:center; height: 35px;"><td><input type="text" readonly="readonly" class="show_label validate[maxSize[63]]" style="width: 440px; padding: 2px;" value="' + courseName + '"/></td>';
+				trInnerStr += '<td>' + createDate + '</td>';
+				trInnerStr += '<td>' + size + ' MB</td>';
+				trInnerStr += '<td><a href="javascript:delFile(\''+ courseName +'\')">$filemgr.delete$</a> <a href=\'javascript:downloadDialog("'+ courseName +'")\'>$filemgr.download$</a></td></tr>';
+				jQuery("#filelist").append(trInnerStr);;
+			}
+		}
+	}
+}
+
+function delFile(courseName){
+	art.dialog({
+		title: '',
+		okValue: '$falert.ok$',
+		cancelValue: '$falert.cancel$',
+		lock: true,
+		fixed: true,
+	    background: '#600', 
+	    opacity: 0.87,
+	    content: '$filemgr.deleteconfirm$',
+	    ok: function() {
+			var data = {"actioncode": "416","courseName": courseName};
+			jQueryAjaxCmd({
+				"data": data,
+				success: function(ret) {
+					if(ret == 1) {
+						falert('$falert.ok$', '$filemgr.deletesuccess$');
+						jQuery("#nav_filemgr").click();
+					} else {
+						falert('$falert.ok$', '$filemgr.deletefailed$');
+					}
+				}
+			});
+		},
+		cancel: true
+	});
+}
+
+
+function downloadDialog(courseName){
+	art.dialog({
+		title: '$filemgr.download$',
+		okValue: '$falert.ok$',
+		cancelValue: '$falert.cancel$',
+		lock: true,
+		fixed: true,
+	    background: '#600',
+	    opacity: 0.87,
+	    content: '$filemgr.downloadfirm$',
+	    ok: function() {
+			var data = {"actioncode": "417","courseName": courseName};
+			openUploading();
+			jQueryAjaxCmd({
+				"data": data,
+				success: function(ret) {
+					if(ret == 1) {
+						closeUploading();
+						falert('$falert.ok$', '$filemgr.copysuccess$');
+					} else {
+						closeUploading();
+						falert('$falert.ok$', '$filemgr.copyfailed$');
+					}
+				}
+			});
+		},
+		cancel: true
+	});	
+}
+
+</script>

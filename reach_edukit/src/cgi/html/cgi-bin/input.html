@@ -1,0 +1,86 @@
+<form id="wmform">
+<table border="0">
+  <tr>
+    <td width="38%" height="35" class="$image_prex$itemnametd">$input.input$</td>
+    <td width="62%">
+	<input readOnly name="inputInfo" class="show_label" type="text" /><a id="showDetails" href="#">$input.detail$</a>
+	</td>
+  </tr>
+  <tr>
+    <td height="103" class="$image_prex$itemnametd">$input.screenadjust$</td>
+    <td><div style="border: 1px solid #186FCA;height: 110px;margin-bottom: 10px;padding-left: 10px;padding-top: 20px; width: 330px;"><div class="adjust_screen">
+  <div name="adbtn8" class="up adbtn"></div>
+  <div name="adbtn7" class="down adbtn"></div>
+  <div name="adbtn6" class="left adbtn"></div>
+  <div name="adbtn5" class="right adbtn"></div>
+  <div name="adbtn0" class="middle adbtn"></div>
+  <div class="adjust_range">
+  	<input style="margin-right:4px;" name="range" type="radio" value="10" />$input.high$
+	<input style="margin-left:10px; margin-right:4px;" name="range" type="radio" value="5" />$input.mid$
+	<input style="margin-left:10px; margin-right:4px;" checked name="range" type="radio" value="1" />$input.low$
+  </div>				  
+    </div></div></td>
+  </tr>
+</table>
+</form>
+
+<script>
+jQuery(function() {
+	initFormValidation();
+	/*
+	 * inputdetals info float window
+	 */
+	jQuery('#showDetails').click(function() {
+		closeAllPrompt();
+		jQueryAjaxHtml({
+			data: {"actioncode": "315"},
+			success: function(innerStr) {
+				art.dialog({
+					title: '$input.detail$',
+					okValue: '$input.ok$',
+					lock: true,
+					fixed: true,
+				    background: '#600', // ±³¾°É«
+				    opacity: 0.87,	// Í¸Ã÷¶È
+				    content: innerStr,
+				    ok: function() {
+				        return true;
+				    }
+				});
+				jQueryAjaxCmd({
+					data: {"actioncode": "408"},
+					success: function(retscript) {
+						eval(retscript);
+					}
+				});
+			}
+		});
+	});
+	
+	/*
+	 * adjust screen click handler
+	 */
+	jQuery('.adbtn').click(function() {
+		var data = {"actioncode": "409"};
+		var cmdType = jQuery(this).attr('name').substring(5);
+		var speed = formSet.getRadioValue('#wmform ', 'range');
+		var sdiajust = formSet.getRadioValue('#wmform ', 'sdiajust');
+		data['cmdType'] = cmdType;
+		data['speed'] = speed; 
+		data['sdiajust'] = sdiajust;
+		jQueryAjaxCmd({
+			"data": data,
+			success: function() {}
+		});	
+	});
+	
+	
+	/*
+	 * hide part of menu items when the username is not admin.
+	 */
+	var user = jQuery.cookies.get('user');
+	if(user != 'admin') {
+		jQuery('#showDetails').hide();
+	}
+});
+</script> 

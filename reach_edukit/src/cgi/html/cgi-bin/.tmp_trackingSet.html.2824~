@@ -1,0 +1,73 @@
+<form enctype="multipart/form-data" id="wmform" action="encoder.cgi" method="post">
+	  <table style="width:758px; height:350px;" border="0">
+		<tr>
+          <td class="$image_prex$itemnametd">$trackingSet.jiweiSet$</td>
+          <td>
+           	<input type="radio" id="jiwei1" name="jiwei" value="4" checked="checked" /><label for="jiwei1">$trackingSet.jiwei4$</label>
+			<input style="margin-left: 20px;" type="radio" id="jiwei2" name="jiwei" value="5"/><label for="jiwei2">$trackingSet.jiwei5$</label>
+			<input style="margin-left: 20px;" type="radio" id="jiwei3" name="jiwei" value="6"/><label for="jiwei3">$trackingSet.jiwei6$</label>
+			<input type="hidden" id="actioncode" name="actioncode" value="403">
+          </td>
+        </tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$trackingSet.IPCam$1£º</td>
+		  <td><input type="text" id="camIP1" name="camIP1" class="camIP inputtext validate[required, custom[ipv4]]" /></td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$trackingSet.IPCam$2£º</td>
+		  <td><input type="text" id="camIP2" name="camIP2" class="camIP inputtext validate[required, custom[ipv4]]" /></td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$trackingSet.IPCam$3£º</td>
+		  <td><input type="text" id="camIP3" name="camIP3" class="camIP inputtext validate[required, custom[ipv4]]" /></td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$trackingSet.IPCam$4£º</td>
+		  <td><input type="text" id="camIP4" name="camIP4" class="camIP inputtext validate[required, custom[ipv4]]" /></td>
+		</tr>
+		<tr>
+		  <td height="67">&nbsp;</td>
+		  <td>
+			<input id="saveBtn" type="button" class="$image_prex$click_btn" style="letter-spacing: 0px; padding-left: 5px;" value="$trackingSet.restartsave$" /></td>
+		</tr>
+	  </table>
+</form>
+<script>
+/**
+ * make IP text input disabled or not by the value of Jiwei raido
+ */	
+function setTextDisabledByJiwei() {
+	var val = jQuery('#wmform input:radio:checked[name="jiwei"]').val();
+	jQuery('.camIP').removeClass('inputtext2').addClass('inputtext').removeProp("disabled");
+	if(val == 4) {
+		jQuery('#camIP3, #camIP4').removeClass('inputtext').addClass('inputtext2').prop("disabled", "disabled");	
+	} else if(val == 5) {
+		jQuery('#camIP4').removeClass('inputtext').addClass('inputtext2').prop("disabled", "disabled");
+	}
+}
+
+jQuery(function() {
+	initFormValidation();
+	jQuery('#wmform input:radio[name="jiwei"]').change(setTextDisabledByJiwei).change();
+
+	jQuery("#saveBtn").click(function() {
+		var validate = validateFormByID('wmform');
+		if(validate) {
+			var data = getFormItemValue('wmform');
+			jQueryAjaxCmd({
+				"data": data,
+				success: function(ret) {
+					alert(ret);
+					if(ret == "1"){
+						falert('$falert.ok$', '$trackingSet.rebootsuccess$');
+					} else {
+						falert('$falert.ok$', '$trackingSet.rebootfail$');
+					}
+				}
+			});
+		}
+		//alert(validate);
+	});
+	
+});
+</script> 

@@ -1,0 +1,13 @@
+#!/bin/sh
+
+NAME=`basename $1`
+./old_mkpack $1
+
+mv update.tar.gz inst_ctrl/update.tgz -f
+
+tar -czvf recsever.tgz inst_ctrl
+
+cat inst_RecServer.sh recsever.tgz > $NAME.sh
+
+rm -fr inst_ctrl recsever.tgz install inst_RecServer.sh old_mkpack
+chmod 777 $NAME.sh

@@ -1,0 +1,3 @@
+[submodule "protocol_lib"]
+	path = protocol_lib
+	url = ssh://git@git.szreach.com/rd4/modules/protocol.git

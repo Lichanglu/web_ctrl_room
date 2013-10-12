@@ -1,0 +1,69 @@
+<form enctype="multipart/form-data" id="wmform" action="encoder.cgi" method="post" target="upload">
+	  <table style="width:758px; height:500px;" border="0">
+		<tr>
+		  <td width="184" height="23">&nbsp;</td>
+		  <td width="559"><h5>电影模式设置</h5></td>
+		</tr>
+		<tr>
+		  <td height="50" class="$image_prex$itemnametd">HDMI输出分辨率：</td>
+		  <td>
+		  	<input type="radio" name="hdmi" id="hdmi1" value="1" /><label for="hdmi1">1024*768</label>
+			<input style="margin-left: 20px;" type="radio" name="hdmi" id="hdmi2" value="2" /><label for="hdmi2">1280*720</label>
+		  </td>
+		</tr>
+		<tr>
+		  <td height="60">&nbsp;</td>
+		  <td><input id="restartSaveBtn" type="button" class="$image_prex$click_btn" style="letter-spacing: 0px; padding-left: 5px;" value="重启保存" /></td>
+		</tr>
+		<tr>
+		  <td height="16" colspan="2"><div style="width:375px; height:1px; margin-left:75px; background-color:#186FCA;"></div></td>
+		</tr>
+		<tr>
+		  <td height="37">&nbsp;</td>
+		  <td><h5>电影模式编码参数</h5></td>
+		</tr>
+		<tr>
+          <td height="50" class="$image_prex$itemnametd">合成分辨率：</td>
+          <td>
+           	<select id="mergeRes" name="mergeRes">
+           		<option value="1">1920*1080</option>
+           	</select>
+          </td>
+        </tr>
+		<tr>
+		  <td height="30" class="$image_prex$itemnametd">自动导播合成模式：</td>
+		  <td>&nbsp;</td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd" colspan="2">
+		  	<ul style="margin-left:60px; width:650px; height:210px;">
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel0.png);"></div><input checked type="radio" name="autoModel"/></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel0.png);"></div><input type="radio" name="autoModel"/></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel0.png);"></div><input type="radio" name="autoModel"/></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel0.png);"></div><input type="radio" name="autoModel"/></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel0.png);"></div><input type="radio" name="autoModel"/></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel0.png);"></div><input type="radio" name="autoModel"/></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel0.png);"></div><input type="radio" name="autoModel"/></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel0.png);"></div><input type="radio" name="autoModel"/></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel0.png);"></div><input type="radio" name="autoModel"/></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel0.png);"></div><input type="radio" name="autoModel"/></li>
+				
+			</ul>
+		  </td>
+		</tr>
+		<tr>
+		  <td height="30">&nbsp;</td>
+		  <td>
+			<input id="saveBtn" type="button" class="$image_prex$click_btn" value="保存" /></td>
+		</tr>
+	  </table>
+</form>
+<script>
+jQuery(function() {
+	initFormValidation();
+	
+	jQuery('.autoModelLi div').click(function() {
+		jQuery(this).siblings().first().attr("checked", "checked");
+	});
+});
+</script> 

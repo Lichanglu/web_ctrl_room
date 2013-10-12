@@ -1,0 +1,94 @@
+<form id="wmform">
+  <table height="366" border="0" class="sysinfo_table">
+    <tr>
+      <td colspan="2" style="text-align:center; padding-left:45px;"><h5>$sysinfo.title$</h5></td>
+    </tr>
+    <tr>
+      <td width="399" class="$image_prex$itemnametd">$sysinfo.seriesno$</td>
+      <td width="360"><input readOnly name="serialNO" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.model$</td>
+      <td><input readOnly name="deviceModelNO" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.sysversion$</td>
+      <td><input style="width:300px;" readOnly name="sysVersion" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.webversion$</td>
+      <td><input style="width:300px;" readOnly name="webVersion" type="text" class="show_label" /></td>
+    </tr>
+	<tr>
+      <td class="$image_prex$itemnametd">$sysinfo.kernelversion$</td>
+      <td><input style="width:300px;" readOnly name="kernelversion" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.encversion$</td>
+      <td><input style="width:300px;" readOnly name="encVersion" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.enckernelversion$</td>
+      <td><input style="width:300px;" readOnly name="encKernelVersion" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.fpgaversion$</td>
+      <td><input style="width:300px;" readOnly name="FPGAVersion" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.harddiskspace$</td>
+      <td><input readOnly name="hardDiskSpace" type="text" class="show_label"/></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.freediskspace$</td>
+      <td><input readOnly name="freeDiskSpace" type="text" class="show_label"/></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.mediaip$</td>
+      <td><input readOnly name="mediaIp" type="text" class="show_label" /></td>
+    </tr>
+	<!--tr class="serialTd" style="display: none;">
+      <td width="399" class="$image_prex$itemnametd">$sysinfo.seriesno$</td>
+      <td><input name="serialNumber" id="serialNumber" type="text" class="inputtext1 validate[maxSize[20]]" /></td>
+    </tr>
+	<tr class="serialTd" style="display: none;">
+      <td width="399" class="$image_prex$itemnametd">$sysinfo.model$</td>
+      <td><input name="deviceModel" id="deviceModel" type="text" class="inputtext1 validate[maxSize[20]]" /></td>
+    </tr>
+	<tr class="serialTd" style="display: none;">
+		<td width="399"></td>
+		<td><input id="btnSetSerialNo" type="button" class="$image_prex$click_btn" value="$btn.save$" /></td>
+	</tr-->
+  </table>
+</form>
+<script>
+jQuery(function() {
+	initFormValidation();
+	/*var user = jQuery.cookies.get("user");
+	if(user == "reachadministrator"){
+		jQuery(":input[name='serialNumber']").css({"background": "#ffffff"});
+		jQuery(".serialTd").css({"display": "table-row"});
+	}
+	
+	jQuery("#btnSetSerialNo").click(function(){
+		if(!validateFormByID('wmform')){
+			alert(22);
+			return true;
+		}
+		var serialNumber = jQuery(":input[name='serialNumber']").val();
+		var deviceModel = jQuery(":input[name='deviceModel']").val();
+		if(serialNumber) {
+			var data = {"actioncode": "420", "serialNumber": serialNumber, "deviceModel": deviceModel};
+			jQueryAjaxCmd({
+				"data": data,
+				success: function(ret) {
+					alert("$savesucess$");
+				}
+			});
+			
+		} else {
+			return false;
+		}
+	});*/
+});
+</script>

@@ -1,0 +1,251 @@
+        <form enctype="multipart/form-data" id="wmform" action="encoder.cgi" method="post" target="upload">
+          <table width="753" height="327" border="0">
+            <tr>
+              <td width="148" height="54" class="$image_prex$itemnametd"><h5>$sysupgrade.title$</h5></td>
+              <td width="565">&nbsp;</td>
+            </tr>
+            <tr>
+              <td height="54" class="$image_prex$itemnametd">&nbsp;</td>
+              <td>
+              	$sysupgrade.file$
+              	<input type="file" name="file" />
+				<input type="hidden" name="actioncode" value="110">
+				<input id="submitBtn" type="button" style="margin-left:70px;margin-top:-10px;" class="$image_prex$click_btn" value="$sysupgrade.upgrade$" />
+			  </td>
+            </tr>
+			<tr>
+              <td height="10" colspan="2">
+				<div style="width:410px; height:1px; margin-left:155px; background-color:#186FCA;"></div>
+			  </td>
+            </tr>
+            <tr>
+              <td height="53" class="$image_prex$itemnametd"><h5>$systemset.timeset$</h5></td>
+              <td>&nbsp;</td>
+            </tr>
+            <tr>
+              <td width="148" height="57" class="$image_prex$itemnametd">&nbsp;</td>
+              <td width="565">$systemset.encodertime$<label id="show_time">2013年09月24日 19:19:22</label><input type="button" value="$systemset.timesynch$" class="click_btn_long" id="saveBtn" style="margin-left:10px;"></td>
+            </tr>
+			<tr>
+              <td height="10" colspan="2">
+				<div style="width:410px; height:1px; margin-left:155px; background-color:#186FCA;"></div>
+			  </td>
+            </tr>
+            <tr>
+              <td height="50" class="$image_prex$itemnametd"><h5>$resetdefault.title$</h5></td>
+              <td>&nbsp;</td>
+            </tr>
+            <tr>
+              <td height="35">&nbsp;</td>
+              <td>
+                <input type="button" value="$resetdefault.restore$" class="click_btn_long" id="restoreBtn" style="margin-left:0px;">
+                <input style="margin-left:0px;" id="restartBtn" type="button" class="click_btn_long" value="$resetdefault.reboot$" />
+			  </td>
+            </tr>
+			<tr>
+              <td height="54" class="$image_prex$itemnametd">&nbsp;</td>
+              <td><div class="resetdefault"><h6>$sysupgrade.note$</h6><font style="font-size:12px;">$sysupgrade.notecontent1$</font></div></td>
+            </tr>
+          </table>
+        </form>
+		<iframe name="upload" style="display:none"></iframe>
+<script>
+var intervalId;
+
+function formatTime(date) {
+	var year = date.getFullYear();
+	var month = date.getMonth() + 1;
+	var day = date.getDate();
+	var hours = date.getHours();
+	var minutes = date.getMinutes();
+	var seconds = date.getSeconds();
+	return year + "/" + month + "/" + day + "/" + hours + "/" + minutes + "/" + seconds;
+}
+
+function formatNumber(number) {
+	if(number < 10) {
+		number = '0' + number;
+	}
+	return number;
+}
+
+function initPageTime(timeStr, language) {
+	var formatStr = "";
+	if(timeStr && language) {
+		var timeStrArr = timeStr.split("/");
+		if(timeStrArr && timeStrArr.length==6) {
+			switch(language) {
+				case "cn": {
+					formatStr = timeStrArr[0] + "年" + formatNumber(timeStrArr[1]) + "月" + formatNumber(timeStrArr[2]) + "日 " + formatNumber(timeStrArr[3]) + ":" + formatNumber(timeStrArr[4]) + ":" + formatNumber(timeStrArr[5]);
+					break;
+				}
+				case "us": {
+					formatStr = formatNumber(timeStrArr[1]) + "/" + formatNumber(timeStrArr[2]) + "/" + timeStrArr[0] + " " + formatNumber(timeStrArr[3]) + ":" + formatNumber(timeStrArr[4]) + ":" + formatNumber(timeStrArr[5]);
+					break;
+				}
+				case "hk": {
+					formatStr = timeStrArr[0] + "年" + formatNumber(timeStrArr[1]) + "月" + formatNumber(timeStrArr[2]) + "日 " + formatNumber(timeStrArr[3]) + ":" + formatNumber(timeStrArr[4]) + ":" + formatNumber(timeStrArr[5]);
+					break;
+				}
+			}
+		}
+	}
+	jQuery('#show_time').html(formatStr);
+}
+
+function getUpgradeStatus(){
+	var data = {"actioncode": "112"};
+	jQueryAjaxCmd({
+		"data": data,
+		success: function(ret) {
+			if(ret == "1"){
+				alert('$uploadFileSuccess$');
+				parent.closeUploading();
+				window.clearInterval(intervalId);
+				window.setTimeout('window.location.href = "encoder.cgi"', 1000);
+			}
+			else if(ret == "2"){
+				alert('$uploadFileFail$');
+				parent.closeUploading();
+			} 
+			else if (ret == "3") {
+				alert('$uploadstateerror$');
+				parent.closeUploading();
+			}
+		}
+	});
+}
+
+function getRollbackStatus(){
+	var data = {"actioncode": "112"};
+	jQueryAjaxCmd({
+		"data": data,
+		success: function(ret) {
+			if(ret == "1"){
+				alert('$sysupgrade.rollbacksuccess$');
+				parent.closeUploading();
+				window.clearInterval(intervalId);
+				window.setTimeout('window.location.href = "encoder.cgi"', 1000);
+			}
+			else if(ret == "2"){
+				alert('$sysupgrade.rollbackfailed$');
+				parent.closeUploading();
+			} 
+			else if (ret == "3") {
+				alert('$uploadstateerror$');
+				parent.closeUploading();
+			}
+		}
+	});
+}
+
+jQuery(function() {
+	jQuery("input[type=file]").filestyle({ 
+	     image: "../fileStyle/css/choose-file.png",
+	     imageheight : 22,
+	     imagewidth : 52,
+	     width : 180
+	 });
+	
+	jQuery('#submitBtn').click(function() {
+		jQuery('#wmform').submit();
+		openUploading();
+		intervalId = setInterval("getUpgradeStatus()", 2000);
+	});
+	
+	jQuery('#saveBtn').click(function() {
+		var data = {"actioncode": "436"};
+		var nowTimeStr = formatTime(new Date());
+		data['clienttime'] = nowTimeStr;
+		jQueryAjaxCmd({
+			"data": data,
+			success: function(ret) {
+				//alert(ret);
+				jQuery('#menue').click();
+			}
+		});
+	});
+	
+	jQuery('#restoreBtn').click(function() {
+		art.dialog({
+			title: '$resetdefault.confirm$',
+			okValue: '$resetdefault.ok$',
+			cancelValue: '$resetdefault.cancel$',
+			lock: true,
+			fixed: true,
+		    background: '#600', // 背景色
+		    opacity: 0.87,	// 透明度
+		    content: "$resetdefault.restoreconfirm$",
+		    ok: function() {
+				openUploading();
+				
+				var data = {"actioncode": "418"};
+				jQueryAjaxCmd({
+					"data": data,
+					success: function(ret) {
+						//closeUploading();
+						/*
+						if(ret == "1"){
+							alert('$sysupgrade.rollbacksuccess$');
+							window.setTimeout('window.location.href = "encoder.cgi"', 1000);
+						}
+						else if(ret == "3")
+						{
+							alert('$uploadstateerror$');
+						}
+						else{
+							alert('$sysupgrade.rollbackfailed$');
+						}
+						*/
+					}
+				});
+				
+				intervalId = setInterval("getRollbackStatus()", 2000);
+				//window.location.href = "encoder.cgi";
+				//window.setTimeout('window.location.href = "encoder.cgi"', 1000);
+		    },
+		    cancel: true
+		});
+	});
+	
+	jQuery('#restartBtn').click(function() {
+		art.dialog({
+			title: '$resetdefault.reboot$',
+			okValue: '$resetdefault.ok$',
+			cancelValue: '$resetdefault.cancel$',
+			lock: true,
+			fixed: true,
+		    background: '#600', // 背景色
+		    opacity: 0.87,	// 透明度
+		    content: "$resetdefault.rebootconfirm$",
+		    ok: function() {
+				var data = {"actioncode": "215"};
+				jQueryAjaxCmd({
+					"data": data,
+					success: function(ret) 
+					{ 
+						if(ret == "1")
+						{
+							alert('$resetdefault.rebootsuccess$');
+							window.setTimeout('window.location.href = "encoder.cgi"', 1000);
+						}
+						else
+						{
+							alert('$uploadstateerror$');
+							//window.setTimeout('window.location.href = "encoder.cgi"', 1000);
+						}
+					}
+				});
+				//window.location.href = "encoder.cgi";
+			//	window.setTimeout('window.location.href = "encoder.cgi"', 1000);
+		    },
+		    cancel: true
+		});
+	});
+	
+	initFormValidation();
+	
+	
+	
+});
+</script> 

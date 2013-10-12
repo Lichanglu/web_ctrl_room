@@ -1,0 +1,136 @@
+        <form enctype="multipart/form-data" id="wmform">
+		<table width="753" height="410" border="0">
+        <tr>
+			<td>
+			<table width="745" height="400" border="0" id="NetConfig1">
+				<tr>
+					<td colspan="2" style="text-align: center; height: 50px;" ><h3>$merge.title$</h3></td>
+				</tr>
+				<tr>
+					<td width="140" height="30">$merge.status$</td>
+					<td align="left">
+						&nbsp;&nbsp;
+						<input type="radio" value="2" name="mergestatus" onclick="initMerge(this.value)" />&nbsp;$merge.enable$
+						&nbsp;&nbsp;&nbsp;&nbsp;
+						<input type="radio" value="1" name="mergestatus" onclick="initMerge(this.value)" />&nbsp;$merge.disable$
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<ul style="width: 750px; list-style-type: none;" id="mergeList">
+							<li style="display: block; width: 240px; height: 140px; float: left;">
+							<div style="width: 170px; height: 100px; background-image: url(../images/switch1.png); background-position:0px 0px;"></div>
+							&nbsp;&nbsp;<input type="radio" name="layout" value="1" />$merge.layouttext$1
+							</li>
+							<li style="display: block; width: 240px; height: 140px; float: left;">
+							<div style="width: 170px; height: 100px; background-image: url(../images/switch1.png); background-position:-178px 0px;"></div>
+							&nbsp;&nbsp;<input type="radio" name="layout" value="2" />$merge.layouttext$2
+							</li>
+							<li style="display: block; width: 240px; height: 140px; float: left;">
+							<div style="width: 170px; height: 100px; background-image: url(../images/switch1.png); background-position:-360px 0px;"></div>
+							&nbsp;&nbsp;<input type="radio" name="layout" value="3" />$merge.layouttext$3
+							</li>
+							<li style="display: block; width: 240px; height: 140px; float: left;">
+							<div style="width: 170px; height: 100px; background-image: url(../images/switch1.png); background-position:0px -110px;"></div>
+							&nbsp;&nbsp;<input type="radio" name="layout" value="4" />$merge.layouttext$4
+							</li>
+							<li style="display: block; width: 240px; height: 140px; float: left;">
+							<div style="width: 170px; height: 100px; background-image: url(../images/switch1.png); background-position:-178px -110px;"></div>
+							&nbsp;&nbsp;<input type="radio" name="layout" value="5" />$merge.layouttext$5
+							</li>
+							<li style="display: block; width: 240px; height: 140px; float: left;">
+							<div style="width: 170px; height: 100px; background-image: url(../images/switch1.png); background-position:-360px -110px;"></div>
+							&nbsp;&nbsp;<input type="radio" name="layout" value="6" />$merge.layouttext$6
+							</li>
+						</ul>
+					</td>
+				</tr>
+				
+				<tr height="30">
+					<td class="mergeExchangeRow" width="140" height="30">$merge.switch$</td>
+					<td class="mergeExchangeRow" align="left">
+						<input id="switchBtn" type="button" class="$image_prex$click_btn" value="$merge.switchbtn$" />
+					</td>
+				</tr>
+			</table>
+			</td>
+			<td>
+			</td>
+		</tr>
+		<tr>
+			<td height="67" style="text-align: center; height: 80px;" colspan="2">
+	        <input id="refreshbtn" type="button" class="$image_prex$click_btn" value="$video.refresh$" />
+			<input id="setBtn" type="button" class="$image_prex$click_btn" value="$network.save$" />
+			</td>
+		</tr>
+	</table>
+    </form>
+<script>
+var mergeModel=0;
+
+function initMerge(status,mmode){
+	if(status == 1){
+
+		jQuery("input[name=layout]").attr("disabled", "disabled");
+		jQuery(".mergeExchangeRow").hide();
+	}else{
+		mergeModel = mmode;
+		jQuery("input[name=layout]").removeAttr("disabled");
+		jQuery(".mergeExchangeRow").show();
+
+		if(mergeModel == 0){
+			mergeModel = 1;
+			jQuery("#mergeList div").css({"background-image": "url(../images/switch2.png)"});
+		}else{
+			mergeModel = 0;
+			jQuery("#mergeList div").css({"background-image": "url(../images/switch1.png)"});
+		}
+	}
+}
+
+jQuery(function() {
+	//formBeautify();
+	initFormValidation();
+	jQuery("#switchBtn").click(function(){
+		if(mergeModel == 0){
+			mergeModel = 1;
+			jQuery("#mergeList div").css({"background-image": "url(../images/switch2.png)"});
+		}else{
+			mergeModel = 0;
+			jQuery("#mergeList div").css({"background-image": "url(../images/switch1.png)"});
+		}
+
+	});
+
+	jQuery('#refreshbtn').click(function() {
+		jQuery('#menug').click();
+	});
+
+	jQuery('#setBtn').click(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			openUploading();
+			var data = {"actioncode": "421", "mergeModel": mergeModel};
+			var params = getFormItemValue('wmform');
+			if(params) {
+				jQuery.extend(data, params);
+				jQueryAjaxCmd({
+					"data": data,
+					success: function(ret) {
+						if(ret == "1"){
+							alert('$setsuccess$');
+						}else{
+							alert('$setfailed$');
+						}
+						closeUploading();
+					}
+				});
+				//openUploading();
+				//setTimeout("closeMask()", 3000);
+			}
+		} else {
+			return false;
+		}
+	});
+});
+</script> 

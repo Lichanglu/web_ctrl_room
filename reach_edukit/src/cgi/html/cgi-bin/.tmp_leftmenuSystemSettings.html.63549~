@@ -1,0 +1,38 @@
+<li><a href="#" actionCode="310" id="menua">$leftmenu.network$</a></li>
+<li><a href="#" actionCode="311" id="menub">$leftmenu.user$</a></li>
+<li><a href="#" actionCode="312" id="menuc">信息设置</a></li>
+<li><a href="#" actionCode="314" id="menud">FTP设置</a></li>
+<li class="adminopt"><a href="#" actionCode="313" id="menue">$leftmenu.sysupgrade$</a></li>
+
+<script type="text/javascript">
+/*
+ * init the click event handlers for the menu items.
+ */
+jQuery('#nav li a').click(function() {
+	var actionCode = jQuery(this).attr('actionCode');
+	closeAllPrompt();
+	if(actionCode) {
+		jQueryAjaxHtml({
+			data: {"actioncode": actionCode}
+		});
+		/*if(!roller.firstClicked) {
+			showMainContentAnimate();
+		} else {
+			roller.firstClicked = false;
+		}*/
+	}
+});
+
+/*
+ * select the first menu item.
+ */
+leftMenu.init('nav', 1);
+
+/*
+ * hide part of menu items when the username is not admin.
+ */
+var user = jQuery.cookies.get('user');
+if(user != 'admin') {
+	jQuery('.adminopt').hide();
+}
+</script>

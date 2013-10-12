@@ -1,0 +1,116 @@
+<form enctype="multipart/form-data" id="wmform" action="encoder.cgi" method="post" target="upload">
+	  <table style="width:758px; height:500px;" border="0">
+		<tr>
+		  <td height="23" colspan="2"><h5>$movieModel.title$</h5></td>
+		</tr>
+		<tr>
+		  <td width="184" height="50" class="$image_prex$itemnametd">$movieModel.hdmires$</td>
+		  <td>
+		  	<input checked type="radio" name="hdmi" id="hdmi1" value="1" /><label for="hdmi1">1024*768</label>
+			<input style="margin-left: 20px;" type="radio" name="hdmi" id="hdmi2" value="2" /><label for="hdmi2">1280*720</label>
+		  </td>
+		</tr>
+		<tr>
+		  <td height="60">&nbsp;</td>
+		  <td><input id="restartSaveBtn" type="button" class="$image_prex$click_btn" style="letter-spacing: 0px; padding-left: 3px;" value="$movieModel.restartsave$" /></td>
+		</tr>
+		<tr>
+		  <td height="16" colspan="2"><div style="width:375px; height:1px; margin-left:75px; background-color:#186FCA;"></div></td>
+		</tr>
+		<tr>
+		  <td height="37" colspan="2"><h5>$movieModel.params$</h5></td>
+		</tr>
+		<tr>
+          <td height="50" class="$image_prex$itemnametd">$movieModel.mergeres$</td>
+          <td>
+           	<select id="mergeRes" name="mergeRes">
+           		<option value="1">1920*1080</option>
+				<option value="2">1920*108</option>
+				<option value="3">1920*180</option>
+           	</select>
+          </td>
+        </tr>
+		<tr>
+		  <td height="30" class="$image_prex$itemnametd">$movieModel.mergeModel$</td>
+		  <td>&nbsp;</td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd" colspan="2">
+		  	<ul style="margin-left:60px; width:650px; height:210px;">
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel0.png);"></div><input checked type="radio" name="autoModel" id="autoModel1" value="1"/><label for="autoModel1">$movieModel.mergelayout$1</label></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel1.png);"></div><input type="radio" name="autoModel" id="autoModel2" value="2"/><label for="autoModel2">$movieModel.mergelayout$2</label></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel2.png);"></div><input type="radio" name="autoModel" id="autoModel3" value="3"/><label for="autoModel3">$movieModel.mergelayout$3</label></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel3.png);"></div><input type="radio" name="autoModel" id="autoModel4" value="4"/><label for="autoModel4">$movieModel.mergelayout$4</label></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel4.png);"></div><input type="radio" name="autoModel" id="autoModel5" value="5"/><label for="autoModel5">$movieModel.mergelayout$5</label></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel5.png);"></div><input type="radio" name="autoModel" id="autoModel6" value="6"/><label for="autoModel6">$movieModel.mergelayout$6</label></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel6.png);"></div><input type="radio" name="autoModel" id="autoModel7" value="7"/><label for="autoModel7">$movieModel.mergelayout$7</label></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel7.png);"></div><input type="radio" name="autoModel" id="autoModel8" value="8"/><label for="autoModel8">$movieModel.mergelayout$8</label></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel8.png);"></div><input type="radio" name="autoModel" id="autoModel9" value="9"/><label for="autoModel9">$movieModel.mergelayout$9</label></li>
+				<li class="autoModelLi"><div style="background-image: url(../images/automodel9.png);"></div><input type="radio" name="autoModel" id="autoModel10" value="10"/><label for="autoModel10">$movieModel.mergelayout$10</label></li>
+			</ul>
+		  </td>
+		</tr>
+		<tr>
+		  <td height="30">&nbsp;</td>
+		  <td>
+			<input id="saveBtn" type="button" class="$image_prex$click_btn" value="$btn.save$" /></td>
+		</tr>
+	  </table>
+</form>
+<script>
+jQuery(function() {
+	initFormValidation();
+	jQuery('.autoModelLi div').click(function() {
+		jQuery(this).siblings().first().attr("checked", "checked");
+	});
+	
+	jQuery('#restartSaveBtn').click(function() {
+		art.dialog({
+			title: '',
+			okValue: '$movieModel.ok$',
+			cancelValue: '$movieModel.cancel$',
+			lock: true,
+			fixed: true,
+		    background: '#600', // ±³¾°É«
+		    opacity: 0.87,	// Í¸Ã÷¶È
+		    content: "$movieModel.rebootconfirm$",
+		    ok: function() {
+//				alert(formSet.getRadioValue("#wmform", "hdmi"));
+				var data = {"actioncode": "401", "hdmi": formSet.getRadioValue("#wmform", "hdmi")};
+				jQueryAjaxCmd({
+					"data": data,
+					success: function(ret) { 
+//						alert(ret);
+						if(ret == "1"){
+							falert('$falert.ok$', '$movieModel.rebootsuccess$');
+						} else {
+							falert('$falert.ok$', '$movieModel.rebootfail$');
+						}
+					}
+				});
+		    },
+		    cancel: true
+		});
+	});
+	
+	jQuery('#saveBtn').click(function() {
+		var data = {"actioncode": "402"};
+		data['mergeRes'] = formSet.getSelectValue("#wmform", "mergeRes");
+		data["autoModel"] = formSet.getRadioValue("#wmform", "autoModel");
+//		alert(data['mergeRes']);
+//		alert(data['autoModel']);
+		jQueryAjaxCmd({
+			"data": data,
+			success: function(ret) {
+//				alert(ret); 
+				if(ret == "1"){
+					falert('$falert.ok$', '$movieModel.rebootsuccess$');
+				} else {
+					falert('$falert.ok$', '$movieModel.rebootfail$');
+				}
+			}
+		});
+	});
+	
+});
+</script> 

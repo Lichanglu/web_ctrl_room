@@ -1,0 +1,5 @@
+        <form id="wmform_videoAdvancedSet">
+          <label>
+          <textarea readOnly style="border:1px solid #186FCA; resize:none;" name="inputDetailInfo" cols="40" rows="10"></textarea>
+          </label>
+        </form>

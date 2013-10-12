@@ -1,0 +1,16 @@
+rm *.key
+rm *.reg
+
+rm librsa.a 
+rm rsa.o
+
+rm rsa_key_gen
+
+rm cli_reg
+
+rm srv_build_key
+
+rm cli_verify
+
+rm -rf ./bin
+rm -rf ./lib

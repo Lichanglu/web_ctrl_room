@@ -1,0 +1,15 @@
+#ifndef _VERSION_H__
+#define _VERSION_H__
+
+#define DVR_RDK_VERSION "<dvr_rdk_ver>"
+#define MCFW_VERSION "<mcfw_ver>"
+#define TI_TOOLS_VERSION  "<ti_tools_ver>"
+#define HDVPSS_VERSION  "<hdvpss_ver>"
+#define LINUX_LSP_VERSION "<linux_lsp_ver>"
+#define KERNEL_VERSION  "<kernel_ver>"
+#define UBOOT_VERSION  "<uboot_ver>"
+#define SDK_VERSION   "<SDK_ver>"
+/*project Version information*/
+#define REACH_PROJECT_VERSION    "<project_ver>"
+
+#endif

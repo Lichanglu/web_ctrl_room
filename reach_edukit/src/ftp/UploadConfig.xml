@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FtpFileSata>
+  <MaxSpeed>0</MaxSpeed>
+  <User>user</User>
+  <Passwd>Passwd</Passwd>
+  <RomteIp>0.0.0.0</RomteIp>
+  <RomtePath>/</RomtePath>
+  <Port>21</Port>
+  <WaitUpLoadFile/>
+</FtpFileSata>

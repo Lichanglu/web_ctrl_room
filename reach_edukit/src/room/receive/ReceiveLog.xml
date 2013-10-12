@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RequestMsg>
+  <MsgHead>
+    <MsgCode>30011</MsgCode>
+    <PassKey>RecServer</PassKey>
+  </MsgHead>
+  <MsgBody>
+    <StrmReq>
+      <RoomId>1</RoomId>
+      <Quality>1</Quality>
+    </StrmReq>
+  </MsgBody>
+</RequestMsg>

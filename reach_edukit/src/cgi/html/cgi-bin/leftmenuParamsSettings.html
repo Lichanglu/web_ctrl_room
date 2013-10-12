@@ -1,0 +1,19 @@
+<li><a href="#" actionCode="304" id="menua">$leftmenu.videosource$</a></li>
+<li><a href="#" actionCode="308" id="menub">$leftmenu.titlelogo$</a></li>
+<li><a href="#" actionCode="305" id="menuc">$leftmenu.moviemodel$</a></li>
+<li><a href="#" actionCode="306" id="menud">$leftmenu.trackingset$</a></li>
+<li><a href="#" actionCode="307" id="menue">$leftmenu.cameracontrol$</a></li>
+
+<script type="text/javascript">
+jQuery('#nav li a').click(function() {
+	var actionCode = jQuery(this).attr('actionCode');
+	closeAllPrompt();
+	if(actionCode) {
+		jQueryAjaxHtml({
+			data: {"actioncode": actionCode}
+		});
+	}
+});
+
+leftMenu.init('nav', 1);
+</script>

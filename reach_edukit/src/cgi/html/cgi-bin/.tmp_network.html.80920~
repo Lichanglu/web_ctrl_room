@@ -1,0 +1,173 @@
+        <form enctype="multipart/form-data" id="wmform">
+		<table width="753" height="237" border="0">
+            <tr>
+				<td>
+				<table width="745" height="227" border="0" id="NetConfig1">
+					<!-- 
+					<tr>
+						<td colspan="2" style="padding-left: 50px"><h5>$network.title$1</h5></td>
+					</tr>
+					<tr class="dhcpCtrl">
+					  <td width="28%" height="54" class="$image_prex$itemnametd">$network.dhcp$</td>
+					  <td width="72%">
+						<input id="dhcp" type="checkbox" name="dhcp"/>
+						$network.enable$
+					  </td>
+					</tr>
+					-->
+					<tr>
+					  <td height="44" class="$image_prex$itemnametd">$network.ip1$</td>
+					  <td><input id="IPAddress" class="inputtext validate[required, custom[ipv4]]" name="IPAddress" type="text" /></td>
+					</tr>
+					<tr>
+					  <td height="48" class="$image_prex$itemnametd">$network.mask1$</td>
+					  <td>
+						<input id="subMask" class="inputtext validate[required, custom[ipv4]]" name="subMask" type="text" />
+					  </td>
+					</tr>
+					<tr>
+					  <td height="44" class="$image_prex$itemnametd">$network.ip2$</td>
+					  <td><input id="IPAddress1" class="inputtext validate[required, custom[ipv4]]" name="IPAddress1" type="text" /></td>
+					</tr>
+					<tr>
+					  <td height="48" class="$image_prex$itemnametd">$network.mask2$</td>
+					  <td>
+						<input id="subMask1" class="inputtext validate[required, custom[ipv4]]" name="subMask1" type="text" />
+					  </td>
+					</tr>
+					 <tr>
+					  <td height="42" class="$image_prex$itemnametd">$network.gateway$</td>
+					  <td>
+						<input id="gateWay" class="inputtext validate[required, custom[ipv4]]" name="gateWay" type="text" />
+					  </td>
+					</tr>
+				</table>
+				</td>
+				<td>
+				</td>
+			</tr>
+			<tr>
+              <td height="67" style="padding-left:160px;" colspan="2">
+                <input id="refreshBtn" type="button" class="$image_prex$click_btn" value="$network.refresh$" />
+                <input id="setBtn" type="button" class="$image_prex$click_btn" value="$network.save$" />
+              </td>
+            </tr>
+		</table>
+        </form>
+<script>
+
+function initDHCPCheckBox() {
+	if(jQuery('#dhcp').prop('checked')) {
+		jQuery('#wmform #IPAddress').prop('disabled', true);
+		jQuery('#wmform #subMask').prop('disabled', true);
+		jQuery('#wmform #gateWay').prop('disabled', true);
+	} else {
+		jQuery('#wmform #IPAddress').prop('disabled', false);
+		jQuery('#wmform #subMask').prop('disabled', false);
+		jQuery('#wmform #gateWay').prop('disabled', false);
+	}
+	jQuery('#dhcp').change(function() {
+		if(jQuery(this).prop('checked')) {
+			jQuery('#wmform #IPAddress').prop('disabled', true);
+			jQuery('#wmform #subMask').prop('disabled', true);
+			jQuery('#wmform #gateWay').prop('disabled', true);
+		} else {
+			jQuery('#wmform #IPAddress').prop('disabled', false);
+			jQuery('#wmform #subMask').prop('disabled', false);
+			jQuery('#wmform #gateWay').prop('disabled', false);
+		}
+	});
+
+	if(jQuery('#dhcp1').prop('checked')) {
+		jQuery('#wmform #IPAddress1').prop('disabled', true);
+		jQuery('#wmform #subMask1').prop('disabled', true);
+		jQuery('#wmform #gateWay1').prop('disabled', true);
+	} else {
+		jQuery('#wmform #IPAddress1').prop('disabled', false);
+		jQuery('#wmform #subMask1').prop('disabled', false);
+		jQuery('#wmform #gateWay1').prop('disabled', false);
+	}
+	jQuery('#dhcp1').change(function() {
+		if(jQuery(this).prop('checked')) {
+			jQuery('#wmform #IPAddress1').prop('disabled', true);
+			jQuery('#wmform #subMask1').prop('disabled', true);
+			jQuery('#wmform #gateWay1').prop('disabled', true);
+		} else {
+			jQuery('#wmform #IPAddress1').prop('disabled', false);
+			jQuery('#wmform #subMask1').prop('disabled', false);
+			jQuery('#wmform #gateWay1').prop('disabled', false);
+		}
+	});
+}
+
+jQuery(function() {
+	//formBeautify();
+	initFormValidation();
+	
+	jQuery('#refreshBtn').click(function() {
+		jQuery('#menua').click();
+	});
+	
+	jQuery('#setBtn').click(function() {
+		/*var validate = validateFormByID('wmform');
+		if (validate) {
+			var data = {"actioncode": "406"};
+			var params = getFormItemValue('wmform');
+			if(params) {
+				jQuery.extend(data, params);
+				jQueryAjaxCmd({
+					"data": data,
+					success: function(ret) {
+						if(ret == 1) {
+							alert('Success!');
+							jQuery('#menua').click();
+						}
+					}
+				});
+			}
+		} else {
+			return false;
+		}*/
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			var data = {"actioncode": "406"};
+			var params = getFormItemValue('wmform');
+			if(params && confirm("$network.networksetfirm$")) {
+				jQuery.extend(data, params);
+				jQueryAjaxCmd({
+					"data": data,
+					success: function(ret)	 {
+						if(ret == "1"){
+							window.setTimeout('window.location.href = "encoder.cgi"', 1000);
+						}else{
+							 alert("$network.invalid$");
+							/*
+							art.dialog({
+								title: '$network.confirm$',
+								okValue: '$network.ok$',
+								cancelValue: '$network.cancel$',
+								lock: true,
+								fixed: true,
+								background: '#600', // ����ɫ
+								opacity: 0.87,	// ͸����
+								content: "$network.invalid$",
+								ok: function() {
+									
+								},
+								cancel: true
+							});
+						*/
+						}
+					}
+				});
+			}
+		} else {
+			return true;
+		}
+		
+	});
+	
+	//initDHCPCheckBox();
+	
+});
+</script> 

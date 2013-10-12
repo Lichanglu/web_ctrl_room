@@ -1,0 +1,70 @@
+        <form id="wmform_outputAdvancedSet">
+          <table width="346" height="350" border="0">
+            <tr style="display:none;">
+              <td width="168" height="36" class="$image_prex$itemnametd">&nbsp;</td>
+              <td width="168"><label>
+              <h5>Stream Setting</h5></label></td>
+            </tr>
+            <tr>
+            		<td class="$image_prex$itemnametd" width="33%">$outputaddset.displayselect$</td>
+            		<td width="67%" align="left">
+            			<input id="displayFrame" style="margin-right:4px;" name="displayFrame" type="radio" value="1" checked="checked" /> $outputaddset.display$1
+            			<input id="displayFrame" style="margin-right:4px;" name="displayFrame" type="radio" value="2" /> $outputaddset.display$2
+            		</td>
+            </tr>
+            <tr>
+            		<td class="$image_prex$itemnametd">$outputaddset.quality$</td>
+            		<td align="left">
+            			<input id="quality" style="margin-right:4px;" name="quality" type="radio" value="1" checked="checked"/> HIGH
+            			<input id="quality" style="margin-right:4px;" name="quality" type="radio" value="2" /> LOW
+            		</td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputaddset.protocal$</td>
+              <td><select id="type" name="type" style="border:1px solid #186FCA; width:151px;">
+                <option value="1">TS</option>
+                <option value="2">RTP</option>
+                <option value="3">RTSP</option>
+                <option value="4">TS_OVER_RTP</option>
+              </select></td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputaddset.IP$</td>
+              <td><input id="ip" class="inputtext validate[required, custom[ipv4]]" name="ip" type="text" value="234.255.0.90" /></td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputaddset.videoport$</td>
+              <td>
+              <input id="videoPort" class="inputtext validate[required, custom[integer], min[1025], max[65535]]" name="videoPort" type="text" value="9500" />
+              </td>
+            </tr>
+			 <tr>
+              <td class="$image_prex$itemnametd">$outputaddset.audioport$</td>
+              <td>
+              <input id="audioPort" class="inputtext validate[required, custom[integer], min[1025], max[65535]]" name="audioPort" type="text" value="9502" />
+              </td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputaddset.mtu$</td>
+              <td><input id="mtu" class="validate[required, custom[integer], min[228], max[1500]] inputtext" name="mtu" type="text" value="1480" /><font style="font-size:12px; color:#FF0000; margin-left:5px;">(228~1500)</font></td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputaddset.ttl$</td>
+              <td><input id="ttl" class="validate[required, custom[integer], min[1], max[255]] inputtext" name="ttl" type="text"value="1" /><font style="font-size:12px; color:#FF0000; margin-left:5px;">(1~255)</font></td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputaddset.tos$</td>
+              <td><input id="tos" class="validate[required, custom[integer], min[0], max[255]] inputtext" name="tos" type="text" value="0" /><font style="font-size:12px; color:#FF0000; margin-left:5px;">(0~255)</font></td>
+            </tr>
+            <tr>
+              <td class="$image_prex$itemnametd">$outputaddset.tc$</td>
+              <td><input id="tc_flag" type="checkbox" name="tc_flag" value="checkbox" /><label style="margin-left:5px;">$outputaddset.open$</label></td>
+            </tr>
+			<tr>
+              <td class="$image_prex$itemnametd">$outputaddset.ceiling$</td>
+              <td>
+              <input id="tc_rate" class="validate[required, custom[integer], min[0], max[100]] inputtext" name="tc_rate" type="text" value="0" /><font style="font-size:12px; color:#FF0000; margin-left:5px;">(0~100)</font>
+              </td>
+            </tr>
+          </table>
+        </form>

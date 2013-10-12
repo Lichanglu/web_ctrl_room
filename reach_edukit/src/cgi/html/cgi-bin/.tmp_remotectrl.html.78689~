@@ -1,0 +1,238 @@
+<form enctype="multipart/form-data" id="wmform" action="encoder.cgi" method="post" target="upload">
+	  <table style="width:758px; height:500px;" border="0">
+		<tr>
+		  <td height="37">&nbsp;</td>
+		  <td><h5>�Զ���ԶңЭ��</h5></td>
+		</tr>
+		<tr>
+		  <td height="28" class="$image_prex$itemnametd">Э���ϴ���</td>
+		  <td>
+			<input type="file" name="file" />
+			<input type="hidden" name="actioncode" value="411">
+			<input id="uploadImgBtn" type="button" style="margin-left:70px;margin-top:-10px;" class="$image_prex$click_btn" value="$titlelogo.upload$" /></td>
+		</tr>
+		<tr>
+		  <td height="39" class="$image_prex$itemnametd">$titlelogo.transparency$</td>
+		  <td>
+			<div id="logo_bright_slider" class="slider">
+			  <div id="logo_bright_bar" class="bar"></div>
+			</div>
+			<input id="logo_brightness" readOnly name="logo_brightness" type="text" class="show_label" style="text-align:center; margin-left:20px; width:25px;"/>%				</td>
+		</tr>
+		<tr>
+		  <td height="67">&nbsp;</td>
+		  <td>
+			<input id="refreshBtn" type="button" class="$image_prex$click_btn" value="$titlelogo.refresh$" />
+			<input id="saveBtn" type="button" class="$image_prex$click_btn" value="$titlelogo.save$" />              </td>
+		</tr>
+		
+		<tr>
+		  <td height="16" colspan="2"><div style="width:375px; height:1px; margin-left:75px; background-color:#186FCA;"></div></td>
+		</tr>
+		
+		<tr>
+		  <td width="184" height="23">&nbsp;</td>
+		  <td width="559"><h5>$titlelogo.title$</h5></td>
+		</tr>
+		<tr>
+     <td class="$image_prex$itemnametd"></td>
+     <td>
+		   <input style="margin-right:5px;" type="checkbox" id="caption" name="caption" value="0" />$titlelogo.displaytitle$
+     </td>
+     </tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$titlelogo.position$</td>
+		  <td>
+			<select id="cap_position" name="cap_position" style="width:150px;">
+				<option value="0">Absolute</option>
+				<option value="1">Top Left</option>
+				<option value="2">Top Right</option>
+				<option value="3">Bottom Left</option>
+				<option value="4">Bottom Right</option>
+				<option value="5">Centered</option>
+			</select>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$titlelogo.coordinate$</td>
+		  <td>
+		  X<input id="cap_x" class="inputtext" name="cap_x" type="text" style="width:50px; width:47px\9; margin-left:5px;" />
+		   <font style="font-size:12px; color:#FF0000; margin-right:10px;">(0~<span class="max_x">0</span>)</font>
+		  Y<input id="cap_y" class="inputtext" name="cap_y" type="text" style="width:50px; width:47px\9; margin-left:5px;" />			  
+		   <font style="font-size:12px; color:#FF0000;">(0~<span class="max_y">0</span>)</font>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$titlelogo.content$</td>
+		  <td>
+			<input id="cap_text" class="inputtext" name="cap_text" type="text" /><font style="color:#FF0000;font-size:12px;">$titlelogo.lettersatmost$</font>
+		  </td>
+		</tr>
+		<tr>
+		  <td height="33" class="$image_prex$itemnametd">$titlelogo.transparency$</td>
+		  <td>
+			<div id="cap_bright_slider" class="slider">
+			  <div id="cap_bright_bar" class="bar"></div>
+			</div>
+			<input id="cap_brightness" readOnly name="cap_brightness" type="text" class="show_label" style="text-align:center; margin-left:20px; width:25px;"/>%              </td>
+		</tr>
+		<tr>
+		  <td>&nbsp;</td>
+		  <td>
+			<input id="cap_displaytime" type="checkbox" name="cap_displaytime" />
+			$titlelogo.displaytime$ 
+			<input id="synchTimeBtn" style="margin-left:20px; display:none;" type="button" class="click_btn_long" value="$titlelogo.timesynch$" />
+		</tr>
+		
+	  </table>
+</form>
+<iframe name="upload" style="display:none"></iframe>
+<script>
+var inputTab = 1;
+
+function initMaxPos(max_x, max_y){
+	jQuery("#cap_x").addClass("validate[required, custom[integer], min[0], max["+ max_x +"]]");
+	jQuery("#cap_y").addClass("validate[required, custom[integer], min[0], max["+ max_y +"]]");
+	jQuery("#logo_x").addClass("validate[required, custom[integer], min[0], max["+ max_x +"]]");
+	jQuery("#logo_y").addClass("validate[required, custom[integer], min[0], max["+ max_y +"]]");
+	jQuery(".max_x").text(max_x);
+	jQuery(".max_y").text(max_y);
+}
+
+function formatTime(date) {
+	var year = date.getFullYear();
+	var month = date.getMonth() + 1;
+	var day = date.getDate();
+	var hours = date.getHours();
+	var minutes = date.getMinutes();
+	var seconds = date.getSeconds();
+	return year + "/" + month + "/" + day + "/" + hours + "/" + minutes + "/" + seconds;
+}
+
+function captionCtrlInit(isChecked){
+	if(isChecked==1){
+		jQuery("#caption").attr("checked", "checked");
+		jQuery('#cap_position').removeAttr('disabled');
+		jQuery('#cap_text').removeAttr('disabled');
+		jQuery('#cap_displaytime').removeAttr('disabled');
+		if(jQuery('#cap_position').val() != '0') {
+			jQuery('#cap_x').prop('disabled', true);
+			jQuery('#cap_y').prop('disabled', true);
+		}else{
+			jQuery('#cap_x').prop('disabled', false);
+			jQuery('#cap_y').prop('disabled', false);
+		}
+	}else{
+		jQuery('#cap_position').attr("disabled", "disabled");
+		jQuery('#cap_x').attr("disabled", "disabled");
+		jQuery('#cap_y').attr("disabled", "disabled");
+		jQuery('#cap_text').attr("disabled", "disabled");
+		jQuery('#cap_displaytime').attr("disabled", "disabled");
+	}
+}
+
+function logoCtrlInit(isChecked){
+	if(isChecked == 1){
+		jQuery("#logo").attr("checked", "checked");
+		jQuery('#logo_position').removeAttr('disabled');
+		jQuery('#uploadImgBtn').removeAttr('disabled');
+		jQuery("input[type=file]").removeAttr('disabled');
+		if(jQuery('#logo_position').val() != '0') {
+			jQuery('#logo_x').prop('disabled', true);
+			jQuery('#logo_y').prop('disabled', true);
+		}else{
+			jQuery('#logo_x').prop('disabled', false);
+			jQuery('#logo_y').prop('disabled', false);
+		}
+	}else{
+		jQuery('#logo_position').attr("disabled", "disabled");
+		jQuery('#logo_x').attr("disabled", "disabled");
+		jQuery('#logo_y').attr("disabled", "disabled");
+		jQuery("input[type=file]").attr("disabled", "disabled");
+		jQuery('#uploadImgBtn').attr("disabled", "disabled");
+	}
+}
+
+jQuery(function() {
+	initBrightnessSlider();
+	initFormValidation();
+	
+	jQuery("input[type=file]").filestyle({ 
+	     image: "../fileStyle/css/choose-file.png",
+	     imageheight : 22,
+	     imagewidth : 52,
+	     width : 200
+	 });
+	
+	jQuery('#cap_position').change(function() {
+		if(jQuery(this).val() != '0') {
+			jQuery('#cap_x').prop('disabled', true);
+			jQuery('#cap_y').prop('disabled', true);
+		} else {
+			jQuery('#cap_x').prop('disabled', false);
+			jQuery('#cap_y').prop('disabled', false);
+		}
+	});
+
+	jQuery('#logo_position').change(function() {
+		if(jQuery(this).val() != '0') {
+			jQuery('#logo_x').prop('disabled', true);
+			jQuery('#logo_y').prop('disabled', true);
+		} else {
+			jQuery('#logo_x').prop('disabled', false);
+			jQuery('#logo_y').prop('disabled', false);
+		}
+	});
+
+	jQuery('#refreshBtn').click(function() {
+		jQuery('#menue').click();
+	});
+	
+	jQuery("#caption").change(function(){
+		var isCaptionCheck = jQuery("#caption").attr("checked") == "checked" ? 1 : 0;
+		setFormItemValue('wmform', [{'name': 'caption','value': isCaptionCheck,'type': 'checkbox' }]);
+		captionCtrlInit(isCaptionCheck);
+	});
+	
+	jQuery("#logo").change(function(){
+		var isLogoCheck = jQuery("#logo").attr("checked") == "checked" ? 1 : 0;
+		setFormItemValue('wmform', [{'name': 'logo','value': isLogoCheck,'type': 'checkbox' }]);	
+		logoCtrlInit(isLogoCheck);
+	});
+	
+	jQuery('#saveBtn').click(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			var cap_displaytime = jQuery('#cap_displaytime');
+			if(cap_displaytime.prop('checked')) {
+				cap_displaytime.val("1");
+			} else {
+				cap_displaytime.val("0");
+			}
+			var caption = 0;
+			var logo = 0;
+			if(jQuery("#caption").prop('checked')){
+				jQuery("#caption").val(1);
+			}
+			if(jQuery("#logo").prop('checked')){
+				jQuery("#logo").val(1);
+			}
+			formSet.setHiddenValue('#wmform ', 'actioncode', '411');
+			formSet.setHiddenValue('#wmform ', 'input', inputTab);
+			jQuery('#wmform').submit();
+		} else {
+			return false;
+		}
+	});
+	
+	jQuery('#uploadImgBtn').click(function() {
+		formSet.setHiddenValue('#wmform ', 'actioncode', '419');
+		formSet.setHiddenValue('#wmform ', 'input', inputTab);
+		jQuery('#wmform').submit();
+	});
+	
+	// init the change handlers for the position select.
+	// initPositionSelect();
+	
+});
+</script> 

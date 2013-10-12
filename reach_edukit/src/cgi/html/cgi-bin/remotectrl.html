@@ -1,0 +1,117 @@
+<form enctype="multipart/form-data" id="wmform" action="encoder.cgi" method="post" target="upload">
+	  <table style="width:758px; height:410px;" border="0">
+		<tr>
+		  <td height="37" colspan="2"><h5>$remotectrl.cusrempro$</h5></td>
+		</tr>
+		<tr>
+		  <td height="48" class="$image_prex$itemnametd">$remotectrl.uploadpro$</td>
+		  <td>
+			<input type="file" name="file" />
+			<input type="hidden" name="actioncode" value="404">
+			<input id="uploadImgBtn" type="button" style="margin-left:70px;margin-top:-10px;" class="$image_prex$click_btn" value="$titlelogo.upload$" /></td>
+		</tr>
+		
+		<tr>
+		  <td height="16" colspan="2"><div style="width:475px; height:1px; margin-left:75px; background-color:#186FCA;"></div></td>
+		</tr>
+		<tr>
+		  <td height="60" colspan="2"><h5>$remotectrl.remproaddrbit$</h5></td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$remotectrl.reaCamPro$</td>
+		  <td>
+		  	<select id="teaCamPro" name="teaCamPro">
+		  		<option value="1">$remotectrl.customitem$</option>
+				<option value="2">22222</option>
+				<option value="3">333333333333</option>
+				<option value="4">4444444444</option>
+		  	</select>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$remotectrl.stuCamPro$</td>
+		  <td>
+			<select id="stuCamPro" name="stuCamPro">
+		  		<option value="1">AW-HE50</option>
+				<option value="2">22222</option>
+				<option value="3">333333333333</option>
+				<option value="4">4444444444</option>
+		  	</select>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$remotectrl.teaCamAddrBit$</td>
+		  <td>
+		  	<select id="teaCamAddrBit" name="teaCamAddrBit">
+		  		<option value="1">3cs</option>
+				<option value="2">22222</option>
+				<option value="3">333333333333</option>
+				<option value="4">4444444444</option>
+		  	</select>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$remotectrl.stuCamAddrBit$</td>
+		  <td>
+		  	<select id="stuCamAddrBit" name="stuCamAddrBit">
+		  		<option value="1">22231</option>
+				<option value="2">22222</option>
+				<option value="3">333333333333</option>
+				<option value="4">4444444444</option>
+		  	</select>
+		  </td>
+		</tr>
+		<tr>
+		  <td height="67">&nbsp;</td>
+		  <td>
+			<input id="refreshBtn" type="button" class="$image_prex$click_btn" value="$titlelogo.refresh$" />
+			<input id="saveBtn" type="button" class="$image_prex$click_btn" style="letter-spacing: 0px; padding-left: 3px;" value="$remotectrl.restartsave$" />      
+		  </td>
+		</tr>
+		
+	  </table>
+</form>
+<iframe name="upload" style="display:none"></iframe>
+<script>
+
+jQuery(function() {
+	initFormValidation();
+	jQuery("input[type=file]").filestyle({ 
+	     image: "../fileStyle/css/choose-file.png",
+	     imageheight : 22,
+	     imagewidth : 52,
+	     width : 200
+	 });
+	 
+	 jQuery('#refreshBtn').click(function() {
+	 	jQuery('#menue').click();
+	 });
+	 
+	 jQuery('#uploadImgBtn').click(function() {
+	 	formSet.setHiddenValue('#wmform', 'actioncode', '404');
+		jQuery('#wmform').submit();
+	 });
+	 
+	 jQuery('#saveBtn').click(function() {
+		art.dialog({
+			title: '',
+			okValue: '$movieModel.ok$',
+			cancelValue: '$movieModel.cancel$',
+			lock: true,
+			fixed: true,
+		    background: '#600', // ±³¾°É«
+		    opacity: 0.87,	// Í¸Ã÷¶È
+		    content: "$remotectrl.rebootconfirm$",
+		    ok: function() {
+				var validate = validateFormByID('wmform');
+				if(validate) {
+					formSet.setHiddenValue('#wmform', 'actioncode', '405');
+					jQuery('#wmform').submit();
+				}
+		    },
+		    cancel: true
+		});
+	 });
+	 
+});
+</script> 

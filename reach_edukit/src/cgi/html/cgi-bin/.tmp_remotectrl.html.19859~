@@ -1,0 +1,74 @@
+<form enctype="multipart/form-data" id="wmform" action="encoder.cgi" method="post" target="upload">
+	  <table style="width:758px; height:410px;" border="0">
+		<tr>
+		  <td height="37" colspan="2"><h5>自定义远遥协议</h5></td>
+		</tr>
+		<tr>
+		  <td height="48" class="$image_prex$itemnametd">协议上传：</td>
+		  <td>
+			<input type="file" name="file" />
+			<input type="hidden" name="actioncode" value="411">
+			<input id="uploadImgBtn" type="button" style="margin-left:70px;margin-top:-10px;" class="$image_prex$click_btn" value="$titlelogo.upload$" /></td>
+		</tr>
+		
+		<tr>
+		  <td height="16" colspan="2"><div style="width:475px; height:1px; margin-left:75px; background-color:#186FCA;"></div></td>
+		</tr>
+		<tr>
+		  <td height="60" colspan="2"><h5>远遥协议选择和地址位设置</h5></td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">教师摄像机协议：</td>
+		  <td>
+		  	<select id="teaCamPro" name="teaCamPro">
+		  		<option value="1">自定义</option>
+		  	</select>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">学生摄像机协议：</td>
+		  <td>
+			<select id="stuCamPro" name="stuCamPro">
+		  		<option value="1">AW-HE50</option>
+		  	</select>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">教室摄像机地址位：</td>
+		  <td>
+		  	<select id="teaCamAddrBit" name="teaCamAddrBit">
+		  		<option value="3">3</option>
+		  	</select>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">学生摄像机地址位：</td>
+		  <td>
+		  	<select id="stuCamAddrBit" name="stuCamAddrBit">
+		  		<option value="1">1</option>
+		  	</select>
+		  </td>
+		</tr>
+		<tr>
+		  <td height="67">&nbsp;</td>
+		  <td>
+			<input id="refreshBtn" type="button" class="$image_prex$click_btn" value="$titlelogo.refresh$" />
+			<input id="saveBtn" type="button" class="$image_prex$click_btn" style="letter-spacing: 0px; padding-left: 3px;" value="重启保存" />      
+		  </td>
+		</tr>
+		
+	  </table>
+</form>
+<iframe name="upload" style="display:none"></iframe>
+<script>
+
+jQuery(function() {
+	initFormValidation();
+	jQuery("input[type=file]").filestyle({ 
+	     image: "../fileStyle/css/choose-file.png",
+	     imageheight : 22,
+	     imagewidth : 52,
+	     width : 200
+	 });
+});
+</script> 

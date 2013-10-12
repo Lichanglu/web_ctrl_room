@@ -1,0 +1,17 @@
+./mk_rsa_lib_static.sh
+./mk_rsa_key_gen_static.sh
+./mk_cli_reg_static.sh
+./mk_srv_build_key_static.sh
+./mk_cli_verify_static.sh
+
+rm -rf ./bin
+rm -rf ./lib
+
+mkdir -p ./bin
+mkdir -p ./lib
+
+cp cli_verify ./bin
+cp cli_reg ./bin
+cp rsa_key_gen ./bin
+cp srv_build_key ./bin
+cp librsa.a ./lib

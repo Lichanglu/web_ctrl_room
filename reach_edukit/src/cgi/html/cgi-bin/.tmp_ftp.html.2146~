@@ -1,0 +1,87 @@
+        <form id="wmform">
+	          <table width="753" border="0">
+	          	<tr>
+							  <td>&nbsp;</td>
+						    <td align="left"><h5>$ftp.title$</5></td>
+						  </tr>
+							<tr>
+								<td width="30%" height="35" align="right" class="$image_prex$itemnametd">$ftp.status$</td>
+								<td width="70%"><input type="checkbox" name="ftpstatus" id="ftpstatus" value="1" /></td>
+							</tr>
+							<tr>
+								<td width="30%" height="35" align="right" class="$image_prex$itemnametd">$ftp.address$</td>
+								<td width="70%"><input type="text" name="ftpaddress" id="ftpaddress" class="validate[required] inputtext" /></td>
+							</tr>
+							<tr>
+								<td width="30%" height="35" align="right" class="$image_prex$itemnametd">$ftp.port$</td>
+								<td width="70%"><input type="text" name="thrftpport" id="thrftpport" class="validate[required, custom[integer], min[1], max[65535]] inputtext" /></td>
+							</tr>
+							<tr>
+								<td width="30%" height="35" align="right" class="$image_prex$itemnametd">$ftp.path$</td>
+								<td width="70%"><input type="text" name="ftppath" id="ftppath" class="validate[required] inputtext" /></td>
+							</tr>
+							<tr>
+								<td width="30%" height="35" align="right" class="$image_prex$itemnametd">$ftp.username$</td>
+								<td width="70%"><input type="text" name="ftpusername" id="ftpusername" class="validate[required] inputtext" /></td>
+							</tr>
+							<tr>
+								<td width="30%" height="35" align="right" class="$image_prex$itemnametd">$ftp.password$</td>
+								<td width="70%"><input type="password" name="ftppassword" id="ftppassword" class="validate[required] inputtext" /></td>
+							</tr>
+	            <tr>
+	            	<td width="30%" height="35"></td>
+	              <td style="text-align:left;">
+	                <input id="setbtn" type="button" class="btn-normal" onmouseover="this.className='btn-hover';" onmouseout="this.className='btn-normal';" value="$video.save$" />
+	              </td>
+	            </tr>
+	          </table>
+        </form>
+<script>
+function initCheckBox() {
+	if(jQuery('#ftpstatus').prop('checked')) {
+		jQuery('#wmform .inputtext').prop('disabled', false);
+	} else {
+		jQuery('#wmform .inputtext').prop('disabled', true);
+	}
+	jQuery('#ftpstatus').change(function() {
+		if(jQuery(this).prop('checked')) {
+			jQuery('#wmform .inputtext').prop('disabled', false);
+		} else {
+			jQuery('#wmform .inputtext').prop('disabled', true);
+		}
+	});
+}
+	
+jQuery(function() {
+	
+	/*
+	 * ��ʼ���?��֤
+	 */
+	initFormValidation();
+	
+	/*
+	 * ��ʼ�����ú�ˢ�°�ť�¼�
+	 */
+	jQuery('#setbtn').click(function() {
+		var validate = validateFormByID('wmform');
+		if(validate) {
+			var data = {"actioncode": "435"};
+			var params = getFormItemValue('wmform');
+			if(params) {
+				jQuery.extend(data, params);
+			}
+			jQueryAjaxCmd({
+				"data": data,
+				success:function(ret) {
+					//alert(ret);
+					if(ret == 1) {
+						alert('$opt.success$');
+					}
+				}
+			});
+		} else {
+			return false;
+		}
+	});
+});
+</script>

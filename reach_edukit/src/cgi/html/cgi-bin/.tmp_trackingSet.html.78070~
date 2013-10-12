@@ -1,0 +1,57 @@
+<form enctype="multipart/form-data" id="wmform" action="encoder.cgi" method="post" target="upload">
+	  <table style="width:758px; height:350px;" border="0">
+		<tr>
+          <td class="$image_prex$itemnametd">��λ���ã�</td>
+          <td>
+           	<input type="radio" id="jiwei1" name="jiwei" value="4"/>��λ��
+			<input style="margin-left: 20px;" type="radio" id="jiwei2" name="jiwei" value="5"/>��λ��
+			<input style="margin-left: 20px;" type="radio" id="jiwei3" name="jiwei" value="6"/>��λ��
+          </td>
+        </tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$titlelogo.position$</td>
+		  <td>
+			<select id="logo_position" name="logo_position" style="width:150px;">
+				<option value="0">Absolute</option>
+				<option value="1">Top Left</option>
+				<option value="2">Top Right</option>
+				<option value="3">Bottom Left</option>
+				<option value="4">Bottom Right</option>
+				<option value="5">Centered</option>
+			</select>
+          </td>
+		</tr>
+		<tr>
+		  <td class="$image_prex$itemnametd">$titlelogo.coordinate$</td>
+		  <td>
+		  X<input id="logo_x" class="inputtext" name="logo_x" type="text" style="width:50px; width:49px\9; margin-left:5px;" />
+			<font style="font-size:12px; color:#FF0000; margin-right:10px;">(0~<span class="max_x">0</span>)</font>
+		  Y<input id="logo_y" class="inputtext" name="logo_y" type="text" style="width:50px; width:49px\9; margin-left:5px;" />
+			<font style="font-size:12px; color:#FF0000;">(0~<span class="max_y">0</span>)</font>
+		  </td>
+		</tr>
+		<tr>
+		  <td height="28" class="$image_prex$itemnametd">$titlelogo.logopic$</td>
+		  <td>
+			<input type="file" name="file" />
+			<input type="hidden" name="actioncode" value="411">
+			<input id="uploadImgBtn" type="button" style="margin-left:70px;margin-top:-10px;" class="$image_prex$click_btn" value="$titlelogo.upload$" /></td>
+		</tr>
+		<tr>
+		  <td height="25" class="$image_prex$itemnametd">&nbsp;</td>
+		  <td><font style="color:#FF0000; font-size:12px;">$titlelogo.logoprompt$</font></td>
+		</tr>
+		<tr>
+		  <td height="67">&nbsp;</td>
+		  <td>
+			<input id="refreshBtn" type="button" class="$image_prex$click_btn" value="$titlelogo.refresh$" />
+			<input id="saveBtn" type="button" class="$image_prex$click_btn" value="$titlelogo.save$" />              </td>
+		</tr>
+	  </table>
+</form>
+<iframe name="upload" style="display:none"></iframe>
+<script>
+jQuery(function() {
+	initFormValidation();
+});
+</script> 

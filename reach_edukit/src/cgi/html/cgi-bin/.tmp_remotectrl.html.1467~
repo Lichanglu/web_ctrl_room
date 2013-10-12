@@ -1,0 +1,361 @@
+        <form enctype="multipart/form-data" id="wmform">		<div class="ui-tabs" id="tabs">
+			<ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-widget-width-full ui-corner-all" role="tablist" style="width: 99.2%;">
+				<li class="ui-state-default ui-corner-top ui-tabs-active ui-state-active" tabIndex="1" id="tabs-1">$video.input$1</li>
+				<li class="ui-state-default ui-corner-top" tabIndex="2" id="tabs-2">$video.input$2</li>
+			</ul>
+			<input type="hidden" name="input" value="1" />
+			<div id="tabs-content" class="ui-widget-content ui-widget-width-full ui-corner-bottom" style="clear: both;">
+				<div class="ui-tabs-inner-content">
+          <table width="753" height="327" border="0">
+            <tr>
+              <td width="28%" height="54" class="$image_prex$itemnametd">$remotectrl.ptzprotocal$</td>
+              <td width="72%"><label>
+                <select name="ptzProtocal">
+				   <option value="0">EVI-D70</option>
+                   <option value="1">EVI-D100</option>
+                   <option value="2">PELCO-D</option>
+                   <option value="3">PELCO-P</option>
+				   <option value="4">VCC-H80PI</option>
+				   <option value="5">AW-HE50</option>
+                </select>
+              </label><font style="color:#FF0000; font-size:12px;">$remotectrl.warning$</font></td>
+            </tr>
+            <tr>
+              <td height="34" class="$image_prex$itemnametd">&nbsp;</td>
+              <td>
+                <h5>$remotectrl.control$</h5></td>
+            </tr>
+            <tr>
+              <td height="67" colspan="2">
+              <div class="remotectrl">
+              	<div class="up"></div>
+				<div class="down"></div>
+				<div class="left"></div>
+				<div class="right"></div>
+				<div class="increase"></div>
+				<div class="reduce"></div>
+                <div class="range"><label style="width:77px;margin-right:3px;position:absolute;left:0px;top:0px;text-align:right;">$remotectrl.speed$</label>
+                  <input style="margin-left:81px; margin-right:5px;" type="radio" name="speed" value="1" checked />$remotectrl.low$
+                  <input style="margin-left:10px; margin-right:5px;" type="radio" name="speed" value="5" />$remotectrl.mid$
+                  <input style="margin-left:10px; margin-right:5px;" type="radio" name="speed" value="10" />$remotectrl.high$
+                </div>
+				<div style="left:170px; position: absolute; top: 100px; width: 150px;" >
+					<label style="width:77px;margin-right:3px;position:absolute;left:0px;top:0px;text-align:right;">$remotectrl.addressbit$</label><input style="width:30px; margin-left:80px; text-align:center;" type="text" id="addressbit" name="addressbit" value="1" class="inputtext validate[max[7], min[1]]"><label style="color:#FF0000; margin-left:3px;">(1-7)</label>
+				</div>
+              </div>
+              </td>
+            </tr>
+            <tr>
+              <td height="67" colspan="2" style="padding-left:110px;"><input style="margin-left:50px;" id="refreshBtn" type="button" class="$image_prex$click_btn" value="$remotectrl.refresh$" />
+              <input id="saveBtn" type="button" class="$image_prex$click_btn" value="$remotectrl.save$" /></td>
+            </tr>
+          </table>
+          </div>
+				</div>
+      	</div>
+        </form>
+<script>
+var inputTab = 1;
+
+function initInputTab(tab){
+	inputTab = tab;
+	if(tab == 1){
+		// switch this tab on
+		jQuery("#tabs-1").addClass("ui-tabs-active");
+		jQuery("#tabs-1").addClass("ui-state-active");
+		jQuery("#tabs-2").removeClass("ui-tabs-active");
+		jQuery("#tabs-2").removeClass("ui-state-active");
+		jQuery("#tabs-3").removeClass("ui-tabs-active");
+		jQuery("#tabs-3").removeClass("ui-state-active");
+		setFormItemValue('wmform', [{'name': 'audioInput','value': '1','type': 'radio' }]);
+	}else if(tab == 2){
+		jQuery("#tabs-2").addClass("ui-tabs-active");
+		jQuery("#tabs-2").addClass("ui-state-active");
+		jQuery("#tabs-1").removeClass("ui-tabs-active");
+		jQuery("#tabs-1").removeClass("ui-state-active");
+		jQuery("#tabs-3").removeClass("ui-tabs-active");
+		jQuery("#tabs-3").removeClass("ui-state-active");
+		setFormItemValue('wmform', [{'name': 'audioInput','value': '2','type': 'radio' }]);
+	}else{
+		jQuery("#tabs-3").addClass("ui-tabs-active");
+		jQuery("#tabs-3").addClass("ui-state-active");
+		jQuery("#tabs-1").removeClass("ui-tabs-active");
+		jQuery("#tabs-1").removeClass("ui-state-active");
+		jQuery("#tabs-2").removeClass("ui-tabs-active");
+		jQuery("#tabs-2").removeClass("ui-state-active");
+		jQuery("#r1").removeAttr ("disabled");
+		jQuery("#r2").removeAttr ("disabled");
+	}
+}
+jQuery(function() {
+	//formBeautify();
+	initFormValidation();
+	
+	jQuery("#tabs li").click(function () {
+		inputTab = parseInt(jQuery(this).attr("tabIndex"));
+		if (!jQuery(this).hasClass('ui-tabs-active')) {
+			// switch all tabs off
+			jQuery(".ui-tabs-active").removeClass("ui-tabs-active");
+			jQuery(".ui-state-active").removeClass("ui-state-active");
+			// switch this tab on
+			jQuery(this).addClass("ui-tabs-active");
+			jQuery(this).addClass("ui-state-active");
+		}
+		jQueryAjaxHtml({
+			data: {"actioncode": 309, "input": inputTab},
+			effectsOn: true
+		});
+	});
+	
+	/*
+	 * init event handlers for the buttons.
+	 */
+	jQuery('#refreshBtn').click(function() {
+		jQuery('#menuf').click();
+	});
+	
+	jQuery('#saveBtn').click(function() {
+		var data = {"actioncode": "412"};
+		var params = getFormItemValue('wmform');
+		if(params) {
+			jQuery.extend(data, params);
+		}
+		data.input = inputTab;
+		jQueryAjaxCmd({
+			"data": data,
+			success: function(ret) {
+				if(ret == 1) {
+					alert('$opt.success$');
+				}
+			}
+		});
+	});
+	
+	
+	/*
+	 * init the click event handlers for the PTZ button. 
+	 */
+	jQuery('.left').mousedown(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			jQuery(this).css({'background-image': 'url(../images/remotectrl_left1.png)'});
+			var data = {"actioncode": "413", "type": "0", "input": inputTab};
+			var speed = formSet.getRadioValue('#wmform ', 'speed');
+			data['speed'] = speed;
+			var addressbit = jQuery('#addressbit').val();
+			data['addressbit'] = addressbit; 	
+			jQueryAjaxCmd({
+				"data": data,
+				success: function() {}
+			});
+		} else {
+			return false;
+		}
+	});
+	jQuery('.left').mouseup(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			jQuery(this).css({'background-image': 'url(../images/remotectrl_left.png)'});
+			var data = {"actioncode": "413", "type": "14", "input": inputTab};
+			var speed = formSet.getRadioValue('#wmform ', 'speed');
+			data['speed'] = speed; 
+			var addressbit = jQuery('#addressbit').val();
+			data['addressbit'] = addressbit; 	
+			jQueryAjaxCmd({
+				"data": data,
+				success: function() {}
+			});
+		} else {
+			return false;
+		}
+	});
+	
+	jQuery('.left').mouseout(function() {
+		jQuery(this).css({'background-image': 'url(../images/remotectrl_left.png)'});
+	});
+	
+	jQuery('.right').mousedown(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			jQuery(this).css({'background-image': 'url(../images/remotectrl_right1.png)'});
+			var data = {"actioncode": "413", "type": "1", "input": inputTab};
+			var speed = formSet.getRadioValue('#wmform ', 'speed');
+			data['speed'] = speed; 	
+			var addressbit = jQuery('#addressbit').val();
+			data['addressbit'] = addressbit; 
+			jQueryAjaxCmd({
+				"data": data,
+				success: function() {}
+			});
+		} else {
+			return false;
+		}
+	});
+	jQuery('.right').mouseup(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			jQuery(this).css({'background-image': 'url(../images/remotectrl_right.png)'});
+			var data = {"actioncode": "413", "type": "15", "input": inputTab};
+			var speed = formSet.getRadioValue('#wmform ', 'speed');
+			data['speed'] = speed; 	
+			var addressbit = jQuery('#addressbit').val();
+			data['addressbit'] = addressbit; 
+			jQueryAjaxCmd({
+				"data": data,
+				success: function() {}
+			});
+		} else {
+			return false;
+		}
+	});
+	
+	jQuery('.right').mouseout(function() {
+		jQuery(this).css({'background-image': 'url(../images/remotectrl_right.png)'});
+	});
+	
+	jQuery('.up').mousedown(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			jQuery(this).css({'background-image': 'url(../images/remotectrl_up1.png)'});
+			var data = {"actioncode": "413", "type": "2", "input": inputTab};
+			var speed = formSet.getRadioValue('#wmform ', 'speed');
+			data['speed'] = speed; 	
+			var addressbit = jQuery('#addressbit').val();
+			data['addressbit'] = addressbit; 
+			jQueryAjaxCmd({
+				"data": data,
+				success: function() {}
+			});
+		} else {
+			return false;
+		}
+	});
+	jQuery('.up').mouseup(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			jQuery(this).css({'background-image': 'url(../images/remotectrl_up.png)'});
+			var data = {"actioncode": "413", "type": "16", "input": inputTab};
+			var speed = formSet.getRadioValue('#wmform ', 'speed');
+			data['speed'] = speed; 	
+			var addressbit = jQuery('#addressbit').val();
+			data['addressbit'] = addressbit; 
+			jQueryAjaxCmd({
+				"data": data,
+				success: function() {}
+			});
+		} else {
+			return false;
+		}
+	});
+	
+	jQuery('.up').mouseout(function() {
+		jQuery(this).css({'background-image': 'url(../images/remotectrl_up.png)'});
+	});
+	
+	jQuery('.down').mousedown(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			jQuery(this).css({'background-image': 'url(../images/remotectrl_down1.png)'});
+			var data = {"actioncode": "413", "type": "3", "input": inputTab};
+			var speed = formSet.getRadioValue('#wmform ', 'speed');
+			data['speed'] = speed; 	
+			var addressbit = jQuery('#addressbit').val();
+			data['addressbit'] = addressbit; 
+			jQueryAjaxCmd({
+				"data": data,
+				success: function() {}
+			});
+		} else {
+			return false;
+		}
+	});
+	jQuery('.down').mouseup(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			jQuery(this).css({'background-image': 'url(../images/remotectrl_down.png)'});
+			var data = {"actioncode": "413", "type": "17", "input": inputTab};
+			var speed = formSet.getRadioValue('#wmform ', 'speed');
+			data['speed'] = speed; 
+			var addressbit = jQuery('#addressbit').val();
+			data['addressbit'] = addressbit; 	
+			jQueryAjaxCmd({
+				"data": data,
+				success: function() {}
+			});
+		} else {
+			return false;
+		}
+	});
+	
+	jQuery('.down').mouseout(function() {
+		jQuery(this).css({'background-image': 'url(../images/remotectrl_down.png)'});
+	});
+	
+	jQuery('.increase').mousedown(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			var data = {"actioncode": "413", "type": "8", "input": inputTab};
+			var speed = formSet.getRadioValue('#wmform ', 'speed');
+			data['speed'] = speed;
+			var addressbit = jQuery('#addressbit').val();
+			data['addressbit'] = addressbit;  	
+			jQueryAjaxCmd({
+				"data": data,
+				success: function() {}
+			});
+		} else {
+			return false;
+		}
+	});
+	jQuery('.increase').mouseup(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			var data = {"actioncode": "413", "type": "22", "input": inputTab};
+			var speed = formSet.getRadioValue('#wmform ', 'speed');
+			data['speed'] = speed; 	
+			var addressbit = jQuery('#addressbit').val();
+			data['addressbit'] = addressbit; 
+			jQueryAjaxCmd({
+				"data": data,
+				success: function() {}
+			});
+		} else {
+			return false;
+		}
+	});
+	jQuery('.reduce').mousedown(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			var data = {"actioncode": "413", "type": "9", "input": inputTab};
+			var speed = formSet.getRadioValue('#wmform ', 'speed');
+			data['speed'] = speed; 
+			var addressbit = jQuery('#addressbit').val();
+			data['addressbit'] = addressbit; 	
+			jQueryAjaxCmd({
+				"data": data,
+				success: function() {}
+			});
+		} else {
+			return false;
+		}
+	});
+	jQuery('.reduce').mouseup(function() {
+		var validate = validateFormByID('wmform');
+		if (validate) {
+			var data = {"actioncode": "413", "type": "23", "input": inputTab};
+			var speed = formSet.getRadioValue('#wmform ', 'speed');
+			data['speed'] = speed; 
+			var addressbit = jQuery('#addressbit').val();
+			data['addressbit'] = addressbit; 	
+			jQueryAjaxCmd({
+				"data": data,
+				success: function() {}
+			});
+		} else {
+			return false;
+		}
+	});
+	
+	
+});
+</script> 

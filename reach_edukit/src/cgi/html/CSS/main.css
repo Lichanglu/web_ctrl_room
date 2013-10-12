@@ -1,0 +1,554 @@
+/* CSS Document */
+* {
+	margin: 0;
+	padding: 0;
+}
+
+/*去掉按钮虚线边框*/
+button::-moz-focus-inner, input[type="reset"]::-moz-focus-inner, input[type="button"]::-moz-focus-inner, input[type="submit"]::-moz-focus-inner, input[type="file"] > input[type="button"]::-moz-focus-inner { 
+	border:none;
+}
+
+select {
+	padding: 0;
+	border: 0;
+	margin: 0;
+	width: 100px;
+}
+
+body {
+	font-family: Arial, "微软雅黑", Helvetica, sans-serif;
+	font-size: 14px;
+	background-color: #000;
+	background: url(../images/bg_1.jpg) no-repeat center top;
+}
+
+#div {
+	width: 100%;
+	height: 100%;
+	margin: 0 auto;
+	clear: both;
+}
+
+ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+#wm-header,#wm-main-top,#menu {
+	font-size: 16px;
+}
+
+/*--------------------main-top------------------*/
+#wm-main {
+	width: 1024px;
+	height: 80px;
+	margin: 0 auto;
+	position: relative;
+}
+
+#top {
+	position: relative;
+	font-size: 12px;
+	color: #81c4fd;
+	border-bottom: #184476 1px solid;
+	height: 25px;
+	line-height: 25px;
+	text-align: center;
+}
+
+#top .top_left_span {
+	position: absolute;
+	left: 20px;
+}
+
+#top .top_right_span {
+	position: absolute;
+	right: 20px;
+	color: #81c4fd;
+}
+
+#top a {
+	color: #81c4fd;
+	text-decoration: none;
+}
+
+form table td{
+	font-size:14px;
+}
+
+/*--------main-logo------------------------*/
+.logo {
+	float: left;
+	width: 200px;
+	height: 45px;
+	margin: 5px 0 0 20px;
+}
+
+#wm-main-top {
+	width: 600px;
+	float: right;
+}
+
+#wm-main-top li {
+	margin: 8px 30px 0 0;
+	float: right;
+}
+
+#wm-main-top a:link,#wm-main-top a:visited,#wm-main-top a:active {
+	width: 143px;
+	background: url(../images/btn_12.png) no-repeat 0px -41px;
+	height: 39px;
+	padding-top: 3px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	line-height: 38px;
+	color: #fff;
+	outline: none;
+	letter-spacing: 4px;
+}
+
+#wm-main-top a:hover {
+	color: yellow;
+	background: url(../images/btn_12.png) no-repeat 0px 0px;
+	outline: none;
+}
+
+#wm-main-top a:active {
+	color: yellow;
+	background: url(../images/btn_12.png) no-repeat 0px 0px;
+	outline: none;
+}
+
+/*--------header------------------------*/
+#wm-header {
+	width: 990px;
+	height: 640px;
+	background: url(../images/bg4.png) no-repeat left top;
+	margin: 0 auto;
+	padding-top: 15px;
+	clear: both;
+}
+
+#menu {
+	width: 179px;
+	height: 640px;
+	float: left;
+}
+
+#menu-left {
+	width: 150px;
+	height: 610px;
+	background: url(../images/bot_12.png) no-repeat 14px top;
+	padding: 30px 0 0 27px;
+	float: left;
+}
+
+#menu-right {
+	width: 805px;
+	height: 595px;
+	background: #b1deff;
+	margin-left: -2px;
+	padding: 15px 0 0 0;
+	float: left;
+}
+
+.header-right-a {
+	width: 770px;
+	height: auto; /*background-color:#b0d1f4;*/
+	margin-left: 20px;
+	border-top: 1px solid #186fca;
+	border-bottom: 1px solid #186fca;
+	padding: 20px 0;
+}
+
+/*--------header 2 目录树------------------------*/
+#wm-header ul {
+	margin: 0;
+	list-style: none;
+	width: 150px;
+}
+
+#wm-header ul li a {
+	text-decoration: none;
+	outline: none;
+	display: block;
+	text-decoration: none;
+	padding: 5px 0;
+	color: #fff;
+	text-align: center;
+	line-height: 42px;
+}
+
+#wm-header ul li .menua {
+	background: url(../images/bot_a.png) no-repeat -2px center;
+	color: #2367ab;
+	font-weight: bold;
+	font-size: 17px;
+}
+
+#wm-header ul li .menub {
+	background: url(../images//bot_b.png) no-repeat -2px center;
+	color: #2367ab;
+	font-weight: bold;
+	font-size: 17px;
+}
+
+#wm-header ul li .menuc {
+	background: url(../images//bot_c.png) no-repeat -2px center;
+	color: #2367ab;
+	font-weight: bold;
+	font-size: 17px;
+}
+
+#wm-header ul li .menud, #wm-header ul li .menue, #wm-header ul li .menuf, #wm-header ul li .menug {
+	background: url(../images//bot_d.png) no-repeat -2px center;
+	color: #2367ab;
+	font-weight: bold;
+	font-size: 17px;
+}
+
+/*--------中间内容------------------------*/
+#wmform {
+	font-size: 14px;
+}
+
+#wmform a:visited, #wmform a:link, #wmform a:hover, #wmform a:active {
+	font-size: 12px;
+	color:#276CD7;
+}
+.formLink {
+	font-size: 12px;
+	color:#276CD7;
+	background-color:#B1DEFF;
+	text-decoration:underline;
+	border:0;
+	padding:0;
+	margin:0;
+	text-align:center;
+	cursor:pointer;
+}
+
+#wmform td, #wmform_videoAdvancedSet td, #wmform_outputAdvancedSet td {
+	vertical-align: middle;
+}
+
+#wmform .show_label {
+	font-family: Arial, "微软雅黑", Helvetica, sans-serif;
+	border: 0;
+	margin: 0;
+	padding: 0;
+	background-color: #B1DEFF;
+}
+
+#wmform .click_btn {
+	font-family: Arial, "微软雅黑", Helvetica, sans-serif;
+	margin: 0;
+	border:0;
+	margin-right: 50px;
+	width: 93px;
+	height: 30px;
+	letter-spacing: 6px;
+	text-align: center;
+	padding-left: 10px;
+	background-image: url(../images/btn_bg.gif);
+	cursor: pointer;
+}
+
+#wmform .US_click_btn {
+	font-family: Arial, "微软雅黑", Helvetica, sans-serif;
+	margin: 0;
+	border:0;
+	margin-right: 50px;
+	width: 93px;
+	height: 30px;
+	text-align: center;
+	background-image: url(../images/btn_bg.gif);
+	cursor: pointer;
+}
+
+#wmform .click_btn:hover {
+	background-image: url(../images/btn_bg_hover.gif);
+}
+
+#wmform .US_click_btn:hover {
+	background-image: url(../images/btn_bg_hover.gif);
+}
+
+#wmform .click_btn_long {
+	font-family: Arial, "微软雅黑", Helvetica, sans-serif;
+	margin: 0;
+	border:0;
+	margin-left:80px; 
+	margin-right: 30px;
+    letter-spacing:0px; 
+    width:110px; 
+    height:30px;
+    text-align:center;
+    background-image: url(../images/btn_bg_long.gif);
+    cursor:pointer;
+}
+
+#wmform .click_btn_long:hover {
+	background-image: url(../images/btn_bg_long_hover.gif);
+}
+
+form .inputtext{
+	padding:0;
+	border:1px solid #186FCA;
+}
+
+#wmform td.itemnametd, #wmform_videoAdvancedSet td.itemnametd, #wmform_outputAdvancedSet td.itemnametd, #wmform_outputRTSPSet td.itemnametd{
+	text-align: right;
+	padding: 0;
+}
+
+#wmform td.US_itemnametd, #wmform_videoAdvancedSet td.US_itemnametd, #wmform_outputAdvancedSet td.US_itemnametd, #wmform_outputRTSPSet td.US_itemnametd{
+	padding: 0;
+	padding-right: 10px;
+	text-align: right;
+	color:#155E9C;
+}
+
+#wmform td.itemnametd h2 {
+	vertical-align: middle;
+}
+
+#wmform td.US_itemnametd h2 {
+	vertical-align: middle;
+}
+
+.adjust_screen {
+	position: relative;
+	height: 80px;
+}
+
+.adjust_screen .left {
+	background-image: url("../images/adjust_screen_left.png");
+    border: 0 none;
+    cursor: pointer;
+    height: 22px;
+    left: 0;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 30px;
+    width: 22px;
+}
+
+.adjust_screen .right {
+	background-image: url("../images/adjust_screen_right.png");
+    border: 0 none;
+    cursor: pointer;
+    height: 22px;
+    left: 90px;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 30px;
+    width: 22px;
+}
+
+.adjust_screen .middle {
+	 background-image: url("../images/adjust_screen_middle.png");
+    border: 0 none;
+    cursor: pointer;
+    height: 22px;
+    left: 44px;
+    line-height: 28px;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    text-align: center;
+    top: 30px;
+    width: 22px;
+}
+
+.adjust_screen .up {
+	background-image: url("../images/adjust_screen_up.png");
+    border: 0 none;
+    cursor: pointer;
+    height: 22px;
+    left: 45px;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 0;
+    width: 22px;
+}
+
+.adjust_screen .down {
+	background-image: url("../images/adjust_screen_down.png");
+    border: 0 none;
+    cursor: pointer;
+    height: 22px;
+    left: 45px;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 60px;
+    width: 22px;
+}
+
+.adjust_screen .adjust_range {
+	position: absolute;
+	left: 150px;
+	top: 35px;
+	width: 200px;
+	height: 30px;
+	line-height: 30px;
+}
+
+.adjust_range .right_margin {
+	margin-right: 20px;
+}
+
+.input_html_div {
+	width: 385px;
+	height: auto;
+	background-color: #FFFFFF;
+	float: left;
+}
+
+.stream_table {
+	border: 0;
+	border-right: 1px solid #186FCA;
+	border-bottom: 1px solid #186FCA;
+}
+
+.stream_table td {
+	border: 1px solid #186FCA;
+	border-right: 0;
+	border-bottom: 0;
+	padding-left:10px;
+}
+
+.stream_table .itemtr {
+	cursor: pointer;
+}
+
+.remotectrl {
+	border: 1px solid #186FCA;
+	width: 450px;
+	height: 160px;
+	margin-left: 85px;
+	position: relative;
+}
+
+.remotectrl .up {
+	background-image: url("../images/remotectrl_up.png");
+    border: 0 none;
+    cursor: pointer;
+    height: 22px;
+    left: 80px;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 30px;
+    width: 22px;
+}
+
+.remotectrl .down {
+	background-image: url("../images/remotectrl_down.png");
+    border: 0 none;
+    cursor: pointer;
+    height: 22px;
+    left: 80px;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 90px;
+    width: 22px;
+}
+
+.remotectrl .left {
+	background-image: url("../images/remotectrl_left.png");
+    border: 0 none;
+    cursor: pointer;
+    height: 22px;
+    left: 40px;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 60px;
+    width: 22px;
+}
+
+.remotectrl .right {
+	background-image: url("../images/remotectrl_right.png");
+    border: 0 none;
+    cursor: pointer;
+    height: 22px;
+    left: 120px;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 60px;
+    width: 22px;
+}
+
+.remotectrl .increase {
+	background-image: url("../images/remotectrl_increase.png");
+    border: 0 none;
+    cursor: pointer;
+    height: 22px;
+    left: 170px;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 30px;
+    width: 22px;
+}
+
+.remotectrl .reduce {
+	background-image: url("../images/remotectrl_reduce.png");
+    border: 0 none;
+    cursor: pointer;
+    height: 22px;
+    left: 210px;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 30px;
+    width: 22px;
+}
+
+.remotectrl .range {
+	position: absolute;
+	width: 260px;
+	left: 170px;
+	top: 70px;
+}
+
+.resetdefault {
+	width: 350px;
+	height: 60px;
+	border: 1px solid #186FCA;
+	padding: 30px;
+	color: #FF0000;
+}
+
+.sysinfo_table {
+	text-align: left;
+}
+
+
+/*--------------------------------slider-----------------------------*/
+.slider{
+	background-color: #67A6E3;
+    border: 1px solid #064585;
+    float: left;
+    height: 3px;
+    margin: 7px 0 0;
+    width: 150px;
+}
+
+.bar {
+	background-color: #2777D7;
+    border: 2px outset #2777D7;
+    height: 15px;
+    top: -7px;
+    width: 7px;
+}

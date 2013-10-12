@@ -1,0 +1,1433 @@
+record.nodisk= No storage devices,recording failed!
+file.updatefileerror =Modify file failed!
+detailroom.setInputError= recording,Can not switch lines!
+detailroom.layouterror=Recording,Can not modify the layout!
+detailroom.AudioOutput=Mic Amplify:
+detailroom.AudioBig=Enable
+plsSelectMutli = Please select the multicast content! 
+setPopedom.title=Authority
+setPopedom.type = Authority
+setPopedom.download = Download
+setPopedom.vod = Casting
+sys_op.setPopedom = Recorded files will be automatically authorized to user,If you choose the option.
+multi.outError=Make sure that more than one output device is available!
+isModifyConfiguraion = Are you sure to modify parameters?
+MaxUserCount = Pay attention to the maximum count!
+tmp.VGA=VGA:
+detailroom.changevmode=Encoder will restart automatically after changing parameters,are you sure to continue?    
+detailroom.samplevideomode=Encode:
+detailroom.videomode=Encode:
+UserOrPasswordError=Invalid username or password!
+ftpserver.ftpManagement=FTP configuration
+ftpserver.serverUploadAdrss=Encoder upload address:
+ftpserver.serverport=Encoder port:
+ftpserver.servercatalog=Encoder catalog:
+ftpserver.loginusername=Username:
+ftpserver.loginuserpassword=Password:
+ftpserver.attentionContent=FTP server need to support client passive mode to upload the file.
+
+ftpserver.isallowupload=Allow to upload:
+wms.password=Password
+sys_op.import1=1.INI files for the agreement document.
+sys_op.iniUpload=PTZ Protocol Upgrade
+maxuni=Maximum Unicasts:
+maxvod=Maximum VOD:
+maxuser=Maximum User:
+notallowuserlogin=This version does not allow common users to log in!
+char11=:
+sys_op.attention8=Please wait...
+loginError=Invalid username or password!
+input.haveError=Illegal characters like <> \ ?%&# "{}|^[]*! exist!
+#addrecord.jsp
+addrecord.casting4vod=:::VOD Casting Page:::
+addrecord.addrecordtask=Add/Modify RecordingTask
+addrecord.recordtaskDetailDesc=Recording task detail description
+addrecord.channel=Channel:
+addrecord.filename=File name:
+addrecord.except4=(Except for the characters including # % ; \ / : * ? " ' < > |)  
+addrecord.store=Store:
+addrecord.server=Encoder
+addrecord.externalMemory=External memory
+addrecord.type=Type:
+addrecord.weifenlei=Unclassified
+addrecord.desc=Description:
+addrecord.content=Content:
+addrecord.recordvideo=                 
+addrecord.recordaudio=                  
+addrecord.recorddata= 
+addrecord.authority=Authority:
+addrecord.casting4alluser=All users can play this file
+addrecord.download4user=All users can download this file
+addrecord.priority=Priority:
+addrecord.first2currentRecord=Current recording first 
+addrecord.first2taskRecord=Recording task first
+addrecord.samename=Same name:
+addrecord.overwritesamefile=Overwrite file with same name
+addrecord.autoRename=Rename automatically
+addrecord.withoutRunning=Skip without execution 
+addrecord.time=Time:
+addrecord.startTime=Start time:
+addrecord.rightnow=Immediately
+addrecord.bookedtime=Scheduled
+addrecord.startTimeBook=Start time scheduled:
+addrecord.year=
+addrecord.month=
+addrecord.date=
+addrecord.hour=Hour 
+addrecord.minute=Minute
+addrecord.endTime=End time:
+addrecord.self=Manually
+addrecord.endtimeBooked=End time scheduled:
+addrecord.AfterHour=Hour later
+addrecord.selfdefine=Definition:
+addrecord.meetingroom=Meeting Room
+
+#addroom.jsp
+addroom.adddelete=Add / Modify
+addroom.name=\ Name:
+addroom.videovoiceenderaddress=V/A Addr:
+addroom.avideovoiceenderaddress=Auxiliary Addr:
+addroom.dataenderaddress=Data Addr:
+
+#addtype
+adddeletefiletype=Add/Modify
+filetypename=Type Name:
+remark=Remark:
+ByteCount=(0~50 bytes)
+
+
+#close.jsp
+success=Success to configuration
+setFileType.selection=Select
+
+#adduser.jsp
+multiMediaSystem=£º£º£ºReach Multimedia Encoder£º£º£º
+adduser=Add/Modify
+login.username=User Name...
+login.password=Password...
+login.button=Log in
+confirmpw=Password Confirm:
+type=Type:
+user=common user
+guestUser=guest
+operator=operator
+administrator=administrator
+superadministrator=super administrator
+LiveCastingRight=Live casting authority:
+allow2multicast=Allow to receive multiCasting
+allow2unicast=Allow to receive unicasting
+typeDesc=Type description:
+userDesc=Common user---allow to playback media or receive live casting
+guestDesc=GUEST---allow to receive media
+operatorDesc=Operator---have part right of the superuser, such as open or close multicast
+administratorDesc=Administrator --------------------- All Right. 
+
+#dbhelp.jsp
+pluginManual=Plugin Manual
+                 
+#detailfile.jsp
+filemodify=File Modification
+time=Time:
+source=Source:
+
+#detailroom.jsp
+detailInfo=Info
+aEncoder=Auxiliary Addr
+videoAudioEnder=Video Addr
+videoFormat=Video Format:
+modifyvideoformat=Modify Video Format(Please Reconnect after Changing Video Format)
+bandvideo=Video Band:
+bandaudio=Audio Band:
+aEnder=Auxiliary Addr
+ipAddress=IP Addr:
+videorate=Video Frame Rate:
+dataEncoder=Data Encoder
+dataEncoder=Data Encoder:
+speedrate=Frame Rate:
+detailroom.quality=Quality:
+detailroom.vgaEncoder=Vga Encoder
+detailroom.dataEncoder=Data Encoder
+detailroom.address=Addr
+
+detailroom.VGARate=DVI Frame Rate:
+detailroom.Video=Video
+detailroom.ModeSet=Video Mode:
+detailroom.Bright=Brightness:
+detailroom.Contrast=Contrast:
+detailroom.Saturation=Saturation:
+
+detailroom.Gray=Gray:
+detailroom.RedBright=Brightness(R):
+detailroom.BlueBright=Brightness(B):
+detailroom.GreenBright=Brightness(G):
+detailroom.RedContrast=Contrast(R):
+detailroom.BlueContrast=Contrast(B):
+detailroom.GreenContrast=Contrast(G):
+
+detailroom.Audio=Audio
+detailroom.AudioInput=Audio Input:
+detailroom.Micro=Mic
+detailroom.EncodeMode=Encode:
+detailroom.AudioSamp=Sampling Frequency:
+detailroom.Channel= Channel
+detailroom.Bandwidth=Bandwidth:
+detailroom.LeftChannel=Left:
+detailroom.RightChannel=Right:
+detailroom.Layout=Layout:
+324097int=Video Bandwidth Between 128 ~ 20000!
+
+3842000int=Video Bandwidth Between 384 ~ 2000!
+3844000int=Video Bandwidth Between 384 ~ 4000!
+
+dataroom.quality2=Quality value should be a integer between 5 and 90!
+illegalRate=Frame rate value should be a integer between 1 and 60!
+illegalRate15=Frame rate value should be a integer between 1 and 5!
+detailroom.hdvideo1=HD Encoder
+detailroom.ratemode=Rate Mode:
+detailroom.qulityMode=Quality Mode:
+detailroom.mode=Mode:
+detailroom.encoderconfig=Encode Set:
+detailroom.audioSet=Line
+detailroom.xray=X Axis:
+detailroom.yray=Y Axis:
+
+
+
+ 
+#down.jsp
+copyright=Copy Right 
+
+#error.jsp
+errorOperation=Illegal Operation!
+reload=Please Re-Login
+
+
+
+#file.jsp
+fileList=List
+sn=NO
+fileName=Name
+fileName1=Name
+size=Size
+size1=Size
+recordLength=Recording Time
+source=Source
+
+#filelist.jsp
+castingtime=Times
+casting=Casting
+casting1=Casting
+operation=Operation
+operation1=Operation
+useMediaPlayer=Using mediaplayer
+useReachPlay=Using RecPlayer
+downloadSaveas=Download & Sava As
+viewModify=View or modify on file description
+rusure2delete=Are you sure to delete?
+deleteInServer=Delete the file from Encoder
+recording=Recording
+
+#filetype.jsp
+fileTypeConfigure=File Type Configuration
+addNewType=Add New Type
+TypeName=Type Name
+rusure2delete=Are you sure to delete?
+
+#-------------------------------
+#help.jsp
+help1=1. Plugin Used Scope(If you want to configure as following, please download and install plugin first)
+help11=   1).Preview
+help12=   2).File Casting
+help13=   3).Receiving Multicasting
+help14=   4).Receiving Uniticasting
+help2=2. Plugin Installation:
+help21=   1).Plugin will be automatically when you visit webSite page.
+help22=   2).If not install automatically, please click
+help3=Here
+help4=Or Download The Plugin On The Buttom Of Website Page.
+                    
+#index.jsp
+closeopenMenu=Close / Open Menu   
+
+#left.jsp
+sytemInfo=Sytem Information
+management=\ Management
+recordCastingManagement=REC Management
+recordManagement=Recording
+castingManagment=Live Casting
+fileManagement=File Management
+typeManagement=Type
+systemMaintain=System Maintainance
+updateIP=Upgrade / IP 
+castingpasswordManament=Cast Password
+synchnizedTimeAndRestart=Time Sync/ Reboot
+searchSystem=System Searching
+searchSystemLog=System Logs
+searchCopyTask=Recording Task
+searchUserOnline=User Online
+userManagement=User Management  
+left.picWidth=24
+left.file=File
+left.argumentConfiguration=Configuration
+
+#login.jsp
+login.copyright=Copy Right    
+login.fontsize=3
+
+#logs.jsp
+systemLogs=System Log
+userNamess=User Name:   
+LogType=Log Type:
+systemMaintain=System Maintainance
+systemManagement=System Management
+userOperation=User Operation
+otherOperation=Other Operation
+allLogs=All Logs
+sure2deleteLogs=Are you sure to delete logs result from searching?
+logs.time=Time
+logs.to=To:
+logs.logs=Logs
+logs.user=User Name
+logs.machineIP=Host IP
+logs.logTime=Logs Time
+logs.lastPage=Last Page
+logs.nextPage=Next Page
+logs.number=No.
+logs.page= Page
+totalCountofPages=Total   
+
+#multi-uni.jsp
+castingControl=Live
+multi-uni.multiCasting=Multicast Control
+channel=Channel
+multicastingContent=Multicast Content
+operate=Configuration
+multiCastingVideo=
+multiCastingAudio=
+multiCastingData=
+attention=Attention:
+multicasting1=1. Multicast address range: 224.0.0.0 ~ 239.255.255.255
+multicasting2=2. Multicast port number scope: 6000 ~ 50000
+multicasting3=3. When different channels use same multicast address to multicast, one multicast port number should be 5 numbers far from the other ones in order to avoid conflict.
+multi-uni.unicastingConsole=Unicast
+channel=Channel
+multicastingContent=Multicast Content
+multiuni.stopPicWidth=65
+multiuni.longpicwidth=71
+multiuni.longpicwidth1=57
+multiuni.longpicwidth2=57
+multiuni.video2=
+multiuni.video1=
+
+#record.jsp
+record.addRecordTask=Add Recording
+record.recordInfo=Recording Information
+record.fileName=Name
+record.store=Store
+record.content=Content
+record.time=Time
+record.taskList=Task List
+record.recordContent=Content
+record.startTime=StartTime
+record.endTime=EndTime
+record.highPriority=Priority
+record.sameName=Same Name
+record.status=Status
+record.type=Type
+record.desc=Description
+record.configuration=Operation
+record.selfStop=Stop Manually
+record.current=Current
+record.task=Task
+record.overwrite=Over Write
+record.rename=Rename
+record.jumpout=Skip
+record.waiting=Waiting
+record.recording=Recording
+record.unclassified=Unclassified
+record.view=View or modification on task description
+record.sure2deleteTask=Are you sure to delete the task?
+record.deleteTaskFromList=Delete the task from recording task list
+addtype_file=Files:
+file.recordingfile=Recording Files:
+
+#restart.jsp
+record.synchronizedAndRestart=Restart
+record.sure2synchronizeServerTime=Are You Sure To Synchronize Encoder Time?
+record.sychronizeTime=Synchronize time between the encoder and your computer. 
+record.restartServer=Are You Sure To Restart Encoder?
+record.plsStopRecording=Please stop file recording first before you restart encoder, or system will stop file recording automatically. 
+restart.time.picWidth=99
+addtype_addfile=Add Files:
+
+#room.jsp
+room.list=List
+room.addRoom=Add
+room.connected=Connected
+room.channel=Ch
+room.disconnected=Disconnected
+room.name=\ Name
+room.sure2delete=Are you sure to delete?
+room.aVideoAdress=Auxiliary Video Addr
+room.dataEnderAddress=Data Addr
+room.videoAdres=V/A Addr
+room.connectPicWidth=70
+room.picWidth=82
+room.detailPicWidth=55
+room.picCloseWidth=82
+room.status=OK
+room.statusFail=Fail
+room.avideo=Auxiliary Video Encoder
+room.video=V/A Encoder
+room.dataEnder=Data Encoder
+
+
+#searchRecord.jsp
+searchRecord.waiting4Recording=Waiting For 
+searchRecord.Recording=Recording
+searchRecord.succedRecording=Success To Record
+searchRecord.recordTaskLogs=Recording Task Logs
+searchRecord.lostTime=Missing Time
+searchRecord.lowPriority=Low Priority
+searchRecord.fileRename=File Rename
+searchRecord.no=No
+searchRecord.connected=Connected
+searchRecord.stopByOneself=Stop Manually 
+searchRecord.UnknownError=UNKNOWN ERROR
+searchRecord.AllStatus=All Status
+searchRecord.sure2DeleteLog=Are you sure to delete searched result Of logs but task excecution  
+searchRecord.fileName=Name
+searchRecord.source=Source
+searchRecord.recordingContent=Content
+searchRecord.authority=Authority 
+searchRecord.startTime=Start Time
+searchRecord.endTime=End Time
+searchRecord.priority=Priority
+searchRecord.sameName=Process
+searchRecord.status=Status
+searchRecord.desc=Description  
+searchRecord.missingRecordingTime=Missing Recording Time
+
+#searchuser.jsp
+searchUser.userOnline=User Online
+searchUser.userName=User Name
+searchUser.machineIP=Host IP
+searchUser.loginTime=Login Time
+searchUser.type=Type
+searchUser.remark=Remark
+
+#sys_op.jsp
+passworderror = modify password failed!
+oldpassword = Original Password:
+oldpassworderror = Original password entry error
+sys_op.update=Update And Modify IP
+sys_op.updatesystem=Update System
+sys_op.updateFile=Upgrade File:
+sys_op.attention=Attention:
+sys_op.attention1=1.It takes some time to upload updated file, please do not make other operations while the file is uploading. 
+sys_op.attention2=2.After uploaded a updated file, please restart the system to complete the upgrade operation.
+sys_op.attention3=            IP Address Modification
+sys_op.attention4=            IP Address:
+sys_op.submask=Subnet Mask:
+sys_op.defaultNetgate=Gateway:
+sys_op.ipAddress=IP Address:
+sys_op.attention5=1. Please check the IP address carefully to avoid address conflict.
+sys_op.attention6=2. The encoder will restart automatically after the IP address is modified.
+sys_op.attention7=              Uploading The File, Please Wait...
+sys_op.fileList=File List
+sys_op.sn=NO.
+sys_op.fileName=File Name
+sys_op.size=Size
+sys_op.recordLength=Record Time
+sys_op.download=Download
+sys_op.view=Browse...
+
+#sys_password.jsp
+sys_password.modifyPassword=Change Password
+sys_password.clientServicePassword=Client password
+sys_password.client=\ Modification
+sys_password.unicastingpassword=Unicasting password
+sys_password.newpassword=New Password:
+newpasswords= New Password:   
+sys_password.newpasswordConfirm=Confirm:
+sys_password.ordercastingpassword=VOD password
+
+
+#system.jsp
+outver=Kernal Version:
+encoderver=Encoder Version:
+system.systemInfo=System Info
+system.equipmentSn=SN:
+system.equipmentType=Type:
+system.systemVersion=System Version:
+system.webVersion=Web Version:
+system.supportcasting=Support For Casting:
+system.support=Yes
+system.notsupport=No
+system.maxcountofCasting=Maximum Unicast Count:
+system.channelCount=Channel Count:
+system.totalspace=Total Space:
+system.freepercent=Free Space:
+system.channel=Channel
+system.recording=Recording
+system.multiCasting=Multicasting
+system.uniCasting=Unicasting
+system.recordingVideo=Recording video
+system.recordingAudio=Recording audio
+system.recordingData=Recording data
+system.multiCasting=Multicasting
+system.multiCastingVideo=Multicasting video
+system.multiCastingAudio=Multicasting audio
+system.multiCastingData=Multicasting data
+system.uniCasting=Unicasting
+system.uniCastingVideo=Unicasting video
+system.uniCastingAudio=Unicasting audio
+system.uniCastingData=Unicasting data
+
+
+#top.jsp
+top.user=User
+top.guest=Guest User
+top.operator=Operation
+top.administrator=Administrator
+top.superAdministrator=Super Administrator
+top.hi=Hi!
+top.downloadPlugin=Plug-in
+top.pluginDesc=[Plugin Manual]
+top.downLoadPcRec=Download PcRec
+top.win2kPlugin=Win2K Bug-Fix
+top.fileOperation=File configuration
+top.reLogin=Re-Login
+top.logout=Logout
+top.uniCasting=Unicasting
+top.multiCasting=Multicasting
+SystemInfo=[System]
+ParameterSet=[Configuration]
+ViewParameter=View
+RecordFile=[Record]
+ManagerFile=[Files]
+ViewFile=[Browser Files]
+ManagerType=Types
+ManagerFile1=File List
+ViewFile1=Browser Files
+SystemMain=[Maintenance]
+SearchLog=Logs
+UpdateIP=System Management
+
+not0alerm=Incorrect Page!
+fileUpload=File upload automatically:
+
+#u_view.jsp
+u_view.userlist=User list
+u_view.addUser=Add New User
+u_view.userName=User Name
+u_view.type=Type 
+u_view.authority=Right
+u_view.remark=Remark
+u_view.configuration=Operation
+u_view.receivingMultiCasting=Multicasting 
+u_view.receivingUniCasting=Unicasting
+u_view.deletetheUser=Are you sure to delete the user?
+u_view.Authority=68
+u_view.width=30%
+u_view.type.width=13%
+u_view.authority.width=19%
+u_view.remark.width=20%
+
+quickrecord=Quick record
+
+
+#zb.jsp
+zb.noAutherityMultiCasting=No right to receive multicasting
+zb.noMultiInformation=No multicasting information!
+zb.noAutherityUniCasting=No right to receive unicasting
+zb.noUniInformation=No unicasting information!
+zb.error=Have changed IP address or could not casting
+zb.pluginUsedDesc=Plugin Manual
+zb.plsclick=Please Click
+system.wmsManager=WMS Manager
+
+#left table length
+left.table.width=185
+
+#ini.java
+ini.multimediasytem=Multimedia HD System
+ini.companyname_own=Copyright(C) 2006-2013
+ini.companyname=SZ Reach Tech Co., Ltd. Copyright(C)2006-2013 
+ini.reachSystem=HD Encoder
+ini.reachSystem_own=HD Encoder
+DEVICETYPE=ENC2000
+
+userName=User name
+password=Password
+
+
+meetingroom=Meetingroom
+classroom=Classroom
+
+system.leftPercent=60%%
+system.rightPercent=40%%
+
+Reach_Easy_Casting=REC
+
+meetingRoomList=Meetingroom list
+unicastingContent=Unicast Content
+
+image_prex=US_
+lang_suffix=en
+#searchLog.java
+startTimeNotExist=Start time not exist! 
+yyyyMMdd=yyyy-MM-dd HH:mm:ss 
+endTimeNotExist=End time not exist! 
+endTimeLargeThanStartTime=End time should large than start time 
+
+#ipconfig
+lanIPAdresWrong=Lan:Invalid IP address input!
+lansubnetmaskwrong=Lan:Invalid subnet mask input!
+langatewaywrong=Lan:Invalid gateway input!
+wanIPWrong=Wan:Invalid IP address input!
+wansubnetmaskwrong=Wan:Invalid subnet mask input!
+wansubnetmaskwrong=Wan:Invalid gateway input!
+modifyIPAddress=Modify IP address.\n
+modifyIPSuccess=Modify IP successfully, system is going to restart!
+sourceLanIPAddress=Modify source Lan:IP address:
+sourceLanSubnetMask=\nsubnet mask:
+sourceLanGateway=\ngateway:
+sourceChange2Ip=\nChange to:\nIP address:
+subnetmask=\nSubnet mask:
+nextLine=\n
+sourceWanAndIP=Source Wan:\nIP address  
+#login.java  
+loginSystem=Login System!     
+userIsNotExist=Invalid user name!  
+passwordWrong=Invalid Password!
+
+#modifypassword.java
+passwordISNull=Password is empty!
+unicastPasswordInputNotSame=Invalid unicast passwords confirm input!
+unicastingPasswordModification=Unicast passoword modification.
+ordercastingPasswordNotSame=password input and confirm password are not same!
+ordercasting=Order Casting Password Modification
+modifyPasswordSuccess=Password Modification Success!
+
+#restart.java
+restartSystem=Restart System!
+
+#addtype.java
+recordModifiedNotExist=Record That Modified does not exist
+
+#deltype.java
+dDeleteType=Delete Type.\nType Name:
+dRemark=\nRemark:
+dDeletedTypeNotExist=Type does not exist!
+
+#detailfile.java
+fileNotExist=File does not exist!
+#file.java
+modifyFileInfo=File information modification.\nfile from:
+sourceFileInformation=\nSource file information: \nfile name:
+changeTo=\nChange to \n file name:
+fType=\nType:
+fDesc=\nDescription: 
+fSize=\nsize:
+fRecordTime=M\ntime:
+fSource=\nsource:
+fDeleteFileSuccess=delete file succeeded.\n
+fDeleteFileFail=delete file failed.\n
+uploadUpdateFileFail=Upload upgrade file failed.\nfile name is:
+uploadFileFail=updated file failed!
+uploadUpdateFileSuccess=upload updated file succceeded.\nFile name is:
+uploadFileSuccess=updated file succeeded
+updatefiles=Update Files
+
+
+#mediaplayfile.java
+mFileNotExist=File does not exist!
+mUsingMediaPlayer=use media player.\nFile name is:
+mFileSource=\n file from:
+
+#recplayfile.java
+rFileNotExist=File does not exist!
+rFileNotExist=using Recplayer to play the file.\nfile name is:
+rFileSource=\nFile source:
+
+#updatefile.java
+plsInputFileName=Please input file name!
+illegalFileName=Illegal file name!
+fileIsExist=File already exists!
+
+#updatetype.java
+plsInputTypeName=Please input type name:
+typeNameIsExist=File type does not exist!
+addFileType=Add file type.\n type name is:
+uRemark=\nRemark:
+uModifyFileType=File type modification.\noriginal file type name:
+uNewType=\nNew type name:
+modifyTypeNotExist=File type does not exist!
+
+#db.java
+conServerSuccess=Connect encoder succeeded!
+conServerFail=Connect encoder failed. Error code is:
+
+#function.java
+systemInitial=Initial system!
+ready2ReadIP=Ready to get IP
+getIP=Get IP!
+restIP=Test IP!
+initReadIPSuccess=Get IP initial successfully
+initGetCountExSuccess=Get countEx succssfully
+logoutSytem=Logout
+overtimequit=Connection to system over time!
+fUser=User:
+logoutOtherWhere=\ The IP login in other place, please logout first.\n IP:
+newIP=\nnew IP:
+
+#syntime.java
+synchnizedServerTimeSuccess=Synchronize encoder time succeeded.\noriginal time is
+newTime=\nNew time:
+synchronizedTimeSuccess=Synchronize time succeeded!
+synchronizedServerTimeFail=Synchronize encoder time failed.
+synchronizedTimeFail=Synchronize time failed!
+
+#delrecord.java
+delrecord.deleteRecordTaskAndChannel=Delete record task.\nchannel is:
+delrecord.FileName=\nFile name:
+delrecord.store=\nStore:
+delrecord.type=\nType:
+delrecord.time=\nTime:
+delrecord.stopAuto=Stop automatically
+delrecord.desc=\nDescription:
+delrecord.deleteFileNotExist=The task does not exist!
+
+#detailrecord.java
+detailrecord.recordError=Record task error, caused by record name error or record option error, \nTask information:Record name is: 
+detailrecord.source=\nSource:
+detailrecord.recordOption=\nRecord Option:
+detailrecord.video=Video 
+detailrecord.audio=Audio 
+detailrecord.data=Data
+detailrecord.recordInformation=\nRecord Information: \nRecord Name:
+detailrecord.source=\nSource:
+detailrecord.recordOption=\nRecord Option:
+detailrecord.recordErrorNoRecord=Record task error cause by no record information.\ntask information: \nrecord name
+
+
+#updateuser.java
+plsInputName=Plese input the user name!
+userIsExist=User already exists!
+passwordIsNull=Password is empty!
+passwordTwiceInputNotSame=Passwords do not match!
+usernameNotExist=User not exist!
+
+#multi.java
+stopMulticasting=Stop multicasting.
+multicastingAddressError=Multicasting addresses should be input between 224.0.0.1 ~ 239.255.255.255!
+plsInputMulticastingCorrect=Please input multicasting port!
+multicastingOutOfScope=Multicasting port should be input between 6000 ~ 50000!
+multicastingPortNChannel=Multicasting port and channel
+portRepeat=Port repeat!
+openMulticasting=Start multicasting.\nChannel is:
+multi.port=\nPort:
+multi.content=\nContent:
+multi.video=Video
+multi.audio=Audio
+multi.data=Data
+
+#user.java
+user.deleteuser=Delete User.\nName:
+user.password=\nPassword.*\nType:
+user.castingright=\nLive Casting type:
+user.receivingMulticasting=Receiving multicasting
+user.receivingUnicasting=Receiving unicasting 
+user.remark=\nRemark:
+detailfile050=(0~50 bytes)
+
+#record.java
+record.stopRecordfinish=Stop recording \nCause by having finished,\nChannel Is:
+record.fileName=\nFile name is:
+record.source=\nSource:
+record.stopRecordPriorityLow=Stop recording \nCause by low priority, \nChannel is:
+record.recordTaskFailCauseBy=Recording task execution failed,Cause by unknown.
+record.connected=Connected. \nChannel is:
+record.recordTaskFailSameFile=Recording task execution failed.\nCause by same name files. skip without execution. \nChannel is:
+record.recordTaskFailOverwriteFail=Record task excecution failed.\nCause by same name file overwrite fail:
+record.recordTaskSuccess=Record task excecution succeeded.\nChannel is:
+record.recordTaskFailLowPriority=Record task execution failed caused by low priority. \n Channel is:
+record.Unclassified=Unclassified
+record.unknown=UNKNOWN
+record.stopAutomatically=Stop manual
+
+#searchrecord.java
+deleteTaskFail=Can not delete task that have not ben executed.
+
+!-uni.java
+uni.stopUnicasting=Stop unicasting
+uni.startUnicasting=Start unicasting.\nChannel is:
+uni.content=\nContent:
+uni.video=Video 
+uni.audio=Audio
+uni.data=Data
+		        
+#updaterecord.java
+updaterecord.inputFileName=Input file name!
+updaterecord.illegalFileName=Illegal file name!
+updaterecord.chooseRecordContent=Please choose record content!
+updaterecord.recordTaskFail=Record task execution failed.
+updaterecord.connected=Connected
+updaterecord.recordTaskfailbynodatasource=Record task execution failed Caused by no video or no datasource
+updaterecord.starttimewrong=InvalidStartTime input!
+updaterecord.startTimeLargeThanCurrentTime=Start time should be later than current time!
+updaterecord.endTimeWrong=Invalid end time input!
+updaterecord.endTimeLargeThanStartTime=End time should later than start time!
+updaterecord.addRecordTask=Add record task.\n Channel is:
+updaterecord.fileName=\nFile name:
+updaterecord.store=\nStore:
+updaterecord.type=\nType:
+updaterecord.content=\nContent:
+updaterecord.video=Video 
+updaterecord.audio=Audio
+updaterecord.data=Data
+updaterecord.right=\nRight:
+updaterecord.ableToCast=Allow to cast
+updaterecord.ableToDownload=Allow to download
+updaterecord.priority=\nPriority:
+updaterecord.currentRecordFirst=Current recording first
+updaterecord.taskRecordFirst=Task recording first
+updaterecord.IfSameName=\nIf same name:
+updaterecord.overWriteSameName=Overwrite the file with same name
+updaterecord.renameAutomatically=Rename automatically
+updaterecord.skipNoExecution=Skip without execution
+updaterecord.time=\nTime:
+updaterecord.rights=Right:
+updaterecord.stopManual=Stop manual
+updaterecord.desc=\nDescription:
+updaterecord.times=Time:
+updaterecord.IfSameNames=If same:
+updaterecord.channel=Channel:
+updaterecord.fileName=File name:
+updaterecord.remark=\nRemark:
+updaterecord.contents=Content:
+updaterecord.prioritys=Priority
+updaterecord.type=\nType:
+updaterecord.stores=Store:
+updaterecord.modifyRecordTask=Recording task modification.\nbefore modification:\n
+updaterecord.afterModification=\nAfter modification\n
+updaterecord.fileModifiedNotExist=The file modification does not exist!
+
+#addroom.java
+recordNotExist=Record Modification Is Not Exist!
+
+!-av1room.java
+324096int=Video Band Between 32 ~ 4096!
+130int=Video Band Frequency between 1 ~ 30! 
+125int=Video Band Frequency between 1 ~ 25! 
+110int=Video Band Frequency between 1 ~ 10! 
+15int=Video Band Frequency between 1 ~ 5! 
+
+#av2room.java
+324096int=Video Band Between 32 ~ 4096!
+
+# user.java
+user.java.addTime=Add User.\nName:
+user.java.user.type=\nType
+user.java.liveCastingRight=\nLiving Casting
+user.java.receivingMulticasting=Receiving Multicasting
+user.java.receivingUnicasting=Receiving Unicasting
+user.java.modifyUserInformation=User Information Modification.\nOriginal User Information:\nName:
+user.java.password=\nPassword:*\nType:
+user.java.livingAuthorization=\nLive Casting Right:
+user.java.receivingMulticast=Receiving Multicasting
+user.java.receivingUnicast=Receiving Unicasting
+user.java.remark=\nRemark:
+user.java.newUserInformation=\nNew User Information. \nName:
+user.java.password=\nPassword**\nType:
+user.java.deleteUser=Delete User.*\nName:
+user.java.password=\nPassword.*\nType:
+
+#setright.java
+setright.toUser=To User:
+setright.configureRights=Configuration.
+userNotExist=User Is Not Exist.
+
+#setuser.java
+userNotExistNUser=The User Is Not Exist.
+
+#adduser.java
+recordNotExist=Record Is Going To be modified does not exist
+
+#updateroom.java
+updateroom.java.input=Please Input
+updateroom.java.name=Name
+updateroom.java.exist=Same name room exists!
+updateroom.java.videoEncoderWrong=Invalid Video Encoder Address!
+updateroom.java.aVideoEncoderWrong=Invalid Auxiliary Video Encoder Address!
+updateroom.java.DataEncoder=Data Encoder Address!
+updateroom.java.IllegalAddress=Please Input A Legal Address!
+
+#optRoom.java
+optRoom.java.add=Add
+optRoom.java.name=\nName:
+optRoom.java.videoEncoder=\nVideo addr:
+optRoom.java.aVideoEncoder=\nAuxiliary video addr:
+optRoom.java.dataEncoder=\nData addr:
+optRoom.java.modify=Modification
+optRoom.java.source=\nSource
+optRoom.java.name=\nName:
+optRoom.java.new=\nNew
+optRoom.java.delete=Delete
+optRoom.java.connected=Connected
+optRoom.java.name=\nName:
+optRoom.java.channel=\nChannel:
+optRoom.java.disconnected=Disconnected
+optRoom.java.modifyVideoFormat=Video encoder configuration codification.\nFormat:
+optRoom.java.rate=\nFrequency:
+optRoom.java.bandVideo=\nVideo band:
+optRoom.java.bandAudio=\nAudio band:
+optRoom.java.modifyVideoChannel=Video encoder configuration modification.\nChannel:
+optRoom.java.modifyAVideoFormat=Auxiliary video encoder configuration modification.\nformat:
+optRoom.java.rate=\nfrequency:
+optRoom.java.videoBand=\nvideo band:
+optRoom.java.modifyAEncoderChannel=Auxiliary video encoder configuration modification.\nchannel:
+optRoom.java.format=\nFormat
+optRoom.java.modifyDataEncoderRate=Data encoder configuration modification.\nauxiliary:
+optRoom.java.modifyDataEncoderChannel=Data encoder configuration codification.\nchannel:
+
+#error.jsp
+backToLogin=Turn Back To Login Page
+backToLoginIn5Min=The page does not exist, it will be turned back to login page.
+
+#dataroom.java
+dataroom.quality=Quality value should be a integer between 5 and 90
+
+#sys_session.jsp
+sys_session.sessionManagement=Session 
+sys_session.managerTime=Administrator session time:
+sys_session.unitS=(S)
+sys_session.otheruser=Others session time: 
+sys_session.attention=Attention: If value is -1, it means that session is not Limited.  
+sys_session.arguments=Restart right now or click "cancel" restart later.
+sys_session.sessiontimecontrol=Session time control
+left.sessionManagement=Session Management
+admintimeshouldbeinteger=Admin session time value should be integer!
+othersshouldbeinteger=Other user session time value should be integer!
+session.time=S
+sessionTimechange=Admin session time modification.Value is:
+othersessionTimechange=Other user session time modification.Value is:
+
+uploadfilenotnull=The file upload is empty.  
+usermanagement=User Set
+usergroupmanagement=Group management
+
+g_view.userGroupList=Group list
+g_view.groupName=Group name
+addgroup=Add/Modify group
+ 
+ addgroup.groupName=Group name:
+ 
+groupDesc=Common user group---limited user, this type of user can playback the media or receive live casting media
+groupguestDesc=GUEST group---can only receive media
+groupoperatorDesc=Operator group---have the part right of the superuser, such as open or close multicast 
+groupadministratorDesc=Administrator:have the highest authority,both the user name and password can be changed.
+u_view.group=Group name
+
+stop01.width=79
+
+searchuser.adminview=Is the administrator previewing?  
+searchuser.castcount=Receiving casting Count:
+detailfile.fullofchact=Character too many!
+admin.yes=Yes
+admin.no=No
+
+recon=Recon
+unlimited=Unlimited
+noconnect=Not connect
+
+allselect=  Select all:
+
+g_view.name=Add new 
+zeroing=reset
+
+file.recordpause=Pause recording......
+file.zeroing=count reset?
+
+addtype.file=The types of files:
+
+group=common user
+guestUserGroup=guest
+groupoperator=operator
+groupadministrator=administrator
+setUser2Group.usergroup=Group
+
+recon=reconnect
+unlimited=unlimited
+disable=disable
+
+continuerecording=Continue recording
+continueRecord.channel=channel:
+
+userlist=User List:
+addgroup.addusertogroup=Add to group:
+addgroup.add=add:
+
+Reach_Teach=TEACH
+reconnectcountvalueisempty=Reconnect count value is empty!
+reconnectcountvaluemustbeinteger=Reconnect count value must be Integer!
+reconnectcountvaluemustbetween-1to100=Reconnect count value must between -1 to 100.
+
+rightclosewidth=83
+consolewidth=35%%
+rightclose=83
+channelwidth=5%%
+addtype.addfiletype=Add File:
+selectall=select
+autoupload=upload automatically--
+noautoupload=not upload--
+
+updaterecord.recordTaskFail4Noroom=Recording task fail. because: the room not connect.
+
+pauserecording=Pause recording. \nChannel:
+tablewidth=785
+adresswidth=20%%
+exportwidth=70
+room.consolewidth=28%%
+
+plsinputgroupname=Please input group name!
+userdoesnotexist=The group does not exist!
+addgroupname=Add group.group name:
+modifygroup=Modify group.group name:
+groupright=Group right:
+adduser.usergroup=user group:
+adduser.group=Group:
+quitfromgroup=Delete From Group:
+delall=delete the files?
+usertype=Type:
+zb.multicast=Multicast:
+zb.unicast=Unicast:
+
+
+inputmessge=Input:
+X.err=X axis's format error!
+Y.err=Y axis's format error! 
+disk.lower=Hard Disk's space is less than 10%.Task failed!
+
+detailroom.rate=BitRate:
+ini.reachSystemEncoder=    HD Encoder 
+
+locale.english=English
+
+locale.chinese=Simplified Chinese
+
+locale.tranditional=Traditional Chinese
+
+language.type=Language:
+
+language=Language
+
+detailroom.shouldBeInterate=The value should be integration.
+
+loading=loading...
+
+sys_op.setFileLen=Record File Max-Length
+
+#wms.jsp
+wmsAddress=WMS Address
+wmsPort=WMS Port
+stopWms=Stop WMS.
+WMSPortOutOfScope=WMS port out of scope!
+plsInputWMSPortCorrect=Please input WMS port!
+WmsPortNChannel=WMS port and channel
+
+tmp.title=::::::
+tmp.video=VIDEO:
+tmp.dvi=DVI:
+tmp.audio=Audio:
+zb1.alertmulti=Multicast is not turned on, open the multicast re-visit!
+	
+detailroom.notice4AAC=Plug-in must be installed if users select \nAAC encoding to record and playback.
+
+
+ytkz.uptitle=Up
+ytkz.lefttitle=Left
+ytkz.bigtitle=Focal length of the zoom
+ytkz.smalltitle=Focal length of the narrow
+ytkz.righttitle=Right
+ytkz.downtitle=Down
+ytkz.speed=Speed
+ytkz.low=Low
+ytkz.mid=Medium
+ytkz.high=High
+adjust.speed=Speed:  
+adjust.low=Low
+adjust.mid=Medium
+adjust.high=High
+delfile.error=File that is in use can not be deleted!
+quickrecord.diskerror=Less than 10% of hard disk space, failed to record the task!
+urlerror=the URL format error! Please re-enter!
+	
+binfile=Please select the file extension bin
+bmpfile=Please select the file extension jpg
+pngfile=Please select the file extension png
+inifile=Please select the file extension ini
+sys_op.attention11=1.Picture must be jpg format and less than 200k size.
+sys_op.attention12=2.After uploaded a bmp file, please restart the system to finish the operation.
+sys_op.logupload=Upload Logo picture
+sys_op.logfile=JPG picture:
+sys_op.filesizeerror=Please select the picture below 200K!
+
+
+systemhtml1=Core Version: 
+systemhtml2=System Version: 
+systemhtml3=FPGA Version: 
+systemhtmlIPAddress=IP Address: 
+systemhtmlSubnetMask=Subnet Mask: 
+systemhtmlGateway=Gateway:  
+systemhtmlMAC=MAC Address: 
+oldpassword=Password: 
+oldpassworderror=Wrong Password! 
+modifyIPFailed=IP Address Modify Fail! 
+
+
+setvideoFailed=Video Parameter Modify Fail! 
+setvideoSuccess=Video Parameter Modify Success!  
+setaudioFailed=Audio Parameter Modify Fail! 
+setaudioSuccess=Audio Parameter Modify Success! 
+settextFailed=Subtitles Setting Fail! 
+settextSuccess=Subtitles Setting Success! 
+paramset.videoset=Video Setting
+paramset.videoset.selectinput=Input:
+paramset.audioset=Audio Setting
+paramset.txtset=Subtitles Setting
+paramset.txtset.xx=Abscissa:
+paramset.txtset.yy=Ordinate:
+paramset.txtset.content=Content:
+paramset.txtset.showtime=Display Time
+
+ 
+
+file.updatefileerror=File Modify Fail!
+fileshow.recordtime=Record Time:
+fileshow.operation= Operation:
+paramset.audiovideoset=Audio Setting:
+paramset.videoqulia=Video Quality:
+paramset.audiosample= Audio Sampling Rate:
+paramset.audioinput=Audio Input:
+updatefileerrors=File Format Wrong!
+plsSelectVideoInput=Please Choose Video Quality!
+restart.saveupdateinfo=NOTE: This Operation Will Change The System
+sys_op.outputset=Output Setting
+sys_op.outputselect=Choose Output 
+sys_op.sysset=System Setting
+useradd.maxusererror=Maximum User
+
+paramset.xxerror=Abscissa Should Less than
+paramset.yyerror=Ordinate Should Less than
+restart.savetitle=Save Parameters
+restart.saveupdate=Save Parameters to Firmware
+restart.saveupdateinfo= NOTE: This Operation Will Change The System
+paramset.xxyyerror=Please Input Numbers!
+multicastingAddress=Address
+multicastingPort=Port
+system.multiCastingNUniCasting=Live Streaming
+caiyanglv=Sampling Frequency:
+yinpinmalv=Bandwidth:  
+inputssss=Input:  
+savefailed=Save Failed!
+savesucess=Save Success!
+setsuccess=Set success!
+setfailed=Set failed!
+bgloginjpg=login_bg.jpg
+bgloginjpg_own=login_bg_own.jpg
+topGif=top.gif
+topGif_own=top_own.gif
+ini.companyname_own=Copyright (C) 2006 - 2011
+paramset.farSet.title=PTZ Protocol
+paramset.farSet.select=Protocol:
+paramset.farSet.success=Protocol setting success!  
+paramset.farSet.failed=Protocol setting failed!  
+paramset.usefar.title=PTZ Control
+paramset.green=Colour Correction
+paramset.screen.title=Screen Adjust
+
+
+!--added by xuzhuguang for the ENC1260
+opt.success=Success!
+uploadLogoTooLarge=The image size is too big!
+uploadFileSizeFailed=Invalid image size!
+
+!--index.html
+index.logout=Log out
+index.settings=Settings
+index.administration=Administration
+index.systeminfo=System info
+
+
+!--leftmenuParamsSettings.html
+leftmenu.videosource=Video Source
+leftmenu.videoencoding=Video Encoding
+leftmenu.audio=Audio
+leftmenu.streams=Streams
+leftmenu.titlelogo=Title/Logo
+leftmenu.cameracontrol=Camera Control
+
+
+!--leftmenuSystemSettings.html
+leftmenu.network=Network
+leftmenu.user=User
+leftmenu.system=System
+leftmenu.sysupgrade=System Upgrade
+leftmenu.sysrestore=System Restore
+
+!--input.html
+input.input=Input:
+input.detail=Detail
+input.colorspace=Color space:
+input.HDCP=HDCP:
+input.screenadjust=Screen adjust:
+input.default=Default
+input.high=High
+input.mid=Mid
+input.low=Low
+input.refresh=Refresh
+input.save=Save
+input.inputType=Input type:
+input.ok=OK
+input.cancel=Cancel
+input.colorcbcr=CbCr Correct:
+input.colorcbcrbtn=Correct 
+input.inputtypeconfirm=Change input type,set and restart now?
+input.sdiajust=SDI adjust:
+
+
+!--video.html
+video.input=Input
+video.merge=Merge input
+video.resolution=Resolution:
+video.maginfit=Image fit:
+video.ratio=Ratio
+video.stretch=Stretch
+video.H264profile=H.264 profile:
+video.preset=Preset :
+video.framerate=Frame rate:
+video.gop=GOP:
+video.bitrate=Bit rate:
+video.display=Display:
+video.title=Title
+video.logo=Logo
+video.refresh=Refresh
+video.save=Save
+video.advancedsettitle=H264DetailInfo
+video.ok=OK
+video.cancel=Cancel
+video.vediosetfailed=Setting failed!
+video.vediosetresolulock=Resolution setting by server failed!
+video.preset=Scene:
+video.motion=Sports(Default)
+video.motionless=ComputerGraphics
+
+!--video_advancedSet.html
+video.quality=Video quality:
+video.high=High
+video.low=Low
+videoadvancedset.param1=Param one:
+videoadvancedset.param2=Param two:
+videoadvancedset.param3=Param three:
+videoadvancedset.param4=Param four:
+videoadvancedset.param5=Param five:
+
+
+!--audio.html
+audio.input=Input:
+audio.samplerate=Sample rate:
+audio.audiolevelleft=Audio level left:
+audio.audiolevelright=Audio level right:
+audio.bitrate=Bit rate:
+audio.mute=Mute:
+audio.refresh=Refresh
+audio.save=Save
+
+
+!--output.html
+output.id=Input ID
+output.input=Input
+output.broadcast=Broadcast URL
+output.protocal=Protocol
+output.port=Port
+output.status=Status
+output.detail=Detail
+output.add=Add
+output.rtspconfig=RTSP config
+output.refresh=Refresh
+output.save=Save
+output.rtspsettitle=RTSP config
+output.ok=OK
+output.cancel=Cancel
+output.mustmultiIP=Failed! Invaild IP !
+output.playurl=Play url
+
+
+--output_rtspSet.html
+outputrtspset.serverport=RTSP server port:
+outputrtspset.warning=(WARNING:Takes effect on next reboot)
+outputrtspset.active=Keep active:
+outputrtspset.mtu=MTU:
+outputrtspset.input=Input:
+outputrtspset.quality=Stream quality:
+outputrtspset.streammode=Streaming mode:
+outputrtspset.multiIP=Multi IP:
+outputrtspset.multiport=Multi port:
+outputrtspset.second=second
+outputrtspset.sdp=SDP:
+outputrtspset.download=Download
+
+
+!--output_detailSet.html
+outputdetailset.protocal=Protocal:
+outputdetailset.IP=IP:
+outputdetailset.videoport=Video port:
+outputdetailset.audioport=Audio port:
+outputdetailset.mtu=MTU:
+outputdetailset.ttl=TTL:
+outputdetailset.tos=TOS:
+outputdetailset.tc=TC:
+outputdetailset.open=enable
+outputdetailset.ceiling=Ceiling(%):
+outputdetailset.avgbandwidth=Average Bandwidth:
+outputdetailset.ceilingbandwidth=Ceiling Bandwidth:
+
+
+!--output_addSet.html
+outputaddset.displayselect=Display select:
+outputaddset.display=Display
+outputaddset.quality=Quality:
+outputaddset.protocal=Protocal:
+outputaddset.IP=IP:
+outputaddset.videoport=Video port:
+outputaddset.audioport=Audio port:
+outputaddset.mtu=MTU:
+outputaddset.ttl=TTL:
+outputaddset.tos=TOS:
+outputaddset.tc=TC:
+outputaddset.open=enable
+outputaddset.ceiling=Ceiling(%):
+
+
+!--captionlogo.html
+titlelogo.title=Title
+titlelogo.displaytitle=Enable title
+titlelogo.displaylogo=Enable LOGO
+titlelogo.position=Position:
+titlelogo.coordinate=Coordinate:
+titlelogo.content=Content:
+titlelogo.transparency=Transparency:
+titlelogo.displaytime=Display time
+titlelogo.timesynch=Time synch
+titlelogo.logo=Logo
+titlelogo.logopic=Logo picture:
+titlelogo.upload=Upload
+titlelogo.refresh=Refresh
+titlelogo.save=Save
+titlelogo.logoprompt=(File format must be png, and must be smaller than 64 x 64,width must be multiple of 8)
+titlelogo.lettersatmost= (46 letters at most)
+
+
+!--remotectrl.html
+remotectrl.ptzprotocal=PTZ Protocol:
+remotectrl.control=Control
+remotectrl.speed=Speed:
+remotectrl.low=Low
+remotectrl.mid=Mid
+remotectrl.high=High
+remotectrl.refresh=Refresh
+remotectrl.save=Save
+remotectrl.warning=(WARNING:Takes effect on next reboot)
+remotectrl.addressbit=Address bit:
+
+
+!--network.html
+network.title=Network Interface Card
+network.dhcp=DHCP:
+network.enable=Enable
+network.ip1=IP address 1:
+network.ip2=IP address 2:
+network.mask1=Mask 1:
+network.mask2=Mask 2:
+network.gateway=Gateway:
+network.refresh=Refresh
+network.save=Save
+network.confirm=Confirm
+network.ok=OK
+network.cancel=Cancel
+network.networksetfirm=Network settings will take effect after reboot, continue to reboot?
+network.invalid=Invalid IP settings
+
+
+!--modifypassword.html
+updatepassword.title=Change password
+updatepassword.username=User name:
+updatepassword.oldpw=Old password:
+updatepassword.newpw=New password:
+updatepassword.confirmpw=Password confirm:
+updatepassword.save=Save
+updatepassword.nopermission=You hava no permission to modify the password of this user!
+
+
+!--otherset.html
+systemset.encodertime=Encoder time:
+systemset.zoommodel=Advanced Encoder Setting
+systemset.enclevel=Encode Level:
+systemset.highprofile=High Profile
+systemset.baseline=Base Line
+systemset.timesynch=Time synch
+systemset.timeset=Time set
+systemset.reboot=Reboot system
+systemset.save=Setting
+
+
+!--sysupgrade.html
+sysupgrade.title=System upgrade
+sysupgrade.file=File:
+sysupgrade.upgrade=Upgrade
+sysupgrade.note=Notice:<br><br>
+sysupgrade.notecontent1=1. After System restore, all parameter settings will be lost and restored &nbsp;&nbsp;&nbsp;&nbsp;to factory default;<br><br>2. During system restoring, encoder will be rebooted automatically,
+sysupgrade.notecontent2= and restore &nbsp;&nbsp;&nbsp;&nbsp;success after rebooted;<br><br>3. Only admin can System restore button.
+
+
+
+!--resetdefault.html
+resetdefault.title=System restore
+resetdefault.restore=Restore
+resetdefault.reboot=Reboot
+resetdefault.restoreconfirm=The system will reboot after restore automatically, please click 'OK' to continue.
+resetdefault.rebootconfirm=Confirm to reboot the system?
+resetdefault.ok=OK
+resetdefault.cancel=Cancel
+resetdefault.confirm=Confirm
+
+
+!--sysinfo.html
+sysinfo.title=System info
+sysinfo.seriesno=Series NO.:
+sysinfo.model=Model:
+sysinfo.softwareversion=Software version:
+sysinfo.compiledtime=Compiled time:
+sysinfo.webversion=Web version:
+sysinfo.ip1=IP address 1:
+sysinfo.mask1=Mask 1:
+sysinfo.ip2=IP address 2:
+sysinfo.mask2=Mask 2:
+sysinfo.gateway=Gateway:
+sysinfo.mac=MAC:
+sysinfo.cpuload=CPU load:
+sysinfo.refresh=Refresh
+sysinfo.set=Setting
+
+merge.title=Display layout set
+merge.resolution=Output resolution:
+merge.layout=layout:
+merge.layouttext=layout
+merge.status=Compose switch:
+merge.enable=On
+merge.disable=Off
+merge.switch=Exchange windows:
+merge.switchbtn=Exchange
+

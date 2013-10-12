@@ -1,0 +1,162 @@
+        <form enctype="multipart/form-data" id="wmform">
+          <table width="753" height="224" border="0">
+			<tr>
+              <td height="53" class="$image_prex$itemnametd">&nbsp;</td>
+              <td><h5>$systemset.zoommodel$</h5></td>
+            </tr>
+			<tr>
+			  <td class="$image_prex$itemnametd"></td>
+			  <td>
+				$video.maginfit$
+				<input type="radio" name="zoomModel" value="0" />
+				$video.ratio$
+				<input style="margin-left:15px;" type="radio" name="zoomModel" value="1" />
+				$video.stretch$
+			  </td>
+			</tr>
+			<tr>
+              <td height="10" class="$image_prex$itemnametd">&nbsp;</td>
+              <td></td>
+            </tr>
+			<tr>
+			  <td class="$image_prex$itemnametd"></td>
+			  <td>
+				$systemset.enclevel$
+				<input type="radio" name="enclevel" value="1" />
+				$systemset.highprofile$
+				<input style="margin-left:15px;" type="radio" name="enclevel" value="0" />
+				$systemset.baseline$
+				
+				<p style="margin: 5px 0; color: red;">$outputrtspset.warning$</p>
+			  </td>
+			</tr>
+			<tr>
+              <td height="10" class="$image_prex$itemnametd">&nbsp;</td>
+              <td></td>
+            </tr>
+			<tr>
+              <td height="30" class="$image_prex$itemnametd">&nbsp;</td>
+              <td><input id="encAdvancedBtn" type="button" class="$image_prex$click_btn" value="$systemset.save$" style="letter-spacing:0px;padding-left:0px;" /></td>
+            </tr>
+			
+			<tr>
+              <td height="10" colspan="2">
+				<div style="width:370px; height:1px; margin-left:155px; background-color:#186FCA;"></div>
+			  </td>
+            </tr>
+            <tr>
+              <td height="53" class="$image_prex$itemnametd">&nbsp;</td>
+              <td><h5>$systemset.timeset$</h5></td>
+            </tr>
+            <tr>
+              <td width="148" height="57" class="$image_prex$itemnametd">&nbsp;</td>
+              <td width="565">$systemset.encodertime$<label id="show_time"></label><input style="margin-left:10px;" id="saveBtn" type="button" class="click_btn_long" value="$systemset.timesynch$" /></td>
+            </tr>
+			<tr>
+              <td height="10" colspan="2">
+				<div style="width:370px; height:1px; margin-left:155px; background-color:#186FCA;"></div>
+			  </td>
+            </tr>
+            <tr>
+              <td height="52">&nbsp;</td>
+              <td><h5>$systemset.reboot$</h5></td>
+            </tr>
+            <tr>
+              <td height="52">&nbsp;</td>
+              <td>
+              	<input id="rebootBtn" type="button" class="$image_prex$click_btn" value="$resetdefault.reboot$" style="letter-spacing:0px;padding-left:0px;" />			  </td>
+            </tr>
+          </table>
+        </form>
+<script>
+function formatTime(date) {
+	var year = date.getFullYear();
+	var month = date.getMonth() + 1;
+	var day = date.getDate();
+	var hours = date.getHours();
+	var minutes = date.getMinutes();
+	var seconds = date.getSeconds();
+	return year + "/" + month + "/" + day + "/" + hours + "/" + minutes + "/" + seconds;
+}
+
+function formatNumber(number) {
+	if(number < 10) {
+		number = '0' + number;
+	}
+	return number;
+}
+
+function initPageTime(timeStr, language) {
+	var formatStr = "";
+	if(timeStr && language) {
+		var timeStrArr = timeStr.split("/");
+		if(timeStrArr && timeStrArr.length==6) {
+			switch(language) {
+				case "cn": {
+					formatStr = timeStrArr[0] + "��" + formatNumber(timeStrArr[1]) + "��" + formatNumber(timeStrArr[2]) + "�� " + formatNumber(timeStrArr[3]) + ":" + formatNumber(timeStrArr[4]) + ":" + formatNumber(timeStrArr[5]);
+					break;
+				}
+				case "us": {
+					formatStr = formatNumber(timeStrArr[1]) + "/" + formatNumber(timeStrArr[2]) + "/" + timeStrArr[0] + " " + formatNumber(timeStrArr[3]) + ":" + formatNumber(timeStrArr[4]) + ":" + formatNumber(timeStrArr[5]);
+					break;
+				}
+			}
+		}
+	}
+	jQuery('#show_time').html(formatStr);
+}
+
+jQuery(function() {
+	initFormValidation();
+
+	jQuery('#encAdvancedBtn').click(function() {
+		var data = {"actioncode": "422"};
+		var params = getFormItemValue('wmform');
+		if(params) {
+			jQuery.extend(data, params);
+		}
+		jQueryAjaxCmd({
+			"data": data,
+			success: function(ret) {
+					alert('$opt.success$');
+			}
+		});
+	});
+
+	jQuery('#saveBtn').click(function() {
+		var data = {"actioncode": "224"};
+		var nowTimeStr = formatTime(new Date());
+		data['clienttime'] = nowTimeStr;
+		//alert(data.clienttime)
+		jQueryAjaxCmd({
+			"data": data,
+			success: function(ret) {
+				alert(ret);
+				jQuery('#menuc').click();
+			}
+		});
+	});
+	
+	jQuery('#rebootBtn').click(function() {
+		art.dialog({
+			title: '$resetdefault.confirm$',
+			okValue: '$resetdefault.ok$',
+			cancelValue: '$resetdefault.cancel$',
+			lock: true,
+			fixed: true,
+		    background: '#600', // ����ɫ
+		    opacity: 0.87,	// ͸����
+		    content: "$resetdefault.rebootconfirm$",
+		    ok: function() {
+				var data = {"actioncode": "215"};
+				jQueryAjaxCmd({
+					"data": data,
+					success: function(ret) {}
+				});
+				window.setTimeout('window.location.href = "encoder.cgi"', 1000);
+		    },
+		    cancel: true
+		});
+	});
+});
+</script> 

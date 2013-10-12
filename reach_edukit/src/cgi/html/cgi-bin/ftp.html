@@ -1,0 +1,78 @@
+<form id="wmform">
+      <table width="753" border="0">
+      	<tr>
+		  <td colspan="3" height="60"><h5>$ftp.title$</h5></td>
+	    </tr>
+		<tr>
+			<td width="30%" height="35" align="right" class="$image_prex$itemnametd">$ftp.status$</td>
+			<td><input type="checkbox" name="ftpstatus" id="ftpstatus" value="1" /></td>
+		</tr>
+		<tr>
+			<td width="30%" height="35" align="right" class="$image_prex$itemnametd">$ftp.address$</td>
+			<td><input type="text" name="ftpaddress" id="ftpaddress" class="validate[required] inputtext ftpinput" /></td>
+			<td rowspan="5">
+				<div style="width: 310px" class="resetdefault"><h6>$ftp.notice$<br><br></h6><font style="font-size:12px;">$ftp.noticeCon$</font></div>
+			</td>
+		</tr>
+		<tr>
+			<td width="30%" height="35" align="right" class="$image_prex$itemnametd">$ftp.port$</td>
+			<td><input type="text" name="thrftpport" id="thrftpport" class=" ftpinput validate[required, custom[integer], min[1], max[65535]] inputtext" /></td>
+		</tr>
+		<tr>
+			<td width="30%" height="35" align="right" class="$image_prex$itemnametd">$ftp.path$</td>
+			<td><input type="text" name="ftppath" id="ftppath" class=" ftpinput validate[required] inputtext" /></td>
+		</tr>
+		<tr>
+			<td width="30%" height="35" align="right" class="$image_prex$itemnametd">$ftp.username$</td>
+			<td><input type="text" name="ftpusername" id="ftpusername" class=" ftpinput validate[required] inputtext" /></td>
+		</tr>
+		<tr>
+			<td width="30%" height="35" align="right" class="$image_prex$itemnametd">$ftp.password$</td>
+			<td><input type="password" name="ftppassword" id="ftppassword" class=" ftpinput validate[required] inputtext" /></td>
+		</tr>
+        <tr>
+        	<td width="30%" height="35"></td>
+          <td style="text-align:left;">
+		  	<input type="hidden" name="actioncode" value="435" />
+            <input id="setbtn" type="button" class="click_btn" value="$video.save$" />
+          </td>
+        </tr>
+      </table>
+</form>
+<script>
+function initFtpstatus() {
+	if(jQuery('#ftpstatus').is(':checked')) {
+		jQuery('#wmform .ftpinput').removeClass('inputtext2').addClass('inputtext').prop('disabled', false);
+	} else {
+		jQuery('#wmform .ftpinput').removeClass('inputtext').addClass('inputtext2').prop('disabled', true);
+	}
+}
+	
+jQuery(function() {
+	/*
+	 * 初始化表单验证
+	 */
+	initFormValidation();
+	
+	jQuery('#ftpstatus').change(initFtpstatus).change();
+	/*
+	 * 初始化设置和刷新按钮事件
+	 */
+	jQuery('#setbtn').click(function() {
+		var validate = validateFormByID('wmform');
+		if(validate) {
+			var data = getFormItemValue('wmform');
+			jQueryAjaxCmd({
+				"data": data,
+				success:function(ret) {
+					if(ret == 1) {
+						falert('$falert.ok$', '$opt.success$');
+					}
+				}
+			});
+		} else {
+			return false;
+		}
+	});
+});
+</script>

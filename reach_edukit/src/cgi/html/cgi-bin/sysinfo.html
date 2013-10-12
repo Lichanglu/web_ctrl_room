@@ -1,0 +1,52 @@
+<form id="wmform">
+  <table height="366" border="0" class="sysinfo_table">
+    <tr>
+      <td colspan="2" style="text-align:center; padding-left:45px;"><h5>$sysinfo.title$</h5></td>
+    </tr>
+    <tr>
+      <td width="399" class="$image_prex$itemnametd">$sysinfo.seriesno$</td>
+      <td width="360"><input readOnly name="serialNO" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.model$</td>
+      <td><input readOnly name="deviceModelNO" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.webversion$</td>
+      <td><input style="width:300px;" readOnly name="webVersion" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.aiosysversion$</td>
+      <td><input style="width:300px;" readOnly name="aiosysversion" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.aiosysenctime$</td>
+      <td><input style="width:300px;" readOnly name="aiosysenctime" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.hdsysversion$</td>
+      <td><input style="width:300px;" readOnly name="hdsysversion" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.hdsysenctime$</td>
+      <td><input style="width:300px;" readOnly name="hdsysenctime" type="text" class="show_label" /></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.harddiskspace$</td>
+      <td><input readOnly name="hardDiskSpace" type="text" class="show_label"/></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.freediskspace$</td>
+      <td><input readOnly name="freeDiskSpace" type="text" class="show_label"/></td>
+    </tr>
+    <tr>
+      <td class="$image_prex$itemnametd">$sysinfo.mediaip$</td>
+      <td><input readOnly name="mediaIp" type="text" class="show_label" /></td>
+    </tr>
+  </table>
+</form>
+<script>
+jQuery(function() {
+	initFormValidation();
+});
+</script>
