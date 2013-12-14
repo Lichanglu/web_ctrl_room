@@ -205,6 +205,8 @@ typedef struct _MountUsbDeb
 
 Int32 RegisterrSerialControlTask();
 Int32 ClearStateLed();
+int32_t CopyDir(int8_t *SrcPath, int8_t *DstPath, int fd);
+
 
 #endif
 

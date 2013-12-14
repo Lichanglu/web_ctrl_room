@@ -22,14 +22,27 @@
 #include "app_network.h"
 #include "capture.h"
 #include "commontrack.h"
-int flag[6] = {0};    //   0 main 1 fuzhu
-int teachorstu = 0; //0 teach 1 stu
+
+#if 0
+//如修改 请同步修改
+#define STU_CHID			0
+#define STUSIDE_CHID		1
+#define TEACH_CHID		2
+#define VGA_CHID			3
+#define JPEG_CHID			4
+#endif
+
+//对应各个客户端类型
+int flag[6] = { -1, -1, -1, -1, -1, -1}; //   0 老师 和 学生 1 学生辅助 2VGA
+int teachorstu[6] = { -1, -1, -1, -1, -1, -1}; //0 stu 1 teach  2 stuside
+int studentFlag = 0; //标识学生是否连接
+
 
 #define  PORT_ONE 0
 extern EduKitLinkStruct_t	*gEduKit;
 extern track_encode_info_t	g_track_encode_info;
 extern stutrack_encode_info_t	g_stutrack_encode_info;
-
+extern stusidetrack_encode_info_t	g_stusidetrack_encode_info;
 int 	gRunStatus = 1;
 static unsigned long g_video_time = 0;
 static unsigned int gnAudioCount = 0;
@@ -177,10 +190,10 @@ static void InitAudioParam(AudioParam *audio)
 	///1---32KHz
 	///3---48KHz
 	///其他-----96KHz
-	audio->SampleRate = 3;
+	audio->SampleRate = 2;
 	audio->Channel = 2;					//声道数 (默认为2)
 	audio->SampleBit = 16;				//采样位 (默认为16)
-	audio->BitRate = 64000;				//编码带宽 (默认为64000)
+	audio->BitRate = 12800;				//编码带宽 (默认为64000)
 	audio->InputMode = LINE_INPUT;		//线性输入
 	audio->RVolume = 31;					//左右声道音量
 	audio->LVolume = 31;
@@ -222,6 +235,16 @@ static int GetNullClientData(unsigned char dsp)
 	return -1;
 }
 
+Void InitClient(unsigned char dsp)
+{
+	int cli ;
+
+	for(cli = 0; cli < MAX_CLIENT; cli++) {
+
+		SETSOCK(dsp, cli, INVALID_SOCKET);
+
+	}
+}
 
 void ClearLostClient(unsigned char dsp)
 {
@@ -610,7 +633,8 @@ void SendDataToClient110(int nLen, unsigned char *pData,
 
 	pthread_mutex_lock(&g_send_m);
 	bzero(&DataFrame, sizeof(DataHeader));
-
+	static uint32_t time = 0;
+	static uint32_t test = 0;
 	nSent = 0;
 	nSendLen = 0;
 	nPacketCount = 0;
@@ -675,29 +699,48 @@ void SendDataToClient110(int nLen, unsigned char *pData,
 				int sendflag = 0;
 
 				//学生全景
-				if(index == 0) {
-					//主
-					if((flag[cnt] == 0) && (teachorstu == 0)) {
-						sendflag = 1;
-					}
-
+				if((index == 0) && (flag[cnt] == 0) && (teachorstu[cnt] == 0)) {
+					sendflag = 1;
 				}
 				//老师全景 or 学生辅助
-				else if(index == 1) {
-					//主
-					if((flag[cnt] == 1) && (teachorstu == 0)) {
-						sendflag = 1;
-					}
-
-					if((flag[cnt] == 0) && (teachorstu == 1)) {
-						sendflag = 1;
-					}
-				} else if((index == 2) && (flag[cnt] == 2)) {
-					///printf("[SendDataToClient110] sendsocket:[%d]\n", sendsocket);
+				else if((index == 1) && (flag[cnt] == 0) && (teachorstu[cnt] == 1)) {
 					sendflag = 1;
+				}
+				//VGA
+				else if((index == 2) && (flag[cnt] == 2) && (teachorstu[cnt] == -1)) {
+
+					sendflag = 1;
+				} else if((index == 3) && (teachorstu[cnt] == 2) && (flag[cnt] == 0)) {
+					sendflag = 1;
+
 				}
 
 				if((sendsocket > 0) && (sendflag == 1))  {
+
+
+					if((index == 0) && (flag[cnt] == 0) && (teachorstu[cnt] == 0) && (cnt == 0)) {
+						test++;
+
+						if(getostime() - time > 500) {
+							printf("time is @%d socket = %d cnt =%d\n", getostime() - time, sendsocket, cnt);
+						} else if(getostime() - time > 50)
+
+						{
+							printf("time is #%d socket = %d cnt = %d\n", getostime() - time, sendsocket, cnt);
+						}
+
+						time = getostime();
+
+#if 0
+
+						if(test == 440) {
+							test = 0;
+							sleep(2);
+						}
+
+#endif
+					}
+
 					nRet = WriteData(sendsocket, gszSendBuf, nSendLen + sizeof(DataHeader) + HEAD_LEN110);
 
 					if(nRet < 0) {
@@ -1168,7 +1211,7 @@ ExitClientMsg:
 
 static void EncoderProcess110(void *pParams)
 {
-	int					sSocket;
+	int					sSocket = -1;
 	WORD					length;
 
 	char			szData[8192] = {0}, szPass[] = "reach123";;
@@ -1207,9 +1250,11 @@ static void EncoderProcess110(void *pParams)
 		}
 
 		nMsgLen = ntohs(*((short *)szData));
-		//phead->nLen = nMsgLen;
-		nLen = recv(sSocket, szData + 2, nMsgLen - 2, 0);
-		fprintf(stderr, "nMsgLen = %d,szData[2]=%d!\n", nMsgLen, szData[2]);
+		nLen = recv_long_tcp_data(sSocket, szData + 2, nMsgLen - 2);
+		printf("recv nLen = %d\n", nLen);
+		printf("nMsgLen = %d,szData[2]=%d!\n", nMsgLen, szData[2]);
+		printf("szData[3],szData[4]=%d,%d,%d,%d!\n", szData[3], szData[4], szData[5], szData[6]);
+		printf("szData[7],szData[8}=%d,%d,%d,%d!\n", szData[7], szData[8], szData[9], szData[10]);
 
 		if(nLen < nMsgLen - 2) {
 			fprintf(stderr, "nLen < nMsgLen -2  goto ExitClientMsg\n ");
@@ -1341,16 +1386,14 @@ static void EncoderProcess110(void *pParams)
 				break;
 
 			case MSG_FARCTRL:
-				fprintf(stderr, "DSP1 Far Control %d\n",teachorstu);
+				fprintf(stderr, "DSP1 Far Control %d\n", teachorstu[nPos]);
 
-				if(teachorstu == 0)
-				{
-					FarCtrlCamera(1,(unsigned char *)&szData[3],nMsgLen-3);
+				if(teachorstu[nPos] == 0) {
+					FarCtrlCamera(1, (unsigned char *)&szData[3], nMsgLen - 3);
+				} else if(teachorstu[nPos] == 1) {
+					FarCtrlCamera(0, (unsigned char *)&szData[3], nMsgLen - 3);
 				}
-				else
-				{
-					FarCtrlCamera(0,(unsigned char *)&szData[3],nMsgLen-3);
-				}
+
 				//GreenScreenAjust();
 				//ReviseVGAPic(DSP1,&szData[3],nMsgLen-3);
 				break;
@@ -1371,10 +1414,10 @@ static void EncoderProcess110(void *pParams)
 
 
 					if(!strcmp("123", szData + 3 + 1)) {
-						//凯图辅助编码器
+						//学生辅助
 						flag[nPos] = 1;
 					} else {
-						//凯图辅助编码器
+						//老师 和 学生
 						flag[nPos] = 0;
 					}
 				} else if((szData[3] == 'U') && ((!strcmp("reach123", szData + 3 + 1)) || (!strcmp("123", szData + 3 + 1)))) {
@@ -1382,8 +1425,30 @@ static void EncoderProcess110(void *pParams)
 					SETLOGINTYPE(PORT_ONE, nPos, LOGIN_USER);
 					fprintf(stderr, "logo User!\n");
 				} else if((szData[3] == 'A') && (!strcmp("1234", szData + 3 + 1))) {
+
 					flag[nPos] = 2;
 
+				}
+				//老师
+				else if((szData[3] == 'A') && (!strcmp("1", szData + 3 + 1))) {
+
+					flag[nPos] = 0;
+					teachorstu[nPos] = 1;
+					enc_enable_channel(gEduKit->encoderLink.encLink.link_id, TEACH_CHID);
+				}
+				//学生
+				else if((szData[3] == 'A') && (!strcmp("2", szData + 3 + 1))) {
+
+					flag[nPos] = 0;
+					teachorstu[nPos] = 0;
+					enc_enable_channel(gEduKit->encoderLink.encLink.link_id, STU_CHID);
+				}
+				//学生辅助
+				else if((szData[3] == 'A') && (!strcmp("3", szData + 3 + 1))) {
+
+					flag[nPos] = 0;
+					teachorstu[nPos] = 2;
+					enc_enable_channel(gEduKit->encoderLink.encLink.link_id, STUSIDE_CHID);
 				} else {
 					szData[0] = 0;
 					szData[1] = 3;
@@ -1392,6 +1457,9 @@ static void EncoderProcess110(void *pParams)
 					send(sSocket, szData, 3, 0);
 					fprintf(stderr, "logo error!\n");
 					SETLOGINTYPE(PORT_ONE, nPos, LOGIN_ADMIN);
+
+					flag[nPos] = -1;
+					teachorstu[nPos] = -1;
 					goto ExitClientMsg;   //
 				}
 
@@ -1434,8 +1502,8 @@ static void EncoderProcess110(void *pParams)
 				printf("ISUSED=%d, ISLOGIN=%d\n", ISUSED(DSP1, nPos), ISLOGIN(DSP1, nPos));
 				g_track_encode_info.is_encode = 1;
 				g_stutrack_encode_info.is_encode = 1;
-				enc_enable_channel(gEduKit->encoderLink.encLink.link_id, 1);
-				enc_enable_channel(gEduKit->encoderLink.encLink.link_id, 2);
+				g_stusidetrack_encode_info.is_encode = 1;
+
 				break;
 			}
 
@@ -1469,91 +1537,88 @@ static void EncoderProcess110(void *pParams)
 				fprintf(stderr, "==================================================\n");
 
 				//g_track_encode_info.track_status = 1;
-				if(Newp->nFrame == 1)
-				{
+				if(Newp->nFrame == 1) {
 					SetVgaState();
 				}
-				
-				else if(Newp->nFrame == 2)
-				{
+
+				//学生站立
+				else if(Newp->nFrame == 2) {
 					g_track_encode_info.track_status = 1;
-						g_track_strategy_info.switch_cmd_author = AUTHOR_STUDENTS;
-						g_track_strategy_info.send_cmd			= SWITCH_STUDENTS;
-						StudentUp = 1;
-						
+					g_track_strategy_info.switch_cmd_author = AUTHOR_STUDENTS;
+					g_track_strategy_info.send_cmd			= SWITCH_STUDENTS;
+					StudentUp = 1;
+
+				}
+				//学生坐下
+				else if(Newp->nFrame == 3) {
+					g_track_encode_info.track_status = 1;
+					g_track_strategy_info.switch_cmd_author = AUTHOR_STUDENTS;
+					g_track_strategy_info.send_cmd			= SWITCH_TEATHER;
+					StudentUp = 0;
+
+				}
+				//讲台
+				else if(Newp->nFrame == 4) {
+					g_track_encode_info.track_status = 1;
+					g_track_strategy_info.move_flag = 0;
+					g_track_strategy_info.blackboard_region_flag1 = 0;
+					g_track_strategy_info.blackboard_region_flag2 = 0;
+				} else  if(Newp->nFrame == 5) {
+					g_track_encode_info.track_status = 1;
+					g_track_strategy_info.move_flag = 1;
+					g_track_strategy_info.blackboard_region_flag1 = 0;
+					g_track_strategy_info.blackboard_region_flag2 = 0;
 				}
 
-				else if(Newp->nFrame == 3)
-				{
+				else  if(Newp->nFrame == 6) {
 					g_track_encode_info.track_status = 1;
-						g_track_strategy_info.switch_cmd_author = AUTHOR_STUDENTS;
-						g_track_strategy_info.send_cmd			= SWITCH_TEATHER;
-						StudentUp = 0;
-						
+					g_track_strategy_info.move_flag = 0;
+					g_track_strategy_info.blackboard_region_flag1 = 1;
+					g_track_strategy_info.blackboard_region_flag2 = 0;
+				} else  if(Newp->nFrame == 7) {
+					g_track_encode_info.track_status = 1;
+					g_track_strategy_info.move_flag = 0;
+					g_track_strategy_info.blackboard_region_flag1 = 0;
+					g_track_strategy_info.blackboard_region_flag2 = 1;
 				}
-				 else if(Newp->nFrame == 4)
-				 {
-				 	g_track_encode_info.track_status = 1;
-						g_track_strategy_info.move_flag = 0;
-						g_track_strategy_info.blackboard_region_flag1 = 0;
-						g_track_strategy_info.blackboard_region_flag2 = 0;
-				 }
-				else  if(Newp->nFrame == 5)
-				 {
-				 	g_track_encode_info.track_status = 1;
-						g_track_strategy_info.move_flag = 1;
-						g_track_strategy_info.blackboard_region_flag1 = 0;
-						g_track_strategy_info.blackboard_region_flag2 = 0;
-				 }
 
-				else  if(Newp->nFrame == 6)
-				 {
-				 	g_track_encode_info.track_status = 1;
-						g_track_strategy_info.move_flag = 0;
-						g_track_strategy_info.blackboard_region_flag1 = 1;
-						g_track_strategy_info.blackboard_region_flag2 = 0;
-				 }
-				else  if(Newp->nFrame == 7)
-				 {
-				 	g_track_encode_info.track_status = 1;
-						g_track_strategy_info.move_flag = 0;
-						g_track_strategy_info.blackboard_region_flag1 = 0;
-						g_track_strategy_info.blackboard_region_flag2 = 1;
-				 }
-				
-				else  if(Newp->nFrame == 8)
-				 {
-				 	
-				 		g_track_encode_info.track_status = 0;
-						g_track_strategy_info.position1_mv_flag = 0;
-						g_track_strategy_info.move_flag = 0;
-						g_track_strategy_info.blackboard_region_flag1 = 0;
-						g_track_strategy_info.blackboard_region_flag2 = 1;
-				 }
-				else  if(Newp->nFrame == 9)
-				 {
-				 	
-				 		g_track_encode_info.track_status = 0;
-						g_track_strategy_info.position1_mv_flag = 1;
-						g_track_strategy_info.move_flag = 0;
-						g_track_strategy_info.blackboard_region_flag1 = 0;
-						g_track_strategy_info.blackboard_region_flag2 = 0;
-				 }
-				 
-				 
+				else  if(Newp->nFrame == 8) {
 
-				if(Newp->nQuality == 5)
+					g_track_encode_info.track_status = 0;
+					g_track_strategy_info.position1_mv_flag = 0;
+					g_track_strategy_info.move_flag = 0;
+					g_track_strategy_info.blackboard_region_flag1 = 0;
+					g_track_strategy_info.blackboard_region_flag2 = 1;
+				} else  if(Newp->nFrame == 9) {
+
+					g_track_encode_info.track_status = 0;
+					g_track_strategy_info.position1_mv_flag = 1;
+					g_track_strategy_info.move_flag = 0;
+					g_track_strategy_info.blackboard_region_flag1 = 0;
+					g_track_strategy_info.blackboard_region_flag2 = 0;
+				} else if(Newp->nFrame == 10) {
+					teacherTracerMove(Newp->nQuality);
+				}
+				else if(Newp->nFrame == 11)
 				{
+					//DelTimeOut(999, 0);
+					//AddTimeOut(999, 0, 10);
+					//gTrackState.FirstPic = 255;
+					//teacherTracerMove(255);
+					SwitchFirstPic(10,Newp->nQuality - 5);
+					break;
+				}
+
+
+
+				if(Newp->nQuality == 5) {
 					gMpMode = 1;
-				}
-				else
-				{
-					gMpMode = Newp->nQuality;
+				} else {
+					gMpMode = Newp->nQuality + 10;
 				}
 
-		
 
-				
+
 				//gMpMode = Newp->nQuality;
 				//enc_set_fps(gEduKit.encLink.link_id, 0, (Newp->nFrame)*1000, (Newp->sBitrate)*1000);
 
@@ -1619,19 +1684,30 @@ static void EncoderProcess110(void *pParams)
 				break;
 
 			case MSG_SET_STUDENTS_TRACK_PARAM: {
-				teachorstu = 0;
+				teachorstu[nPos] = 0;
+				studentFlag = 1;
 				char track_param[8192] = {0};
 				memcpy(&track_param, &szData[3], nMsgLen - 3);
+				enc_enable_channel(gEduKit->encoderLink.encLink.link_id, STU_CHID);
 				set_students_track_param(track_param, sSocket);
 				break;
 			}
 
 			case MSG_SET_TEACHER_TRACK_PARAM: {
-				teachorstu = 1;
+				teachorstu[nPos] = 1;
 				char track_param[8192] = {0};
-				//set_teacher_track_param(&szData[HEAD_LEN],sSocket);
 				memcpy(&track_param, &szData[3], nMsgLen - 3);
+				enc_enable_channel(gEduKit->encoderLink.encLink.link_id, TEACH_CHID);
 				set_teacher_track_param(track_param, sSocket);
+				break;
+			}
+
+			case MSG_SET_STUSIDETRACK_PARAM: {
+				teachorstu[nPos] = 2;
+				char track_param[8192] = {0};
+				memcpy(&track_param, &szData[3], nMsgLen - 3);
+				enc_enable_channel(gEduKit->encoderLink.encLink.link_id, STUSIDE_CHID);
+				track_students_right_side_param(track_param, sSocket);
 				break;
 			}
 
@@ -1661,7 +1737,15 @@ ExitClientMsg:
 	}
 
 	close(sSocket);
-	flag[nPos] = 0;
+
+	if((flag[nPos] == 0) && (teachorstu[nPos] == 0)) {
+		studentFlag = 0;
+	}
+
+	flag[nPos] = -1;
+	teachorstu[nPos] = -1;
+
+
 	pthread_detach(pthread_self());
 	pthread_exit(0);
 }
@@ -1743,8 +1827,8 @@ WhoIsExit:
 static int EncoderServerThread()
 {
 	struct sockaddr_in		SrvAddr, ClientAddr;
-	int					sClientSocket;
-	int					ServSock;
+	int					sClientSocket = -1;
+	int					ServSock = -1;
 
 	pthread_t				client_threadid[MAX_CLIENT] = {0};
 
@@ -1757,7 +1841,7 @@ static int EncoderServerThread()
 	int 					fileflags					= 0;
 	int 					opt 					= 1;
 
-
+	InitClient(DSP1);
 	sem_init(&g_sem, 0, 0);
 
 SERVERSTARTRUN:
@@ -1795,6 +1879,7 @@ SERVERSTARTRUN:
 		return -1;
 	}
 
+
 	nLen = sizeof(struct sockaddr_in);
 
 	while(gRunStatus) {
@@ -1803,8 +1888,10 @@ SERVERSTARTRUN:
 		nLen = sizeof(struct sockaddr_in);
 		sClientSocket = accept(ServSock, (void *)&ClientAddr, (DWORD *)&nLen);
 
-		if(sClientSocket > 0) {
-			fprintf(stderr, "\n\n\naccept a valid connect!!!!-----------------, socket = %d\n\n\n\n", sClientSocket);
+		fprintf(stderr, "\n\n\naccept a valid connect!!!!-----------------, socket = %d\n\n\n\n", sClientSocket);
+
+		if((sClientSocket > 0) && (gEduKit->Start == 1)) {
+
 			int nPos = 0;
 			ClearLostClient(DSP1);
 			nPos = GetNullClientData(DSP1);
@@ -1866,6 +1953,13 @@ SERVERSTARTRUN:
 				fprintf(stderr, "sem_wait() semphone inval!!!  result = %d\n", result);
 			}
 		} else {
+
+			if(sClientSocket > 0) {
+				close(sClientSocket);
+				printf("close sClientSocket socket!!! %d\n", sClientSocket);
+				sClientSocket = -1;
+			}
+
 			if(errno == ECONNABORTED || errno == EAGAIN)
 				//软件原因中断
 			{
@@ -1874,7 +1968,10 @@ SERVERSTARTRUN:
 			}
 
 			if(ServSock > 0) {
+				printf("close enclive socket!!! %d\n", ServSock);
 				close(ServSock);
+				ServSock = -1;
+				sleep(1);
 			}
 
 			goto SERVERSTARTRUN;

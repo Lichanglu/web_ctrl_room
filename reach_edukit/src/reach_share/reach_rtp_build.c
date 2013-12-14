@@ -27,22 +27,21 @@
 #include "reach_rtp_build.h"
 #include "reach_rtp_struct.h"
 #include "nslog.h"
+#include "reach_debug.h"
+
 //#include "../log/log_common.h"
 
 #include "reach_udp_snd.h"
 
-int UdpSend_rtp_build_jpeg_data(US_RTP_BUILD_HANDLE handle, int nLen, unsigned char *pData, unsigned int ts_current, int rtp_mtu, void *info, US_FRAMEHEAD *data_info)
+int UdpSend_rtp_build_jpeg_data(US_RTP_BUILD_HANDLE handle, int nLen, unsigned char *pData, int rtp_mtu, unsigned int ts_current,  void *info, US_FRAMEHEAD *data_info)
 {
-
+	//printf("----0---%d--\n",rtp_mtu);
 	if(NULL == handle || NULL == info || NULL == pData) {
 		ERR_PRINTF("handle = [%p], pData = [%p], info = [%p]\n", handle, pData, info);
 		return -1;
 	}
 
-	//	printf("usernum ----- %d \n",data_user_info->user_num);
-
-	//	int32_t  							temp_len		=
-	send_udp_handle *p_udp_hand = (send_udp_handle *)info;
+	send_udp_handle *p_udp_hand 				= (send_udp_handle *)info;
 	int32_t 							send_total_len	= 0;
 	int32_t								send_buf_num	= 0;
 	int32_t 							bytes			= 0;
@@ -50,7 +49,7 @@ int UdpSend_rtp_build_jpeg_data(US_RTP_BUILD_HANDLE handle, int nLen, unsigned c
 	unsigned short *seq = (unsigned short *)(&(handle->jpg_seq_num));
 	unsigned char                   	sendbuf[1500] = {0};
 
-	US_RTP_FIXED_HEADER					*rtp_hdr;
+	US_RTP_FIXED_HEADER					*rtp_hdr = NULL;
 	rtp_hdr 							= (US_RTP_FIXED_HEADER *)&sendbuf[0];
 	rtp_hdr->payload	                = US_H264;
 	rtp_hdr->version	                = 2;
@@ -104,6 +103,7 @@ int UdpSend_rtp_build_jpeg_data(US_RTP_BUILD_HANDLE handle, int nLen, unsigned c
 	printf("samplerate  ---- %d---- \n", frame_head->samplerate);
 #endif
 
+	//	printf("----1---%d--\n",rtp_mtu);
 	if(nLen <= rtp_mtu - 28) {
 		//设置rtp M 位；
 		rtp_hdr->marker = 1;
@@ -124,7 +124,7 @@ int UdpSend_rtp_build_jpeg_data(US_RTP_BUILD_HANDLE handle, int nLen, unsigned c
 		//得到该nalu需要用多少长度为1400字节的RTP包来发送
 		int k = 0, l = 0;
 		int t = 0; //用于指示当前发送的是第几个分片RTP包
-
+		//printf("----2---%d--\n",rtp_mtu);
 		l = nLen % (rtp_mtu - 28); //最后一个RTP包的需要装载的字节数
 
 		if(l == 0) {
@@ -138,9 +138,10 @@ int UdpSend_rtp_build_jpeg_data(US_RTP_BUILD_HANDLE handle, int nLen, unsigned c
 			//	r_memset(&sendbuf[28] , 0 ,1472);
 			rtp_hdr->seq_no = htons((*seq)++); //序列号，每发送一个RTP包增1
 
+			//	printf("----3---%d--\n",rtp_mtu);
 			if(!t) {							//发送第一个分片包
 				rtp_hdr->marker = 0;
-
+				//printf("----4---%d--\n",rtp_mtu);
 
 				frame_head->samplerate = 2;
 				r_memcpy(&sendbuf[28], pData, (rtp_mtu - 28));
@@ -215,7 +216,14 @@ static int32_t us_async_sendto_data(int32_t fd, void *buf, int32_t *buflen, int3
 	while(1) {
 		real_len = r_sendto(fd, pbuf, send_total_len, 0, (struct sockaddr *)&SrvAddr, size);
 
-		//		nslog(NS_INFO, "r_sendto ______________________[%d]\n",real_len);
+#if 0
+
+		if(strcmp(ip, "172.16.4.3") == 0 && port == 0x30a5) {
+			printf("r_sendto ______________________[%d][%s][0x%x]\n", real_len, ip, port);
+		}
+
+#endif
+
 		if(100 < i_loop++) {
 			ERR_PRINTF("real_len is --- [%d]\n", real_len);
 			ERR_PRINTF("async_send_data is send!\n");
@@ -413,8 +421,7 @@ int32_t udp_send_rtp_data(void *info, int8_t *send_buf, int32_t len)
 
 #endif
 
-	//	ERR_PRINTF("SHIRT-FUCK! ---- <%d>--- <ip : %s>  <port : %d>\n",
-	//	frame_head->codec,p_udp_hand->snd_ip,p_udp_hand->snd_video_port);
+	//nslog(NS_ERROR,"SHIRT-FUCK! ---- <%d>--- <ip : %s>  <port : %d>\n",frame_head->codec,p_udp_hand->snd_ip,p_udp_hand->snd_video_port);
 	if(frame_head->codec == 0) {
 		//	ret = us_async_sendto_data(p_udp_hand->snd_fd, (void *)send_buf, &temp_len, 7600, "192.168.4.21");
 		ret = us_async_sendto_data(p_udp_hand->snd_fd, (void *)send_buf, &temp_len, p_udp_hand->snd_video_port, p_udp_hand->snd_ip);
@@ -1056,7 +1063,7 @@ int UdpSend_rtp_build_reset_time(US_RTP_BUILD_HANDLE handle)
 US_RTP_BUILD_HANDLE UdpSend_rtp_build_init(unsigned int ssrc, unsigned int payload)
 {
 	US_RTP_BUILD_HANDLE handle = NULL;
-	handle = (US_RTP_BUILD_HANDLE) malloc(sizeof(US_RTP_BUILD_INFO));
+	handle = (US_RTP_BUILD_HANDLE) r_malloc(sizeof(US_RTP_BUILD_INFO));
 
 	if(handle == NULL) {
 		//	printf("Error,rtp build init failed\n");
@@ -1084,7 +1091,7 @@ int UdpSend_rtp_build_reset(US_RTP_BUILD_HANDLE handle)
 void UdpSend_rtp_build_uninit(void **handle)
 {
 	if((*handle) != NULL) {
-		free(*handle);
+		r_free(*handle);
 	}
 
 	*handle = NULL;

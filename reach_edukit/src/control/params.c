@@ -3,14 +3,14 @@
  *
  *       Filename:  params.c
  *
- *    Description:  
+ *    Description:
  *
  *        Version:  1.0
  *        Created:  2012年11月1日 09时12分18秒
- *       Revision:  
+ *       Revision:
  *       Compiler:  gcc
  *
- *         Author:  黄海洪 
+ *         Author:  黄海洪
  *        Company:  深圳锐取信息技术股份有限公司
  *
  * =====================================================================================
@@ -37,7 +37,7 @@ extern server_set *gpser;
 int32_t modify_int32_value(xmlNodePtr pnode, int32_t int32_old, int32_t int32_new, int8_t *key, int8_t *pbuf)
 {
 	xmlNodePtr node;
-	
+
 	/* 此不再进行参数有效性判断，应该在外部判断 */
 
 	if(int32_old != int32_new){
@@ -56,7 +56,7 @@ int32_t modify_uint32_value(xmlNodePtr pnode, uint32_t uint32_old, uint32_t uint
 										int8_t *key, const int8_t *pbuf)
 {
 	xmlNodePtr node;
-	
+
 	/* 此不再进行参数有效性判断，应该在外部判断 */
 
 	if(uint32_old != uint32_new){
@@ -78,7 +78,7 @@ int32_t modify_uint16_value(xmlNodePtr pnode, uint16_t uint32_old, uint16_t uint
 										int8_t *key, const int8_t *pbuf)
 {
 	xmlNodePtr node;
-	
+
 	/* 此不再进行参数有效性判断，应该在外部判断 */
 
 	if(uint32_old != uint32_new){
@@ -99,7 +99,7 @@ int32_t modify_int8_value(xmlNodePtr pnode, int8_t *int8_old, int8_t *int8_new,
 {
 	int32_t ret = -1;
 	xmlNodePtr node;
-	
+
 	/* 此不再进行参数有效性判断，应该在外部判断 */
 
 	if(r_strcmp((const int8_t *)int8_old, (const int8_t *)int8_new) != 0){
@@ -122,7 +122,7 @@ int32_t modify_addr_value(xmlNodePtr pnode, uint32_t uint32_old, uint32_t uint32
 	xmlNodePtr node;
 	uint32_t value = 0;
 	struct in_addr addr;
-	
+
 	/* 此不再进行参数有效性判断，应该在外部判断 */
 
 	if(uint32_old != uint32_new){
@@ -156,14 +156,14 @@ static int32_t add_user_info(xmlNodePtr pnode, user_info *pinfo)
 	xml_add_new_child(pnode, NULL, MSG_PASSWORD_KEY, pinfo->password);
 	xml_add_new_child(pnode, NULL, MSG_GUEST_KEY, pinfo->guest_name);
 	xml_add_new_child(pnode, NULL, MSG_GUEST_PASSWD_KEY, pinfo->guest_passwd);
-	
+
 	return 0;
 }
 
 static int32_t add_camctrl_info(xmlNodePtr pnode, camera_ctrl *pinfo)
 {
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
-	
+
 	if(NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[add_camctrl_info]--- failed, params is NULL!\n");
 		return -1;
@@ -180,7 +180,7 @@ static int32_t add_camctrl_info(xmlNodePtr pnode, camera_ctrl *pinfo)
 	r_memset(buf, 0, XML_VALUE_MAX_LENGTH);
 	sprintf((char *)buf, "%d", pinfo->video2_addr);
 	xml_add_new_child(pnode, NULL, MSG_VIDEO_2_ADDR_KEY, (const xmlChar *)buf);
-	
+
 	return 0;
 }
 
@@ -188,7 +188,7 @@ static int32_t add_camctrl_info(xmlNodePtr pnode, camera_ctrl *pinfo)
 static int32_t add_ftp_info(xmlNodePtr pnode, ftp_info *pinfo)
 {
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
-	
+
 	if(NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[add_ftp_info]--- failed, params is NULL!\n");
 		return -1;
@@ -216,7 +216,7 @@ static int32_t add_ftp_info(xmlNodePtr pnode, ftp_info *pinfo)
 	xml_add_new_child(pnode, NULL, MSG_THRFTP_USER_KEY, pinfo->THRFTPUserName);
 	xml_add_new_child(pnode, NULL, MSG_THRFTP_PASSWORD_KEY, pinfo->THRFTPPassword);
 	xml_add_new_child(pnode, NULL, MSG_THRFTP_UPLOAD_PATH_KEY, pinfo->THRFTPPath);
-	
+
 	return 0;
 }
 
@@ -252,14 +252,14 @@ static int32_t add_config_info(xmlNodePtr pnode, config_info *pinfo)
 	r_memset(buf, 0, XML_VALUE_MAX_LENGTH);
 	r_strcpy(buf, (const int8_t *)inet_ntoa(addr));
 	xml_add_new_child(pnode, NULL, MSG_MANAGER_ADDR_KEY,(const xmlChar *) buf);
-	
+
 	return 0;
 }
 
 static int32_t add_heart_beat_info(xmlNodePtr pnode, heart_beat_info *pinfo)
 {
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
-	
+
 	if(NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[add_heart_beat_info]--- failed, params is NULL!\n");
 		return -1;
@@ -268,11 +268,11 @@ static int32_t add_heart_beat_info(xmlNodePtr pnode, heart_beat_info *pinfo)
 	r_memset(buf, 0, XML_VALUE_MAX_LENGTH);
 	sprintf((char *)buf, "%d", pinfo->post_time);
 	xml_add_new_child(pnode, NULL, MSG_POST_TIME_KEY, (const xmlChar *)buf);
-	
+
 	xml_add_new_child(pnode, NULL, MSG_POST_URL_KEY, (const xmlChar *)pinfo->post_url);
 
 	xml_add_new_child(pnode, NULL, MSG_TIME_SERIP_KEY, (const xmlChar *)pinfo->time_serip);
-	
+
 	return 0;
 }
 
@@ -324,7 +324,7 @@ static int32_t add_server_info(xmlNodePtr pnode, server_info *pinfo)
 	r_memset(buf, 0, XML_VALUE_MAX_LENGTH);
 	sprintf((char *)buf, "%s", pinfo->ServerSeries);
 	xml_add_new_child(pnode, NULL, MSG_SERVER_SERIES_KEY, (const xmlChar *)buf);
-	
+
 #if 1
 	/* 服务器版本 */
 	r_memset(buf, 0, XML_VALUE_MAX_LENGTH);
@@ -392,7 +392,7 @@ static int32_t add_server_info(xmlNodePtr pnode, server_info *pinfo)
 static int32_t add_audio_info(xmlNodePtr pnode, audio_info *pinfo)
 {
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
-	
+
 	if(NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[add_audio_info]--- failed, params is NULL!\n");
 		return -1;
@@ -427,14 +427,14 @@ static int32_t add_audio_info(xmlNodePtr pnode, audio_info *pinfo)
 	r_memset(buf, 0, XML_VALUE_MAX_LENGTH);
 	sprintf((char *)buf, "%s", pinfo->InputIndex);
 	xml_add_new_child(pnode, NULL, MSG_INPUTINDEX_KEY, (const xmlChar *)buf);
-		
+
 	return 0;
 }
 
 static int32_t add_quality_info(xmlNodePtr pnode, quality_info *pinfo)
 {
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
-	
+
 	if(NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[add_quality_info]--- failed, params is NULL!\n");
 		return -1;
@@ -479,7 +479,7 @@ static int32_t add_enc_info(xmlNodePtr pnode, enc_info *pinfo)
 	xmlNodePtr pqua_node_sd;
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
 //	struct in_addr addr;
-	
+
 	if(NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[add_enc_info]--- failed, params is NULL!\n");
 		return -1;
@@ -497,6 +497,7 @@ static int32_t add_enc_info(xmlNodePtr pnode, enc_info *pinfo)
 	xml_add_new_child(pnode, NULL, MSG_ENC_IP_KEY, (const xmlChar *)buf);
 #endif
 	/* 编码器IP */
+	zlog_debug(OPELOG,"EncIP:[%s]\n", pinfo->EncIP);
 	xml_add_new_child(pnode, NULL, MSG_ENC_IP_KEY, (const xmlChar *)pinfo->EncIP);
 
 	/* 状态 */
@@ -519,7 +520,7 @@ static int32_t add_enc_info(xmlNodePtr pnode, enc_info *pinfo)
 static int32_t add_pic_synt_info(xmlNodePtr pnode, pic_synt_info *pinfo)
 {
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
-	
+
 	if(NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[add_pic_synt_info]--- failed, params is NULL!\n");
 		return -1;
@@ -549,7 +550,7 @@ static int32_t add_pic_synt_info(xmlNodePtr pnode, pic_synt_info *pinfo)
 	r_memset(buf, 0, XML_VALUE_MAX_LENGTH);
 	sprintf((char *)buf, "%d", pinfo->LayoutDef_3);
 	xml_add_new_child(pnode, NULL, MSG_LAYOUT_DEF_3_KEY, (const xmlChar *)buf);
-	
+
 
 	return 0;
 }
@@ -601,11 +602,16 @@ static int32_t add_room_info(xmlNodePtr pnode, room_info *pinfo)
 	/* 录制文件名 */
 	xml_add_new_child(pnode, NULL, MSG_ROOM_RECNAME_KEY, (const xmlChar *)pinfo->RecName);
 
+	/*合成模式*/
+	r_memset(buf, 0, XML_VALUE_MAX_LENGTH);
+	sprintf((char *)buf, "%d", pinfo->Mode);
+	xml_add_new_child(pnode, NULL, MSG_PIC_SYNT_MODE_KEY, (const xmlChar *)buf);
+#if 0
 	/* 画面合成信息 */
 	ppic_synt_node = xmlNewNode(NULL, CONFIG_PARAMS_PICTURE_SYNT_INFO_KEY);
 	xmlAddChild(pnode, ppic_synt_node);
 	add_pic_synt_info(ppic_synt_node, &pinfo->PicSyntInfo);
-
+#endif
 	/* 音频信息 */
 	paudio_node = xmlNewNode(NULL, CONFIG_PARAMS_AUDIO_INFO_KEY);
 	xmlAddChild(pnode, paudio_node);
@@ -624,7 +630,7 @@ static int32_t add_room_info(xmlNodePtr pnode, room_info *pinfo)
 static int32_t read_user_info(xmlDocPtr pdoc, xmlNodePtr pnode, user_info *pinfo)
 {
 	xmlNodePtr node;
-	
+
 	if(NULL == pdoc || NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[read_user_info]--- failed, params is NULL!\n");
 		return -1;
@@ -661,7 +667,7 @@ static int32_t read_camctrl_info(xmlDocPtr pdoc, xmlNodePtr pnode, camera_ctrl *
 {
 	xmlNodePtr node;
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
-	
+
 	if(NULL == pdoc || NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[read_camctrl_info]--- failed, params is NULL!\n");
 		return -1;
@@ -711,7 +717,7 @@ static int32_t read_ftp_info(xmlDocPtr pdoc, xmlNodePtr pnode, ftp_info *pinfo)
 {
 	xmlNodePtr node;
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
-	
+
 	if(NULL == pdoc || NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[read_ftp_info]--- failed, params is NULL!\n");
 		return -1;
@@ -735,7 +741,7 @@ static int32_t read_ftp_info(xmlDocPtr pdoc, xmlNodePtr pnode, ftp_info *pinfo)
 		get_current_node_value((char *)buf, XML_VALUE_MAX_LENGTH, pdoc, node);
 		pinfo->MCFTPPort = atoi((char *)buf);
 	}
-	
+
 	node = get_children_node(pnode, MSG_FTP_SERVERIP_KEY);
 	if(node){
 		r_memset(pinfo->MCFTPAddr, 0, 24);
@@ -760,7 +766,7 @@ static int32_t read_ftp_info(xmlDocPtr pdoc, xmlNodePtr pnode, ftp_info *pinfo)
 		get_current_node_value((char *)pinfo->MCFTPPath, FTP_MAX_FTPPATH_LENGTH, pdoc, node);
 	}
 
-	
+
 
 	node = get_children_node(pnode, MSG_THRFTPPORT_KEY);
 	if(node){
@@ -773,7 +779,7 @@ static int32_t read_ftp_info(xmlDocPtr pdoc, xmlNodePtr pnode, ftp_info *pinfo)
 		sprintf((char *)buf, "%d", pinfo->THRFTPPort);
 		xml_add_new_child(pnode, NULL, MSG_THRFTPPORT_KEY, (const xmlChar *)buf);
 	}
-	
+
 	node = get_children_node(pnode, MSG_THRFTP_SERVERIP_KEY);
 	if(node){
 		r_memset(pinfo->THRFTPAddr, 0, 24);
@@ -817,7 +823,7 @@ static int32_t read_ftp_info(xmlDocPtr pdoc, xmlNodePtr pnode, ftp_info *pinfo)
 		sprintf((char *)buf, "%s", pinfo->THRFTPPath);
 		xml_add_new_child(pnode, NULL, MSG_THRFTP_UPLOAD_PATH_KEY, (const xmlChar *)buf);
 	}
-	
+
 	return 0;
 }
 
@@ -828,7 +834,7 @@ static int32_t read_config_info(xmlDocPtr pdoc, xmlNodePtr pnode, config_info *p
 	xmlNodePtr node;
 	struct in_addr addr;
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
-	
+
 	if(NULL == pdoc || NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[read_config_info]--- failed, params is NULL!\n");
 		return -1;
@@ -840,7 +846,7 @@ static int32_t read_config_info(xmlDocPtr pdoc, xmlNodePtr pnode, config_info *p
 		get_current_node_value((char *)buf, XML_VALUE_MAX_LENGTH, pdoc, node);
 		pinfo->language = atoi((char *)buf);
 	}
-	
+
 	node = get_children_node(pnode, MSG_LANIPTYPE_KEY);
 	if(node){
 		r_memset(buf, 0, XML_VALUE_MAX_LENGTH);
@@ -870,7 +876,7 @@ static int32_t read_config_info(xmlDocPtr pdoc, xmlNodePtr pnode, config_info *p
 		r_memcpy(&pinfo->manager_addr, &addr, 4);
 	}
 #endif
-	
+
 	return 0;
 }
 
@@ -878,7 +884,7 @@ static int32_t read_heart_beat_info(xmlDocPtr pdoc, xmlNodePtr pnode, heart_beat
 {
 	xmlNodePtr node;
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
-	
+
 	if(NULL == pdoc || NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[read_heart_beat_info]--- failed, params is NULL!\n");
 		return -1;
@@ -916,7 +922,7 @@ static int32_t read_sys_info(xmlDocPtr pdoc, xmlNodePtr pnode, sys_info *pinfo)
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
 	struct in_addr addr;
 	xmlNodePtr node;
-	
+
 	if(NULL == pdoc || NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[read_sys_info]--- failed, params is NULL!\n");
 		return -1;
@@ -955,7 +961,7 @@ static int32_t read_server_info(xmlDocPtr pdoc, xmlNodePtr pnode, server_info *p
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
 	struct in_addr addr;
 	xmlNodePtr node;
-	
+
 	if(NULL == pdoc || NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[read_server_info]--- failed, params is NULL!\n");
 		return -1;
@@ -1082,7 +1088,7 @@ static int32_t read_audio_info(xmlDocPtr pdoc, xmlNodePtr pnode, audio_info *pin
 {
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
 	xmlNodePtr node;
-	
+
 	if(NULL == pdoc || NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[read_sys_info]--- failed, params is NULL!\n");
 		return -1;
@@ -1144,7 +1150,7 @@ static int32_t read_pic_synt_info(xmlDocPtr pdoc, xmlNodePtr pnode, pic_synt_inf
 {
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
 	xmlNodePtr node;
-	
+
 	if(NULL == pdoc || NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[read_pic_synt_info]--- failed, params is NULL!\n");
 		return -1;
@@ -1200,7 +1206,7 @@ static int32_t read_quality_info(xmlDocPtr pdoc, xmlNodePtr pnode, quality_info 
 {
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
 	xmlNodePtr node;
-	
+
 	if(NULL == pdoc || NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[read_quality_info]--- failed, params is NULL!\n");
 		return -1;
@@ -1264,7 +1270,7 @@ static int32_t read_enc_info(xmlDocPtr pdoc, xmlNodePtr pnode, enc_info *pinfo)
 	xmlNodePtr node;
 	xmlNodePtr pqua_node;
 	int32_t rate_type = 0;
-	
+
 	if(NULL == pdoc || NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[read_enc_info]--- failed, params is NULL!\n");
 		return -1;
@@ -1277,7 +1283,7 @@ static int32_t read_enc_info(xmlDocPtr pdoc, xmlNodePtr pnode, enc_info *pinfo)
 		get_current_node_value((char *)buf, XML_VALUE_MAX_LENGTH, pdoc, node);
 		pinfo->ID = atoi((const char *)buf);
 	}
-	
+
 #if 0
 	/* 编码器IP */
 	node = get_children_node(pnode, MSG_ENC_IP_KEY);
@@ -1349,7 +1355,7 @@ static int32_t read_enc_info(xmlDocPtr pdoc, xmlNodePtr pnode, enc_info *pinfo)
 			read_quality_info(pdoc, pqua_node, &pinfo->SD_QuaInfo);
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -1361,7 +1367,7 @@ static int32_t read_room_info(xmlDocPtr pdoc, xmlNodePtr pnode, room_info *pinfo
 	xmlNodePtr ppic_synt_node;
 	xmlNodePtr penc_node[RECORD_ROOM_MAX_ENC_NUM];
 	int32_t index = 0;
-	
+
 	if(NULL == pdoc || NULL == pinfo || NULL == pnode){
 		zlog_error(DBGLOG, "---[read_room_info]--- failed, params is NULL!\n");
 		return -1;
@@ -1419,11 +1425,19 @@ static int32_t read_room_info(xmlDocPtr pdoc, xmlNodePtr pnode, room_info *pinfo
 	if(node){
 		get_current_node_value((char *)pinfo->RecName, XML_VALUE_MAX_LENGTH, pdoc, node);
 	}
+	/*合成模式*/
+	node = get_children_node(pnode, MSG_PIC_SYNT_MODE_KEY);
+	if(node){
+		r_memset(buf, 0, XML_VALUE_MAX_LENGTH);
+		get_current_node_value((char *)buf, XML_VALUE_MAX_LENGTH, pdoc, node);
+		pinfo->Mode = atoi((const char *)buf);
+	}
 
+#if 0
 	/* 合成画面信息 */
 	ppic_synt_node = get_children_node(pnode, CONFIG_PARAMS_PICTURE_SYNT_INFO_KEY);
 	read_pic_synt_info(pdoc, ppic_synt_node, &pinfo->PicSyntInfo);
-
+#endif
 	/* 音频信息 */
 	paudio_node = get_children_node(pnode, CONFIG_PARAMS_AUDIO_INFO_KEY);
 	read_audio_info(pdoc, paudio_node, &pinfo->AudioInfo);
@@ -1461,7 +1475,7 @@ static int32_t modify_ftp_info(xmlNodePtr pnode, ftp_info *pold, ftp_info *pnew)
 	modify_int8_value(pnode, (int8_t *)pold->THRFTPUserName, (int8_t *)pnew->THRFTPUserName, (int8_t *)MSG_THRFTP_USER_KEY, buf);
 	modify_int8_value(pnode, (int8_t *)pold->THRFTPPassword, (int8_t *)pnew->THRFTPPassword, (int8_t *)MSG_THRFTP_PASSWORD_KEY, buf);
 	modify_int8_value(pnode, (int8_t *)pold->THRFTPPath, (int8_t *)pnew->THRFTPPath, (int8_t *)MSG_THRFTP_UPLOAD_PATH_KEY, buf);
-	
+
 	return 0;
 }
 
@@ -1470,7 +1484,7 @@ int32_t modify_ftp_info_only(const int8_t *xml_file, ftp_info *pold, ftp_info *p
 	xmlNodePtr pusr_info_node;
 	parse_xml_t px;
 	int32_t ret = -1;
-	
+
 	/* 需要在外部加锁 */
 
 	if(NULL == xml_file || NULL == pold || NULL == pnew){
@@ -1489,12 +1503,12 @@ int32_t modify_ftp_info_only(const int8_t *xml_file, ftp_info *pold, ftp_info *p
 	ret = modify_ftp_info(pusr_info_node, pold, pnew);
 
 	xmlSaveFormatFile((const char *)xml_file, px.pdoc, 1);
-	
+
 cleanup:
 
 	release_dom_tree(px.pdoc);
 
-//	r_system((const int8_t *)"sync");
+	r_system((const int8_t *)"sync");
 
 	return ret;
 }
@@ -1598,12 +1612,12 @@ int32_t modify_heart_beat_info_only(const int8_t *xml_file, heart_beat_info *pol
 	ret = modify_heart_beat_info(pusr_info_node, pold, pnew);
 
 	xmlSaveFormatFile((const char *)xml_file, px.pdoc, 1);
-	
+
 cleanup:
 
 	release_dom_tree(px.pdoc);
 
-//	r_system((const int8_t *)"sync");
+	r_system((const int8_t *)"sync");
 
 	return ret;
 }
@@ -1636,7 +1650,7 @@ int32_t modify_sys_info_only(const int8_t *xml_file, sys_info *pold, sys_info *p
 	xmlNodePtr pusr_info_node;
 	parse_xml_t px;
 	int32_t ret = -1;
-	
+
 	/* 需要在外部加锁 */
 
 	if(NULL == xml_file || NULL == pold || NULL == pnew){
@@ -1655,12 +1669,12 @@ int32_t modify_sys_info_only(const int8_t *xml_file, sys_info *pold, sys_info *p
 	ret = modify_sys_info(pusr_info_node, pold, pnew);
 
 	xmlSaveFormatFile((const char *)xml_file, px.pdoc, 1);
-	
+
 cleanup:
 
 	release_dom_tree(px.pdoc);
 
-//	r_system((const int8_t *)"sync");
+	r_system((const int8_t *)"sync");
 
 	return ret;
 }
@@ -1799,12 +1813,12 @@ int32_t modify_pic_synt_info_only(const int8_t *xml_file, pic_synt_info *pold, p
 	ret = modify_pic_synt_info(ppic_synt_info_node, pold, pnew);
 
 	xmlSaveFormatFile((const char *)xml_file, px.pdoc, 1);
-	
+
 cleanup:
 
 	release_dom_tree(px.pdoc);
 
-//	r_system((const int8_t *)"sync");
+	r_system((const int8_t *)"sync");
 
 	return ret;
 }
@@ -1854,16 +1868,12 @@ static int32_t modify_enc_info(xmlNodePtr pnode, enc_info *pold, enc_info *pnew)
 
 	/* 索引值 */
 	modify_uint32_value(pnode, pold->ID, pnew->ID, (int8_t *)MSG_ENC_ID_KEY, buf);
-#if 0
-	/* 编码器IP */
-	modify_addr_value(pnode, pold->EncIP, pnew->EncIP, (int8_t *)MSG_ENC_IP_KEY, buf);
-#endif
 
 	/* 编码器IP */
 	modify_int8_value(pnode, pold->EncIP, pnew->EncIP, (int8_t *)MSG_ENC_IP_KEY, buf);
 
 	/* 状态 */
-	modify_uint32_value(pnode, pold->Status, pnew->Status, (int8_t *)MSG_ENC_STATUS_KEY, buf);
+	//modify_uint32_value(pnode, pold->Status, pnew->Status, (int8_t *)MSG_ENC_STATUS_KEY, buf);
 
 	/* 质量参数 */
 	/* FIXME:注意顺序 */
@@ -1871,12 +1881,12 @@ static int32_t modify_enc_info(xmlNodePtr pnode, enc_info *pold, enc_info *pnew)
 	if(pqua_node){
 		modify_quality_info(pqua_node, &pold->HD_QuaInfo, &pnew->HD_QuaInfo);
 	}
-
+#if 0
 	pqua_node = find_next_node(pqua_node, CONFIG_PARAMS_QUALITY_INFO_KEY);
 	if(pqua_node){
 		modify_quality_info(pqua_node, &pold->SD_QuaInfo, &pnew->SD_QuaInfo);
 	}
-
+#endif
 	return 0;
 }
 
@@ -1914,14 +1924,16 @@ static int32_t modify_room_info(xmlNodePtr pnode, room_info *pold, room_info *pn
 	/* 录制文件名 */
 	modify_int8_value(pnode, (int8_t *)pold->RecName, (int8_t *)pnew->RecName, (int8_t *)MSG_ROOM_RECNAME_KEY, buf);
 
-	zlog_debug(OPELOG, "Resolution = %d, %d\n", pold->PicSyntInfo.Resolution, pnew->PicSyntInfo.Resolution);
-	zlog_debug(OPELOG, "Model = %s, %s\n", pold->PicSyntInfo.Model, pnew->PicSyntInfo.Model);
-	zlog_debug(OPELOG, "SourceNum = %d, %d\n", pold->PicSyntInfo.SourceNum, pnew->PicSyntInfo.SourceNum);
+	//zlog_debug(DBGLOG, "Mode = %d, %d\n", pold->Mode, pnew->Mode);
 
+	/*合成模式*/
+	modify_uint32_value(pnode, pold->Mode, pnew->Mode, (int8_t *)MSG_PICTURE_SYNT_MODEL_KEY, buf);
+
+#if 0
 	/* 合成画面信息 */
 	ppic_synt_node = get_children_node(pnode, CONFIG_PARAMS_PICTURE_SYNT_INFO_KEY);
 	modify_pic_synt_info(ppic_synt_node, &pold->PicSyntInfo, &pnew->PicSyntInfo);
-
+#endif
 	/* 音频信息 */
 	paudio_node = get_children_node(pnode, CONFIG_PARAMS_AUDIO_INFO_KEY);
 	modify_audio_info(paudio_node, &pold->AudioInfo, &pnew->AudioInfo);
@@ -1933,8 +1945,26 @@ static int32_t modify_room_info(xmlNodePtr pnode, room_info *pold, room_info *pn
 		modify_enc_info(penc_node, &pold->EncInfo[index], &pnew->EncInfo[index]);
 		penc_node = find_next_node(penc_node, CONFIG_PARAMS_ENC_INFO_KEY);
 	}
-	
 
+
+	return 0;
+}
+
+static int32_t modify_room_name(xmlNodePtr pnode, room_info *pold, room_info *pnew)
+{
+	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
+	xmlNodePtr paudio_node;
+	xmlNodePtr ppic_synt_node;
+	xmlNodePtr penc_node;
+	int32_t index = 0;
+
+	if(NULL == pnode || NULL == pold || NULL == pnew) {
+		zlog_error(DBGLOG, "modify_room_info error, params is NULL!\n");
+		return -1;
+	}
+
+	/* 会议室名称 */
+	modify_int8_value(pnode, (int8_t *)pold->RoomName, (int8_t *)pnew->RoomName, (int8_t *)MSG_ROOMNAME_KEY, buf);
 	return 0;
 }
 
@@ -1945,13 +1975,13 @@ int32_t modify_room_info_only(const int8_t *xml_file, room_info *pold, room_info
 	parse_xml_t px;
 	int32_t ret = -1;
 	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
-	
+
 	/* 需要在外部加锁 */
 	if(NULL == xml_file || NULL == pold || NULL == pnew){
 		zlog_debug(DBGLOG, "--[modify_room_info_only] failed, params is NULL!\n");
 		return ret;
 	}
-	
+
 	zlog_debug(DBGLOG,"modify_room_info_only -----old_name :%s--new_name : %s---- len : %d\n",pold->RoomName,pnew->RoomName,sizeof(room_info));
 	init_file_dom_tree(&px, (const char *)xml_file);
 	if(NULL == px.pdoc || NULL == px.proot){
@@ -1976,17 +2006,136 @@ int32_t modify_room_info_only(const int8_t *xml_file, room_info *pold, room_info
 		ret = modify_room_info(pusr_info_node, pold, pnew);
 		xmlSaveFormatFile((const char *)xml_file, px.pdoc, 1);
 	}
-	
+
 cleanup:
-	
+
 	release_dom_tree(px.pdoc);
 
-//	r_system((const int8_t *)"sync");
+	r_system((const int8_t *)"sync");
 
 	return ret;
 }
 
+int32_t modify_room_name_only(const int8_t *xml_file, room_info *pold, room_info *pnew)
+{
+	xmlNodePtr pusr_info_node;
+	xmlNodePtr pnode;
+	parse_xml_t px;
+	int32_t ret = -1;
+	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
 
+	/* 需要在外部加锁 */
+	if(NULL == xml_file || NULL == pold || NULL == pnew){
+		zlog_debug(DBGLOG, "--[modify_room_info_only] failed, params is NULL!\n");
+		return ret;
+	}
+
+	zlog_debug(DBGLOG,"modify_room_info_only -----old_name :%s--new_name : %s---- len : %d\n",pold->RoomName,pnew->RoomName,sizeof(room_info));
+	init_file_dom_tree(&px, (const char *)xml_file);
+	if(NULL == px.pdoc || NULL == px.proot){
+		zlog_error(DBGLOG, "--[modify_room_info_only] failed, init_file_dom_tree error, file: %s\n", xml_file);
+		goto cleanup;
+	}
+
+	/* 会议室信息 */
+
+	pusr_info_node = get_children_node(px.proot, CONFIG_PARAMS_ROOM_INFO_KEY);
+	while(pusr_info_node){
+		pnode = get_children_node(pusr_info_node, MSG_ROOMID_KEY);
+		r_memset(buf, 0, XML_VALUE_MAX_LENGTH);
+		get_current_node_value((char *)buf, XML_VALUE_MAX_LENGTH, px.pdoc, pnode);
+		if(pnew->RoomID == atoi((const char *)buf)){
+			break;
+		}
+		pusr_info_node = find_next_node(pusr_info_node, CONFIG_PARAMS_ROOM_INFO_KEY);
+	}
+
+	if(pusr_info_node){
+		ret = modify_room_name(pusr_info_node, pold, pnew);
+		xmlSaveFormatFile((const char *)xml_file, px.pdoc, 1);
+	}
+
+cleanup:
+
+	release_dom_tree(px.pdoc);
+
+	r_system((const int8_t *)"sync");
+
+	return ret;
+}
+
+void clean_invalid_ipcamera_ip(Tracer_Info_t *tinfo)
+{
+	int i = 0;
+	for(i = tinfo->num; i < MAX_IPCAMERA_NUM; i++) {
+		strcpy(tinfo->ip[i], "0.0.0.0");
+	}
+}
+
+int32_t modify_ipcamera_ip_only(Tracer_Info_t *tinfo)
+{
+	xmlNodePtr room_info_node;
+	xmlNodePtr enc_info_node;
+	xmlNodePtr enc_id_node;
+	xmlNodePtr enc_ip_node;
+	int32_t ip_num = tinfo->num-2;
+	int32_t first_ip_id = FIRST_IPCAMERA_INDEX+1;
+	int32_t i = 0;
+	parse_xml_t px;
+	int32_t ret = -1;
+	int8_t buf[XML_VALUE_MAX_LENGTH] = {0};
+	clean_invalid_ipcamera_ip(tinfo);
+	init_file_dom_tree(&px, (const char *)CONFIG_TABLE_FILE);
+	if(NULL == px.pdoc || NULL == px.proot){
+		zlog_error(DBGLOG, "init_file_dom_tree error, file: %s\n", CONFIG_TABLE_FILE);
+		goto cleanup;
+	}
+
+	/* 会议室信息 */
+
+	room_info_node = get_children_node(px.proot, CONFIG_PARAMS_ROOM_INFO_KEY);
+	enc_info_node = get_children_node(room_info_node, CONFIG_PARAMS_ENC_INFO_KEY);
+	while(enc_info_node){
+		enc_id_node = get_children_node(enc_info_node, MSG_ENC_ID_KEY);
+		r_memset(buf, 0, XML_VALUE_MAX_LENGTH);
+		get_current_node_value((char *)buf, XML_VALUE_MAX_LENGTH, px.pdoc, enc_id_node);
+		if(atoi((const char *)buf) >= first_ip_id){
+			enc_ip_node = get_children_node(enc_info_node, MSG_ENC_IP_KEY);
+			switch(atoi((const char *)buf)) {
+			case 6:
+				i = 2;
+				break;
+			case 7:
+				i = 1;
+				break;
+			case 8:
+				i = 0;
+				break;
+			case 9:
+				i = 3;
+				break;
+			default:
+				break;
+			}
+
+			if(enc_ip_node){
+				modify_node_value(enc_ip_node, tinfo->ip[i]);
+				ret = 0;
+			}
+			else{
+				package_add_xml_leaf(enc_info_node, MSG_ENC_IP_KEY, (const int8_t *)(tinfo->ip[i]));
+			}
+
+		}
+		enc_info_node = find_next_node(enc_info_node, CONFIG_PARAMS_ENC_INFO_KEY);
+	}
+	xmlSaveFormatFile((const char *)CONFIG_TABLE_FILE, px.pdoc, 1);
+
+cleanup:
+	release_dom_tree(px.pdoc);
+	r_system((const int8_t *)"sync");
+	return ret;
+}
 
 int32_t modify_usr_info_only(const int8_t *xml_file, user_info *pold, user_info *pnew)
 {
@@ -2010,12 +2159,12 @@ int32_t modify_usr_info_only(const int8_t *xml_file, user_info *pold, user_info 
 	proom_info_node = get_children_node(px.proot, CONFIG_PARAMS_USER_INFO_KEY);
 	ret = modify_user_info(proom_info_node, pold, pnew);
 	xmlSaveFormatFile((const char *)xml_file, px.pdoc, 1);
-	
+
 cleanup:
-	
+
 	release_dom_tree(px.pdoc);
 
-//	r_system((const int8_t *)"sync");
+	r_system((const int8_t *)"sync");
 
 	return ret;
 }
@@ -2025,7 +2174,7 @@ int32_t modify_server_info_only(const int8_t *xml_file, server_info *pold, serve
 	xmlNodePtr pserver_info_node;
 	parse_xml_t px;
 	int32_t ret = -1;
-	
+
 	/* 需要在外部加锁 */
 
 	if(NULL == xml_file || NULL == pold || NULL == pnew){
@@ -2043,12 +2192,12 @@ int32_t modify_server_info_only(const int8_t *xml_file, server_info *pold, serve
 	pserver_info_node = get_children_node(px.proot, CONFIG_PARAMS_SERVER_INFO_KEY);
 	ret = modify_server_info(pserver_info_node, pold, pnew);
 	xmlSaveFormatFile((const char *)xml_file, px.pdoc, 1);
-	
+
 cleanup:
-	
+
 	release_dom_tree(px.pdoc);
 
-//	r_system((const int8_t *)"sync");
+	r_system((const int8_t *)"sync");
 
 	return ret;
 }
@@ -2078,12 +2227,12 @@ int32_t modify_config_only(const int8_t *xml_file, config_info *pold, config_inf
 	pusr_info_node = get_children_node(px.proot, CONFIG_PARAMS_CONFIG_INFO_KEY);
 	ret = modify_config_info(pusr_info_node, pold, pnew);
 	xmlSaveFormatFile((const char *)xml_file, px.pdoc, 1);
-	
+
 cleanup:
-	
+
 	release_dom_tree(px.pdoc);
 
-//	r_system((const int8_t *)"sync");
+	r_system((const int8_t *)"sync");
 
 	return ret;
 }
@@ -2110,11 +2259,11 @@ int32_t modify_camctrl_info_only(const int8_t *xml_file, camera_ctrl *pold, came
 	pinfo_node = get_children_node(px.proot, CONFIG_PARAMS_CAMCTRL_ADDR_KEY);
 	ret = modify_camctrl_info(pinfo_node, pold, pnew);
 	xmlSaveFormatFile((const char *)xml_file, px.pdoc, 1);
-	
-cleanup:
-	
-	release_dom_tree(px.pdoc);
 
+cleanup:
+
+	release_dom_tree(px.pdoc);
+	r_system((const int8_t *)"sync");
 	return ret;
 }
 
@@ -2169,7 +2318,7 @@ int32_t create_params_table_file(const int8_t *xml_file, all_server_info *ptable
 	xmlAddChild(proot_node, phbeat_info_node);
 	add_heart_beat_info(phbeat_info_node, &ptable->HBeatInfo);
 
-	
+
 	/*用户配置 */
 	pconfig_info_node = xmlNewNode(NULL, CONFIG_PARAMS_CONFIG_INFO_KEY);
 	xmlAddChild(proot_node, pconfig_info_node);
@@ -2186,7 +2335,7 @@ int32_t create_params_table_file(const int8_t *xml_file, all_server_info *ptable
 	pserver_info_node = xmlNewNode(NULL, CONFIG_PARAMS_SERVER_INFO_KEY);
 	xmlAddChild(proot_node, pserver_info_node);
 	add_server_info(pserver_info_node, &ptable->ServerInfo);
-	
+
 	room_count = ptable->ServerInfo.MaxRoom;
 	if(room_count > CONTROL_ROOM_SERVER_MAX_USER){
 		room_count = CONTROL_ROOM_SERVER_MAX_USER;
@@ -2214,7 +2363,7 @@ cleanup:
 
 	release_dom_tree(doc);
 
-//	r_system((const int8_t *)"sync");
+	r_system((const int8_t *)"sync");
 
 	pthread_mutex_unlock(&ptable->info_m);
 
@@ -2225,7 +2374,7 @@ int32_t read_params_table_file(const int8_t *xml_file, all_server_info *ptable)
 {
 	int32_t index = 0;
 	int32_t room_count = 0;
-	
+
 	xmlDocPtr pdoc;
 	xmlNodePtr proot_node;
 	xmlNodePtr puser_info_node;
@@ -2236,7 +2385,7 @@ int32_t read_params_table_file(const int8_t *xml_file, all_server_info *ptable)
 	xmlNodePtr pconfig_info_node;
 	xmlNodePtr pserver_info_node;
 	xmlNodePtr proom_info_node[CONTROL_ROOM_SERVER_MAX_USER];
-
+	int ret = 0;
 	parse_xml_t px;
 
 	if(NULL == xml_file || NULL == ptable){
@@ -2248,6 +2397,7 @@ int32_t read_params_table_file(const int8_t *xml_file, all_server_info *ptable)
 
 	init_file_dom_tree(&px, (const char *)xml_file);
 	if(NULL == px.pdoc || NULL == px.proot){
+		ret = -1;
 		zlog_error(DBGLOG, "--[read_params_table_file] failed, init_file_dom_tree error, xml file: %s\n", xml_file);
 		goto cleanup;
 	}
@@ -2297,6 +2447,7 @@ int32_t read_params_table_file(const int8_t *xml_file, all_server_info *ptable)
 		read_ftp_info(pdoc, pftp_info_node, &ptable->FtpInfo);
 	}
 	else{
+		zlog_error(DBGLOG, "CONFIG_PARAMS_FTP_INFO_KEYmode:[%d]\n", ptable->FtpInfo.Mode);
 		/* 新增FTP服务器信息节点 */
 		pftp_info_node = xmlNewNode(NULL, CONFIG_PARAMS_FTP_INFO_KEY);
 		xmlAddChild(proot_node, pftp_info_node);
@@ -2351,7 +2502,7 @@ int32_t read_params_table_file(const int8_t *xml_file, all_server_info *ptable)
 			proom_info_node[index] = get_children_node(proot_node, CONFIG_PARAMS_ROOM_INFO_KEY);
 		else
 			proom_info_node[index] = find_next_node(proom_info_node[index-1], CONFIG_PARAMS_ROOM_INFO_KEY);
-		
+
 		if(proom_info_node[index]){
 			read_room_info(pdoc, proom_info_node[index], &ptable->RoomInfo[index]);
 		}
@@ -2362,7 +2513,7 @@ int32_t read_params_table_file(const int8_t *xml_file, all_server_info *ptable)
 			add_room_info(proom_info_node[index], &ptable->RoomInfo[index]);
 		}
 	}
-	
+
 cleanup:
 
 	xmlSaveFormatFile((const char *)xml_file, px.pdoc, 1);
@@ -2370,7 +2521,7 @@ cleanup:
 
 	pthread_mutex_unlock(&ptable->info_m);
 
-	return 0;
+	return ret;
 }
 
 int32_t modify_params_table_file(const int8_t *xml_file, all_server_info *pold_table, all_server_info *pnew_table)
@@ -2442,20 +2593,20 @@ int32_t modify_params_table_file(const int8_t *xml_file, all_server_info *pold_t
 			modify_room_info(proom_info_node[index], &pold_table->RoomInfo[index], &pnew_table->RoomInfo[index]);
 		}
 	}
-	
+
 cleanup:
 	xmlSaveFormatFile((const char *)xml_file, px.pdoc, 1);
 	release_dom_tree(px.pdoc);
 
 	pthread_mutex_unlock(&pold_table->info_m);
-
+	r_system((const int8_t *)"sync");
 	return 0;
 }
 
 int32_t reset_record_params(all_server_info *pinfo)
 {
 	int32_t index = 0;
-	
+
 	if(NULL == pinfo){
 		zlog_debug(DBGLOG, "--[reset_record_params] failed, params is NULL!\n");
 		return -1;
@@ -2475,7 +2626,7 @@ uint32_t get_synt_resoluteion()
 {
 	uint32_t resolution;
 	server_set *pser = NULL;
-	
+
 	if(NULL == gpser){
 		zlog_debug(DBGLOG, "--[get_synt_resoluteion] failed, pinfo is NULL!\n");
 		return 3;
@@ -2499,7 +2650,7 @@ uint32_t get_synt_bitrate()
 {
 	uint32_t bitrate;
 	server_set *pser = NULL;
-	
+
 	if(NULL == gpser){
 		zlog_debug(DBGLOG, "--[get_synt_bitrate] failed, pinfo is NULL!\n");
 		return 3;

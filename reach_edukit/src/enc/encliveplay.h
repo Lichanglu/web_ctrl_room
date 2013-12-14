@@ -160,6 +160,7 @@ typedef unsigned char  BYTE;
 
 #define	MSG_SET_TEACHER_TRACK_PARAM	0xA0	//教师跟踪参数设置
 #define	MSG_SET_STUDENTS_TRACK_PARAM	0xA1	//教师跟踪参数设置
+#define	MSG_SET_STUSIDETRACK_PARAM	0xA2	//教师跟踪参数设置
 
 //-------------------------------------------组播----------------------------------------------------------------------------------------------------------------------
 #define MSG_MUL_START						0x80            //开启组播 HDB_MSGHEAD

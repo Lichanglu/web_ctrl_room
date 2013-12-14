@@ -103,7 +103,7 @@ extern "C" {
 extern int create_TextTime_info(void);
 extern int init_osd_info(void);
 
-int check_CHN(char *text, int size);
+//int check_CHN(char *text, int size);
 void show_text_info(int , const char *, int ,TextInfo* );
 void hide_osd_view(int input, int type);
 

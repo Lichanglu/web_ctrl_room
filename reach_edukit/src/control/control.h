@@ -27,15 +27,11 @@
 #include "timeout_process.h"
 
 
-#define RECORD_SERVER_VERSION							("0.0.0.0")
+#define RECORD_SERVER_VERSION							("v1.0.2")
 
-
-#define RECORD_SERVRE_TYPE								("EDU-SD")
-#define RECORD_SERVER_SERIES							("_EDU-SD_0000")
-
-#define ROOM_DEFAULT_NAME								("EDU-SD_Name")
-
-
+#define RECORD_SERVRE_TYPE								("KR9000")
+#define RECORD_SERVER_SERIES							("_KR9000_0000")
+#define ROOM_DEFAULT_NAME								("KR9000_Name")
 #define CONTROL_DEFAULT_USERNAME						("admin")
 #define CONTROL_DEFAULT_PASSWORD						("admin")
 
@@ -49,7 +45,7 @@
 
 #define DM6467_UPDATE_PACKET							("/var/log/recserver/reach/dm6467.bin")
 
-
+#define	STATUS_GUESET					    			(1)
 #define	STATUS_SUCCESS					    			(0)
 #define	STATUS_FAILED									(-1)
 
@@ -112,6 +108,10 @@ typedef struct _http_env_{
 	struct _server_set_ *pserset;
 
 	pthread_t		http_thid;
+	pthread_t		director_thid;
+	pthread_t		m_thid;
+	pthread_t		com_thid;
+	pthread_t		net_thid;
 	pthread_mutex_t	http_m;
 }http_env;
 
@@ -134,7 +134,6 @@ typedef struct _lives_info_{
 	int8_t		encode_index[VIDEO_ENCODE_INDEX_LEN];
 }lives_info;
 
-
 typedef struct _con_user_{
 	int32_t			tcp_sock;						/* 用户通讯socket */
 	int32_t 		login_ok;						/* 本用户的登录状态 */
@@ -144,7 +143,7 @@ typedef struct _con_user_{
 	uint32_t		datalen;
 
 	uint32_t		art_volume[CONTROL_ROOM_SERVER_MAX_USER];	/* 实时的音量值 */
-
+	int8_t		username[16];
 	platform_em		platform;						/* 平台类型 */
 	con_ack			ack;
 	int8_t			recv_buf[CONTROL_DATA_LEN];		/* 用于接收线程的接收缓冲区 */

@@ -3,14 +3,14 @@
  *
  *       Filename:  paras.h
  *
- *    Description:  
+ *    Description:
  *
  *        Version:  1.0
  *        Created:  2012年11月1日 09时12分18秒
- *       Revision:  
+ *       Revision:
  *       Compiler:  gcc
  *
- *         Author:  黄海洪 
+ *         Author:  黄海洪
  *        Company:  深圳锐取信息技术股份有限公司
  *
  * =====================================================================================
@@ -27,9 +27,8 @@
 #include <string.h>
 
 #include "command_resolve.h"
-
-
-#define CONFIG_TABLE_FILE					("control_config.xml")
+#include "web/webmiddle.h"
+#define CONFIG_TABLE_FILE					("/usr/local/reach/.config/control_config.xml")
 
 
 #define CONFIG_PARAMS_TABLES_KEY			(BAD_CAST "params_table")
@@ -48,8 +47,8 @@
 #define CONFIG_PARAMS_CAMCTRL_ADDR_KEY      (BAD_CAST "camctrl_addr_info")
 
 
-
-
+#define	FIRST_IPCAMERA_INDEX	5
+#define	MAX_IPCAMERA			4
 
 
 int32_t create_params_table_file(const int8_t *xml_file, all_server_info *ptable);
@@ -66,7 +65,7 @@ int32_t modify_heart_beat_info_only(const int8_t *xml_file, heart_beat_info *pol
 int32_t modify_ftp_info_only(const int8_t *xml_file, ftp_info *pold, ftp_info *pnew);
 int32_t modify_pic_synt_info_only(const int8_t *xml_file, pic_synt_info *pold, pic_synt_info *pnew);
 int32_t modify_camctrl_info_only(const int8_t *xml_file, camera_ctrl *pold, camera_ctrl *pnew);
-
+int32_t modify_ipcamera_ip_only(Tracer_Info_t *tinfo);
 
 
 

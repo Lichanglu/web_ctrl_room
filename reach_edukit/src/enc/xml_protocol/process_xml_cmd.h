@@ -19,6 +19,7 @@
 #define NEW_MSG_STATUS_REPORT			30032
 #define NEW_REQUEST_IFRAME				30014
 #define NEW_MSG_ENC_VER_REQ			30045
+#define NEW_FIX_RESOLUTION				30010
 
 
 #define     START          1

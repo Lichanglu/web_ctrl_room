@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include "reach_os.h"
 #include "reach_udp_snd.h"
 #include "reach_rtp_build.h"
+
 
 static void us_set_hdb_freame_head(US_FRAMEHEAD *fh, RUdpS_freame_head_t *pd);
 static uint32_t UdpSend_get_time_tick(send_udp_handle *p_udp_hand, uint32_t  time_tick);
@@ -150,6 +152,7 @@ int32_t UdpSend_rtp_data(udp_send_module_handle *p_udp_hand, frame_info_t *frame
 
 	} else if(RUdpS_JPEG_CODEC_TYPE == frame_info->m_data_codec) {
 #if 1
+		printf("UdpSend_rtp_build_jpeg_data rtp_handle=%p,len=%d,src_date=%p,mtu=%d,udp_hand=%p\n", rtp_hand, frame_info->m_frame_length, udp_hand->src_data, mtu, udp_hand);
 		ret = UdpSend_rtp_build_jpeg_data(rtp_hand, frame_info->m_frame_length, udp_hand->src_data, mtu , video_time, udp_hand, &frame_head);
 
 		if(ret < 0) {
@@ -180,7 +183,7 @@ udp_send_module_handle *UdpSend_init(stream_send_cond_t *src)
 	}
 
 	udp_send_module_handle *p_udp_send_module_hand = NULL;
-	p_udp_send_module_hand = (udp_send_module_handle *)malloc(sizeof(udp_send_module_handle));
+	p_udp_send_module_hand = (udp_send_module_handle *)r_malloc(sizeof(udp_send_module_handle));
 
 	if(NULL == p_udp_send_module_hand) {
 		ERR_PRINTF("malloc error");
@@ -192,7 +195,7 @@ udp_send_module_handle *UdpSend_init(stream_send_cond_t *src)
 	p_udp_send_module_hand->udp_hand.prev_video_time = 0;
 	p_udp_send_module_hand->udp_hand.snd_video_port = src->video_port;
 	p_udp_send_module_hand->udp_hand.snd_audio_port = src->audio_port;
-	p_udp_send_module_hand->udp_hand.src_data = (uint8_t *)malloc(UdpSend_Max_Frame_Length);
+	p_udp_send_module_hand->udp_hand.src_data = (uint8_t *)r_malloc(UdpSend_Max_Frame_Length);
 
 	if(NULL == p_udp_send_module_hand->udp_hand.src_data) {
 		ERR_PRINTF("malloc error p_udp_send_module_hand->udp_hand.src_data = [%p]", p_udp_send_module_hand->udp_hand.src_data);
@@ -236,8 +239,8 @@ int32_t UdpSend_create_sock(send_udp_handle *p_handle)
 		ERR_PRINTF("GET_SOCKET RECV_BUF IS ERROR! <SOCKET : %d> <SEND_BUF : %d > <ERROR_MESSAGE : %s >", udp_fd, upd_max_buf, strerror(errno));
 	}
 
-	SUC_PRINTF("udp_fd = %d, upd_max_snd_buf = %d, video_port = %d, audio_port  = %d, snd_ip = %s\n", udp_fd, upd_max_buf, p_handle->snd_video_port,
-	           p_handle->snd_audio_port, p_handle->snd_ip);
+	//	SUC_PRINTF("udp_fd = %d, upd_max_snd_buf = %d, video_port = %d, audio_port  = %d, snd_ip = %s\n", udp_fd, upd_max_buf, p_handle->snd_video_port,
+	//	           p_handle->snd_audio_port, p_handle->snd_ip);
 	return udp_fd;
 
 }
@@ -250,7 +253,7 @@ void UdpSend_deinit(udp_send_module_handle *p_udp_send)
 	}
 
 	if(NULL != p_udp_send->udp_hand.src_data) {
-		free(p_udp_send->udp_hand.src_data);
+		r_free(p_udp_send->udp_hand.src_data);
 		p_udp_send->udp_hand.src_data = NULL;
 	}
 
@@ -260,6 +263,6 @@ void UdpSend_deinit(udp_send_module_handle *p_udp_send)
 	}
 
 	UdpSend_rtp_build_uninit(&p_udp_send->rtp_hand);
-	free(p_udp_send);
+	r_free(p_udp_send);
 	p_udp_send = NULL;
 }

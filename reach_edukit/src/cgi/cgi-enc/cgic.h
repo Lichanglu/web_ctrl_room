@@ -104,6 +104,7 @@ extern cgiFormResultType cgiFormStringNoNewlines(
 
 extern cgiFormResultType cgiFormStringSpaceNeeded(
 	char *name, int *length);
+extern cgiFormResultType cgiGetFormFileName(char *name, char *file);
 
 
 extern cgiFormResultType cgiFormStringMultiple(

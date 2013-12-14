@@ -298,6 +298,7 @@ static void cgiGetenv(char **s, char *var){
 	}
 }
 
+
 static cgiParseResultType cgiParsePostFormInput() {
 	char *input;
 	cgiParseResultType result;
@@ -1913,6 +1914,23 @@ void cgiSimpleHeaderCookieSetString(char *name, char *value, int secondsToLive)
 
 
 
+
+cgiFormResultType cgiGetFormFileName(char *name, char *file)
+{
+	cgiFormEntry *e;
+	
+	e = cgiFormEntryFindFirst(name);
+	if (!e) {
+		return cgiFormNotFound;
+	}
+	if (!strlen(e->tfileName)) {
+		return cgiFormNotAFile;
+	}
+
+	strcpy(file, e->tfileName);
+
+	return cgiFormSuccess;
+}  
 
 void cgiSetCookienoTime(char *name, int value)
 {

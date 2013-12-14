@@ -13,12 +13,12 @@
 #include <osa_mutex.h>
 #include <osa_thr.h>
 #include <osa_sem.h>
-
+#include "reach.h"
 #include "stdint.h"
-
+#include "sd_demo_osd.h"
 #include "reach_ipcbit.h"
 
-
+extern UInt8 *StuSideAllocBuf(UInt32 srRegId, UInt32 bufSize, UInt32 bufAlign);
 static inline void setVpssCaptureParams(CaptureLink_CreateParams *pCapturePrm,
                                         Int32 numVipInst, UInt32 *vipInstId, Int32 *nextLinkId)
 {
@@ -178,7 +178,7 @@ static inline void setVpssSclrParams(SclrLink_CreateParams *pSclrPrm,
 	pSclrPrm->inputFrameRate					  = 60;
 	pSclrPrm->outputFrameRate					  = 30;
 	pSclrPrm->scaleMode						  = scaleMode;
-	pSclrPrm->numBufsPerCh 				  = 4;
+	//pSclrPrm->numBufsPerCh 				  = 4;
 
 	if(scaleMode == pSclrPrm->scaleMode) {
 		pSclrPrm->outScaleFactor.absoluteResolution.outWidth = outWidth;
@@ -254,17 +254,23 @@ static inline void setOsdDspTrackAlgparams(AlgLink_CreateParams *pOsdDspAlgPrm,
 	pOsdDspAlgPrm->outQueParams[ALG_LINK_SCD_OUT_QUE].nextLink = SYSTEM_LINK_ID_INVALID;
 	pOsdDspAlgPrm->enableOSDAlg	     = FALSE;
 	pOsdDspAlgPrm->enableSCDAlg	     = FALSE;
+	
 
-	pOsdDspAlgPrm->enableSTUTRACKAlg = TRUE;
-	pOsdDspAlgPrm->enableTRACKAlg	 = TRUE;
-
+	printf("enableSTUTRACKAlg[%d] enableTRACKAlg[%d] enableSTUSIDETRACKAlg[%d]\n",pOsdDspAlgPrm->enableSTUTRACKAlg,\
+		pOsdDspAlgPrm->enableTRACKAlg,pOsdDspAlgPrm->enableSTUSIDETRACKAlg);
 	if(pOsdDspAlgPrm->enableTRACKAlg) {
-		pOsdDspAlgPrm->trackCreateParams.ChToStream[1] = 0;
+		pOsdDspAlgPrm->trackCreateParams.ChToStream[2] = 0;
 	}
 
 	if(pOsdDspAlgPrm->enableSTUTRACKAlg) {
 		pOsdDspAlgPrm->stutrackCreateParams.ChToStream[0] = 0;
 	}
+
+	if(pOsdDspAlgPrm->enableSTUSIDETRACKAlg)
+	{
+		pOsdDspAlgPrm->stusidetrackCreateParams.ChToStream[1] = 0;
+	}
+
 
 }
 
@@ -357,7 +363,7 @@ static inline void setVideoEncoderParams(videoEncoderLink_t *pEnc, Int32 prevLin
 		if(pEncPrm->chCreateParams[queId].rateControlPreset == IVIDEO_USER_DEFINED) {
 			pEncPrm->chCreateParams[queId].defaultDynamicParams.rcAlg = IH264_RATECONTROL_PRC;
 		}
-
+		pEncPrm->numBufPerCh[queId] = 3;
 	}
 
 #ifdef HAVE_JPEG
@@ -397,10 +403,10 @@ static inline void setVideoEncoderParams(videoEncoderLink_t *pEnc, Int32 prevLin
 
 #endif
 
-	pEncPrm->numBufPerCh[0] = 4;
-	pEncPrm->numBufPerCh[1] = 4;
-	pEncPrm->numBufPerCh[2] = 4;
-	pEncPrm->numBufPerCh[3] = 4;
+	//pEncPrm->numBufPerCh[0] = 10;
+	//pEncPrm->numBufPerCh[1] = 10;
+	//pEncPrm->numBufPerCh[2] = 10;
+	//pEncPrm->numBufPerCh[3] = 10;
 	pEncPrm->inQueParams.prevLinkId = pEnc->ipc_invideo_Link.link_id;
 	pEncPrm->inQueParams.prevLinkQueId = 0;
 	pEncPrm->outQueParams.nextLink = pEnc->ipcbit_outvideo_Link.link_id;
@@ -522,8 +528,8 @@ static inline void setVideoDecoderParams(videoDecoderLink_t *pDec, Int32 nextLin
 		pDecPrm->chCreateParams[queId].targetMaxHeight = 1080;
 		pDecPrm->chCreateParams[queId].fieldMergeDecodeEnable = FALSE;
 		pDecPrm->chCreateParams[queId].defaultDynamicParams.targetFrameRate = 30;
-		pDecPrm->chCreateParams[queId].defaultDynamicParams.targetBitRate = (10 * 1000 * 1000);
-		pDecPrm->chCreateParams[queId].numBufPerCh = 4;
+		pDecPrm->chCreateParams[queId].defaultDynamicParams.targetBitRate = (5 * 1000 * 1000);
+		pDecPrm->chCreateParams[queId].numBufPerCh = 3;
 	}
 
 	pIpcOutVideoPrm->inQueParams.prevLinkId 	= pDec->decLink.link_id;

@@ -145,8 +145,8 @@ void setXmlAudioParams(int index, AUDIO_PARAM  *audio_info)
 	ainfo.Mute = 0;
 	ainfo.MicType = 0;
 	ainfo.InputMode = 0;
-	ainfo.BitRate = 96000;//audio_info->BitRate;
-	ainfo.SampleRate = 48000;//SampleIndexToBit(audio_info->SampleRate);
+	ainfo.BitRate = 128000;//audio_info->BitRate;
+	ainfo.SampleRate = 44100;//SampleIndexToBit(audio_info->SampleRate);
 	setAudioEncodeParam(channel, &ainfo);
 }
 

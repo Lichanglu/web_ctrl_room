@@ -13,6 +13,7 @@
 #include "webTcpCom.h"
 
 #include "../../enc/middle_control.h"
+#include "../../control/web/webmiddle.h"
 #include "../../enc/input_to_channel.h"
 #define KERNEL_VERSION_LENGTH		16
 
@@ -52,7 +53,6 @@ int  WebGetinputSource(int *outval,int channel)
 	int inlen=sizeof(inputtype);
 	int outlen = 0,ret = 0;
 	int cmd = MSG_GETINPUTTYPE;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;	
 	ret =appCmdIntParse(cmd,inval,inlen,outval,&outlen);
 	if(*outval == DVI-2)
 		*outval = DVI;
@@ -69,13 +69,12 @@ int WebSetinputSource(int inval,int *outval,int channel)
 	int	outlen=sizeof(int);
 	int ret;
 	int cmd = MSG_SETINPUTTYPE;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;	
 	if(inval == DVI )
 		inval = DVI-2;
 	else if (inval == SDI)
 		inval = SDI-2;
 
-	
+
 	ret =appCmdIntParse(cmd,inval,inlen,outval,&outlen);
 	return *outval;
 }
@@ -87,42 +86,60 @@ int webSetColorSpace(int inval,int *outval,int channel)
 	int outlen=sizeof(int);
 	int ret;
 	int cmd = MSG_SETCOLORSPACE;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;		
 	ret =appCmdIntParse(cmd,inval,inlen,outval,&outlen);
 	return *outval;
 }
 
 /* get input signal color spacce*/
 int webGetColorSpace(int *outval,int channel)
-{	
+{
 	int inval=0,inlen=sizeof(int);
 	int outlen=sizeof(int);
 	int ret;
 	int cmd = MSG_GETCOLORSPACE;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;		
 	ret =appCmdIntParse(cmd,inval,inlen,outval,&outlen);
 	return *outval;
 }
 
+int webGetSignalInfo(char *outval, int inlen, int channel)
+{
+	int ret = 0;
+	int outlen = 0;
+	int cmd = MSG_GETSIGNALINFO;
+	ret =appCmdStringParseEx(ENCODESERVER_PORT+channel, cmd, NULL,inlen,(void *)outval,&outlen);
+	return ret;
+}
+
+int webGetEncInfo(EncInfo_t *outval,int channel)
+{
+	EncInfo_t inval;
+	int inlen=sizeof(EncInfo_t);
+	int outlen=sizeof(EncInfo_t);
+	int ret = 0;
+	int cmd = MSG_GET_ENC_INFO;
+	ret =appCmdStructParseEx(ENCODESERVER_PORT+channel, cmd, &inval,inlen,(void *)outval,&outlen);
+	return ret;
+}
+
+
 /*get input signal HDCP flag*/
 int webGetHDCPFlag(int *outval,int channel)
-{	
+{
 	int inval=0,inlen=sizeof(int);
 	int outlen=sizeof(int);
 	int ret;
 	int cmd = MSG_GETHDCPVALUE;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;		
 	ret =appCmdIntParse(cmd,inval,inlen,outval,&outlen);
 	return *outval;
 }
 /*
 int webSetCbCr(int *outval,int channel)
-{	
+{
 	int inval=0,inlen=sizeof(int);
 	int outlen=sizeof(int);
 	int ret;
 	int cmd = MSG_SETCBCR;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;		
+	cmd = cmd | (((channel+1)&0xf)<<16) ;
 	ret =appCmdIntParse(cmd,inval,inlen,outval,&outlen);
 	return *outval;
 }
@@ -133,7 +150,6 @@ int webgetInputSignalInfo(char *outval,int channel)
 	int inlen=strlen(outval);
 	int outlen = 0,ret = 0;
 	int cmd = MSG_GETINPUTSIGNALINFO;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;		
 	ret =appCmdStringParse(cmd,NULL,inlen,outval,&outlen);
 	return ret;
 }
@@ -147,12 +163,8 @@ int webRevisePicture(short hporch,short vporch,int channel)
 	int ret;
 	unsigned int in=0;
 	int cmd = MSG_REVISE_PICTURE;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;
-	
 	in = (hporch<<16)|(vporch&0xffff);
-	//memcpy(inval,&hporch,sizeof(hporch));
-//	memcpy(inval+sizeof(short),&vporch,sizeof(vporch));
-	ret = appCmdIntParse(cmd,in,sizeof(in),&outval,&outlen);
+	ret = appCmdIntParseEx(ENCODESERVER_PORT+channel, cmd,in,sizeof(in),&outval,&outlen);
 	return ret;
 }
 
@@ -166,7 +178,7 @@ int webSDIRevisePicture(short hporch,short vporch,int channel)
 	int ret;
 	unsigned int in=0;
 	int cmd = MSG_SDI_REVISE_PICTURE;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;	
+	cmd = cmd | (((channel+1)&0xf)<<16) ;
 	in = (hporch<<16)|(vporch&0xffff);
 	ret = appCmdIntParse(cmd,in,sizeof(in),&outval,&outlen);
 	return ret;
@@ -177,8 +189,7 @@ int webSignalDetailInfo(char *buf,int inlen,int channel)
 {
 	int outlen,ret=0;
 	int cmd = MSG_SIGNALDETAILINFO;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;
-	ret = appCmdStringParse(cmd,NULL,inlen,buf,&outlen);
+	ret = appCmdStringParseEx(ENCODESERVER_PORT + channel, cmd,NULL,inlen,buf,&outlen);
 	return ret;
 }
 
@@ -216,7 +227,7 @@ int WebGetScaleParam(WebScaleInfo *info,int channel)
 	int inlen=sizeof(WebScaleInfo);
 	int outlen = 0,ret = 0;
 	int cmd = MSG_GETSCALEINFO;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;	
+	cmd = cmd | (((channel+1)&0xf)<<16) ;
 	ret =appCmdStructParse(cmd,NULL,inlen, (void*)info,&outlen);
 	return ret;
 }
@@ -227,8 +238,8 @@ int WebSetScaleParam(WebScaleInfo *ininfo,WebScaleInfo *outinfo,int channel)
 	int inlen=sizeof(WebScaleInfo);
 	int outlen = 0,ret = 0;
 	int cmd = MSG_SETSCALEINFO;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;	
-	
+	cmd = cmd | (((channel+1)&0xf)<<16) ;
+
 	ret =appCmdStructParse(cmd,ininfo,inlen, (void*)outinfo,&outlen);
 	return ret;
 }
@@ -239,8 +250,8 @@ int WebGetVideoEncodeParam(WebVideoEncodeInfo *info,int channel)
 	int inlen=sizeof(WebVideoEncodeInfo);
 	int outlen = 0,ret = 0;
 	int cmd = MSG_GETVIDEOENCODEINFO;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;	
-		
+	cmd = cmd | (((channel+1)&0xf)<<16) ;
+
 	ret =appCmdStructParse(cmd,NULL,inlen, (void*)info,&outlen);
 	return ret;
 }
@@ -251,7 +262,7 @@ int WebSetVideoEncodeParam(WebVideoEncodeInfo *ininfo,WebVideoEncodeInfo *outinf
 	int inlen=sizeof(WebVideoEncodeInfo);
 	int outlen = 0,ret = 0;
 	int cmd = MSG_SETVIDEOENCODEINFO;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;	
+	cmd = cmd | (((channel+1)&0xf)<<16) ;
 	ret =appCmdStructParse(cmd,ininfo,inlen, (void*)outinfo,&outlen);
 	return ret;
 }
@@ -268,8 +279,8 @@ int WebGetAudioEncodeParam(WEB_AudioEncodeParam *info,int channel)
 	int inlen=sizeof(WEB_AudioEncodeParam);
 	int outlen = 0,ret = 0;
 	int cmd = MSG_GETAUDIOPARAM;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;	
-		
+	cmd = cmd | (((channel+1)&0xf)<<16) ;
+
 	ret =appCmdStructParse(cmd,NULL,inlen, (void*)info,&outlen);
 	return ret;
 }
@@ -280,7 +291,7 @@ int WebSetAudioEncodeParam(WEB_AudioEncodeParam *ininfo,WEB_AudioEncodeParam *ou
 	int inlen=sizeof(WEB_AudioEncodeParam);
 	int outlen = 0,ret = 0;
 	int cmd = MSG_SETAUDIOPARAM;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;	
+	cmd = cmd | (((channel+1)&0xf)<<16) ;
 	ret =appCmdStructParse(cmd,ininfo,inlen, (void*)outinfo,&outlen);
 	return ret;
 }
@@ -320,7 +331,7 @@ int WebSetTextOsd(TextInfo *ininfo,TextInfo *outinfo,int channel)
 	int inlen=sizeof(TextInfo);
 	int outlen = 0,ret = 0;
 	int cmd = MSG_SET_TEXTINFO;
-	
+
 	ret =appCmdStructParse(cmd,ininfo,inlen, (void*)outinfo,&outlen);
 	return ret;
 }
@@ -330,7 +341,7 @@ int WebGetTextOsd(TextInfo *ininfo,TextInfo *outinfo,int channel)
 {
 	int inlen=sizeof(TextInfo);
 	int outlen = 0,ret = 0;
-	int cmd = MSG_GET_TEXTINFO;	
+	int cmd = MSG_GET_TEXTINFO;
 	ret =appCmdStructParse(cmd,ininfo,inlen, (void*)outinfo,&outlen);
 	return ret;
 }
@@ -343,7 +354,7 @@ int WebSetLogoOsd(LogoInfo *ininfo,LogoInfo *outinfo,int channel)
 	int inlen=sizeof(LogoInfo);
 	int outlen = 0,ret = 0;
 	int cmd = MSG_SET_LOGOINFO;
-	
+
 	ret =appCmdStructParse(cmd,ininfo,inlen, (void*)outinfo,&outlen);
 	return ret;
 }
@@ -355,7 +366,7 @@ int WebGetLogoOsd(LogoInfo *ininfo,LogoInfo *outinfo,int channel)
 	int inlen=sizeof(LogoInfo);
 	int outlen = 0,ret = 0;
 	int cmd = MSG_GET_LOGOINFO;
-	
+
 	ret =appCmdStructParse(cmd,ininfo,inlen, (void*)outinfo,&outlen);
 	return ret;
 }
@@ -399,17 +410,17 @@ int WebGetTextPos(int type,int *x,int *y)
 	else if(type == TOP_RIGHT)
 	{
 		*x = 1920-64;
-		*y = 0;		
+		*y = 0;
 	}
 	else if(type == BOTTOM_LEFT)
 	{
 		*x = 0;
-		*y = 1080-64 ;			
+		*y = 1080-64 ;
 	}
 	else if(type == BOTTOM_RIGHT)
 	{
 		*x = 1920 -64;
-		*y = 1080-64 ;		
+		*y = 1080-64 ;
 	}
 	else if(type == CENTERED)
 	{
@@ -419,7 +430,7 @@ int WebGetTextPos(int type,int *x,int *y)
 	else
 	{
 		*x = 0;
-		*y = 0;	
+		*y = 0;
 	}
 	return 0;
 }
@@ -434,17 +445,17 @@ int WebGetLogoPos(int type,int *x,int *y)
 	else if(type == TOP_RIGHT)
 	{
 		*x = 1920 ;
-		*y = 0;		
+		*y = 0;
 	}
 	else if(type == BOTTOM_LEFT)
 	{
 		*x = 0;
-		*y = 1080;			
+		*y = 1080;
 	}
 	else if(type == BOTTOM_RIGHT)
 	{
 		*x = 1920;
-		*y = 1080 ;		
+		*y = 1080 ;
 	}
 	else if(type == CENTERED)
 	{
@@ -454,7 +465,7 @@ int WebGetLogoPos(int type,int *x,int *y)
 	else
 	{
 		*x = 0;
-		*y = 0;	
+		*y = 0;
 	}
 	return 0;
 }
@@ -473,7 +484,7 @@ int WebGetCtrlProto(int *outdex,int channel)
 	int ret;
 	int cmd=MSG_GET_CTRL_PROTO;
 	cmd = cmd | (((channel+1)&0xf)<<16) ;
-	
+
 	ret =appCmdIntParse(cmd,index,inlen,outdex,&outlen);
 	return ret;
 }
@@ -485,7 +496,7 @@ int WebSetCtrlProto(int index,int *outdex,int channel)
 	int inlen=sizeof(int);
 	int	outlen=sizeof(int);
 	int ret;
-	int cmd=MSG_SET_CTRL_PROTO;	
+	int cmd=MSG_SET_CTRL_PROTO;
 	cmd = cmd | (((channel+1)&0xf)<<16) ;
 	ret =appCmdIntParse(cmd,index,inlen,outdex,&outlen);
 	return ret;
@@ -522,21 +533,32 @@ int webRebootSystem(void)
 	int inval=0,inlen=sizeof(int);
 	int outval=0,outlen=sizeof(int);
 	int ret;
-	
+
 	ret =appCmdIntParse(MSG_REBOOTSYS,inval,inlen,&outval,&outlen);
 	return ret;
 }
 
-
-/*
-int webGetSysInfo(Enc2000_Sys* out,int *outlen)
+/*reboot -f */
+int webfReboot(void)
 {
-	int ret =0;
-	int cmd = MSG_GETSYSPARAM;
-	ret = appCmdStructParse(cmd, NULL, sizeof(Enc2000_Sys), out, outlen);
+	int inval=0,inlen=sizeof(int);
+	int outval=0,outlen=sizeof(int);
+	int ret;
+
+	ret =appCmdIntParse(MSG_REBOOTSYS_F,inval,inlen,&outval,&outlen);
 	return ret;
 }
-*/
+
+
+int WebGetNetwork(IpConfig* out,int *outlen)
+{
+	int ret =0;
+	IpConfig in;
+	int cmd = MSG_GET_NETWORK;
+	ret = appCmdStructParse(cmd, &in, sizeof(IpConfig), out, outlen);
+	return ret;
+}
+
 
 /*Web Sync time*/
 int Websynctime(DATE_TIME_INFO* inval,DATE_TIME_INFO *outval)
@@ -606,7 +628,25 @@ int WebUpdateFile(char* filename)
 	int outlen=0;
 	int ret;
 	char outval[256] = {0};
-	ret = appCmdStringParse(MSG_UPDATESYS, filename,inlen,outval ,&outlen);
+	ret = appCmdStringParse(MSG_SYSUPGRADE, filename,inlen,outval ,&outlen);
+	return ret;
+}
+
+int WebSysUpgrade_6467(char *filename)
+{
+	int inlen = strlen(filename);
+	int outlen = 0,ret = 0;
+	char outval[264] = {0};
+	ret = appCmdStringParse(MSG_SYSUPGRADE_6467, filename, inlen, outval,&outlen);
+	return ret;
+}
+
+int WebSysRollBack(char *filename)
+{
+	int inlen = strlen(filename);
+	int outlen = 0,ret = 0;
+	char outval[264] = {0};
+	ret = appCmdStringParse(MSG_SYSROLLBACK, filename, inlen, outval,&outlen);
 	return ret;
 }
 
@@ -618,8 +658,6 @@ int WebUploadLogoFile(char* filename,int channel)
 	int ret;
 	char outval[256] = {0};
 	int cmd = MSG_UPLOADIMG;
-	cmd = cmd | (((channel+1)&0xf)<<16) ;
-	
 	ret = appCmdStringParse(cmd, filename,inlen,outval ,&outlen);
 	return ret;
 }
@@ -635,24 +673,23 @@ int webSetChannel(int channel)
 	return outval;
 }
 
-/*
 int WebSetSerialNo(char* serialNo,int inlen)
 {
 	int outlen=0;
 	int ret;
 	char outval[256] = {0};
-	int cmd = MSG_SETSERIALNO;
-	
+	int cmd = MSG_SETSERIALNUM;
+
 	ret = appCmdStringParse(cmd, serialNo,inlen,outval ,&outlen);
 	return ret;
-}*/
+}
 
 int WebSetSwmsLayout(Moive_Info_t in)
 {
 	int inlen=sizeof(Moive_Info_t);
 	int outlen=sizeof(Moive_Info_t);
 	Moive_Info_t outval ;
-	int ret =appCmdStructParse(MSG_SET_SWMS_LAYOUT,&in,inlen,&outval,&outlen);
+	int ret =appCmdStructParse(MSG_SET_SWMS_INFO,&in,inlen,&outval,&outlen);
 	return ret;
 }
 int WebGetSwmsLayout(Moive_Info_t* out)
@@ -660,18 +697,17 @@ int WebGetSwmsLayout(Moive_Info_t* out)
 	Moive_Info_t  inval ;
 	int inlen=sizeof(Moive_Info_t);
 	int outlen=0;
-	int ret =appCmdStructParse(MSG_GET_SWMS_LAYOUT,&inval,inlen,out,&outlen);
+	int ret =appCmdStructParse(MSG_GET_SWMS_INFO,&inval,inlen,out,&outlen);
 	return ret;
 }
 
 int WebSetHDMIRes(int res)
 {
-	int len = sizeof( int);
 	int inlen=sizeof(int);
 	int outlen=sizeof(int);
 	int outval = 0;
 	int ret;
-	ret =appCmdIntParse(MSG_SET_HDMI_RES,res,inlen,&outval,&outlen);
+	ret =appCmdIntParseEx(ENCODESERVER_PORT, MSG_SET_HDMI_RES,res,inlen,&outval,&outlen);
 	return outval;
 }
 
@@ -682,7 +718,26 @@ int WebGetHDMIRes(int* res)
 	int outlen=sizeof(int);
 	int outval = 0;
 	int ret;
-	ret =appCmdIntParse(MSG_GET_HDMI_RES,inval,inlen,res,&outlen);
+	ret =appCmdIntParseEx(ENCODESERVER_PORT, MSG_GET_HDMI_RES,inval,inlen,res,&outlen);
+	return ret;
+}
+int WebGetDevInfo(DevInfo *devinfo)
+{
+	int inlen  = 0;
+	int outlen = 0;
+	int ret;
+
+	ret = appCmdStructParse(MSG_GETDEVINFO,NULL,inlen,devinfo,&outlen);
+	return ret;
+}
+
+int WebGetSysDiskInfo(DiskInfo *diskinfo)
+{
+	int inlen  = 0;
+	int outlen = 0;
+	int ret;
+
+	ret = appCmdStructParse(MSG_GETDISKINFO,NULL,inlen,diskinfo,&outlen);
 	return ret;
 }
 
@@ -690,8 +745,127 @@ int WebGetSystemInfo(System_Info_t *ininfo,System_Info_t *outinfo)
 {
 	int inlen=sizeof(System_Info_t);
 	int outlen = 0,ret = 0;
-	int cmd = MSG_GETSYSPARAM;	
+	int cmd = MSG_GETSYSPARAM;
 	ret =appCmdStructParse(cmd,ininfo,inlen, (void*)outinfo,&outlen);
+	return ret;
+}
+
+int WebGetRemoteCtrl(Remote_Ctrl_t *ininfo,Remote_Ctrl_t *outinfo)
+{
+	int inlen=sizeof(Remote_Ctrl_t);
+	int outlen = 0,ret = 0;
+	int cmd = WEB_GET_RAMOTE_CTRL;
+	ret =appCmdStructParse(cmd,ininfo,inlen, (void*)outinfo,&outlen);
+	return ret;
+}
+
+int WebSetRemoteCtrl(Remote_Ctrl_t *ininfo,Remote_Ctrl_t *outinfo)
+{
+	int inlen=sizeof(Remote_Ctrl_t);
+	int outlen = 0,ret = 0;
+	int cmd = WEB_SET_RAMOTE_CTRL;
+	ret =appCmdStructParse(cmd,ininfo,inlen, (void*)outinfo,&outlen);
+	return ret;
+}
+
+int WebSetTracerInfo(Tracer_Info_t *ininfo,Tracer_Info_t *outinfo)
+{
+	int inlen=sizeof(Tracer_Info_t);
+	int outlen = 0,ret = 0;
+	int cmd = WEB_SET_TRACER_INFO;
+	ret =appCmdStructParse(cmd,ininfo,inlen, (void*)outinfo,&outlen);
+	return ret;
+}
+
+int WebGetTracerInfo(Tracer_Info_t *ininfo,Tracer_Info_t *outinfo)
+{
+	int inlen=sizeof(Tracer_Info_t);
+	int outlen = 0,ret = 0;
+	int cmd = WEB_GET_TRACER_INFO;
+	ret =appCmdStructParse(cmd,ininfo,inlen, (void*)outinfo,&outlen);
+	return ret;
+}
+
+int WebDownload(char* path,int inlen)
+{
+	char out[120];
+	int outlen = 0,ret = 0;
+	int cmd = MSG_DOWNLOAD_DIR;
+	ret =appCmdStringParse(cmd,path,inlen, out,&outlen);
+	return ret;
+}
+
+int WebSetNetControlIp(char* ip,int inlen)
+{
+	char out[120];
+	int outlen = 0,ret = 0;
+	int cmd = MSG_SET_NETCONTROL_IP;
+	ret =appCmdStringParse(cmd,ip,inlen, out,&outlen);
+	return ret;
+}
+int WebGetNetControlIp(char* ip)
+{
+	char out[120];
+	int outlen = 0,ret = 0;
+	int cmd = MSG_GET_NETCONTROL_IP;
+	ret =appCmdStringParse(cmd,out,16, ip,&outlen);
+	return ret;
+}
+
+int WebDelRecourse(char* RecourseName, int inlen)
+{
+	char out[120];
+	int outlen = 0,ret = 0;
+	int cmd = MSG_DEL_RECOURSE;
+	ret =appCmdStringParse(cmd,RecourseName,inlen, out,&outlen);
+	return ret;
+}
+
+
+int WebSetThrFtpinfo(ftp_info *info)
+{
+	ftp_info outinfo;
+	int outlen = 0,ret = 0;
+	int cmd = MSG_SET_THR_FTPINFO;
+	ret =appCmdStructParse(cmd,info,sizeof(ftp_info), &outinfo,&outlen);
+	return ret;
+}
+
+int WebGetThrFtpinfo(ftp_info *outinfo)
+{
+	ftp_info info;
+	int outlen = 0,ret = 0;
+	int cmd = MSG_GET_THR_FTPINFO;
+	ret =appCmdStructParse(cmd,&info,sizeof(ftp_info), outinfo,&outlen);
+	return ret;
+}
+
+
+int WebGetUSBDiskNum(int *num)
+{
+	int in;
+	int outlen = 0,ret = 0;
+	int cmd = MSG_GETDISKNUM;
+	ret =appCmdIntParse(cmd,in,sizeof(int), num,&outlen);
+	return ret;
+}
+
+int WebGetUSBStatus(int status)
+{
+	int out;
+	int outlen = 0,ret = 0;
+	int cmd = MSG_USBSTATUS;
+	ret =appCmdIntParse(cmd,status,sizeof(int),&out ,&outlen);
+	return ret;
+}
+
+
+int WebUSBCopy(int num)
+{
+	int out;
+	int outlen = 0,ret = 0;
+	int cmd = MSG_USBCOPY;
+	ret =appCmdIntParse(cmd,num,sizeof(int), &out,&outlen);
 	return ret;
 }
 

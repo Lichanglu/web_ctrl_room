@@ -3,14 +3,14 @@
  *
  *       Filename:  main.c
  *
- *    Description:  
+ *    Description:
  *
  *        Version:  1.0
  *        Created:  2012年11月1日 09时12分18秒
- *       Revision:  
+ *       Revision:
  *       Compiler:  gcc
  *
- *         Author:  黄海洪 
+ *         Author:  黄海洪
  *        Company:  深圳锐取信息技术股份有限公司
  *
  * =====================================================================================
@@ -58,7 +58,7 @@ int32_t gpio_fd = -1;
 int32_t create_room_config_file()
 {
 	FILE *fp = NULL;
-	
+
 	fp = fopen((char *)def_log_conf, "w+");
 	if(fp == NULL){
 		fprintf(stderr, "create_default_log_conf failed!\n");
@@ -80,7 +80,7 @@ int32_t create_room_client_config_file(int32_t port, int8_t *ipaddr, int32_t ind
 {
 	int8_t filename[256] = {0};
 	int8_t text[2048] = {0};
-	
+
 	sprintf((char *)filename, "%s_%d.xml", ROOM_CLIENT_CONFIG_FILE, index);
 	unlink((const char *)filename);
 
@@ -88,7 +88,7 @@ int32_t create_room_client_config_file(int32_t port, int8_t *ipaddr, int32_t ind
 		sprintf((char *)text, ROOM_CLIENT_PROGRAME_CONFIG_NAME, port);
 	else
 		sprintf((char *)text, ROOM_CLIENT_PROGRAME_CONFIG_NAME_IPADDR, ipaddr, port);
-	
+
 	FILE *fp = fopen((char *)filename, "w+");
 	fwrite(text, r_strlen(text), 1, fp);
 	fclose(fp);
@@ -99,26 +99,21 @@ int32_t create_room_client_config_file(int32_t port, int8_t *ipaddr, int32_t ind
 int32_t start_control_server()
 {
 	/* TODO: 需添加程序自救 */
-	
+
 	control_env *pcon = NULL;
 	http_env *phttp = NULL;
 	int32_t index = 0;
 	int32_t ret = 0;
 //	int8_t cmd[128] = {0};
-	
+
 	setpriority(PRIO_PROCESS, 0, -20);
-	
-#if 0
-	r_system((const int8_t *)SERVER_FTP_UPLOAD_PROGRAME_NAME);
-	sleep(1);
-#endif
 
 	ret = start_control_server_task(&gpser);
 	if(ret != 0){
 		zlog_error(DBGLOG, "---[start_control_server_task]--- failed!\n");
 		return -1;
 	}
-	
+
 	ret = start_ftpupload_com_task(gpser);
 	if(ret != 0){
 		zlog_error(DBGLOG, "---[start_ftpupload_com_task]--- failed!\n");
@@ -134,19 +129,8 @@ int32_t start_control_server()
 	}
 	phttp = &gpser->http;
 	http_set_running(phttp);
-
+	app_weblisten_init(gpser);
 	sleep(2);
-#if 0
-	for(index = 0; index < gpser->pserinfo->ServerInfo.MaxRoom; index++){
-		r_memset(cmd, 0, 128);
-		create_room_client_config_file(CONTROL_ROOM_SERVER_PORT_START+index, (int8_t *)LOCAL_LOOP_INTERFACE, index);
-#if 0		
-		usleep(20000);
-		sprintf((char *)cmd, "%s %d &", ROOM_CLIENT_PROGRAME_NAME, index);
-		system((const char *)cmd);
-#endif
-	}
-#endif
 	return 0;
 }
 
@@ -155,7 +139,7 @@ int32_t close_control_server()
 	control_env *pcon = NULL;
 	http_env *phttp = NULL;
 	all_server_info *pinfo = NULL;
-	
+
 	int32_t index = 0;
 	int32_t j = 0;
 
@@ -163,10 +147,10 @@ int32_t close_control_server()
 	http_set_stop(phttp);
 
 	sleep(6);
-	
+
 	pcon = &gpser->forser;
 	control_set_stop(pcon);
-	
+
 	for(index = 0; index < gpser->pserinfo->ServerInfo.MaxRoom; index++){
 		pcon = &gpser->roomser[index];
 		control_set_stop(pcon);
@@ -194,7 +178,7 @@ int32_t close_control_server()
 
 	if (pinfo->parse_xml_ftp)
 		r_free(pinfo->parse_xml_ftp);
-	
+
 	if(pinfo)
 		r_free(pinfo);
 	r_free(gpser);
@@ -207,7 +191,7 @@ int32_t start_room_server(server_set *gpser)
 {
 	int32_t index = 0;
 	int32_t buf[16] = {0};
-	
+
 	if(NULL == gpser){
 		zlog_error(DBGLOG, "---[start_room_server]--- failed, params is NULL\n");
 		return -1;
@@ -223,6 +207,8 @@ int32_t start_room_server(server_set *gpser)
 	return 0;
 }
 
+extern void init_led_tsk();
+
 int32_t main(int argc, char **argv)
 {
 	printf("********control********\n");
@@ -232,7 +218,7 @@ int32_t main(int argc, char **argv)
 	uint32_t max_room = 0;
 	uint32_t sync_count = 0;
 	localtime_t t;
-	
+
 	Signal(SIGPIPE, SIG_IGN);
 	Signal(SIGINT, SIG_IGN);
 
@@ -259,15 +245,22 @@ int32_t main(int argc, char **argv)
 	g_spec_data = max_room;
 	g_spec_data = 1;
 
-	app_weblisten_init(1);
 
 	gpio_fd = open_gpio_device();
 
-	
+
 	start_control_server();
-	
-	//sleep(5);
+
+
+	init_led_tsk();
+
+    //printf("***************RegisterNetControlTask******************\n");
 	RegDiskDetectMoudle();
+    RegisterNetControlTask();
+
+
+
+	//sleep(5);
 	//start_lcd_display_task();
 #ifdef SERIAL_CONTROL
 	RegisterrSerialControlTask();
@@ -311,7 +304,7 @@ int32_t main(int argc, char **argv)
 	fprintf(stderr, "control_log_deinit---------------!\n");
 	xmlCleanupParser();
 #endif
-	
+
 	return 0;
 }
 

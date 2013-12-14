@@ -36,11 +36,15 @@ static int32_t get_recv_to_ctrl_msgid( stream_handle *stream_hand);
 static int32_t set_recv_to_live_msgid(int32_t msgid, stream_handle *stream_hand);  
 static int32_t get_recv_to_live_msgid( stream_handle *stream_hand);  
 static int32_t set_recv_to_rec_msgid(int32_t msgid, stream_handle *stream_hand);  
+static int32_t set_recv_to_usb_rec_msgid(int32_t msgid, stream_handle *stream_hand);  
+
 static int32_t get_recv_to_rec_msgid( stream_handle *stream_hand); 
 static  int32_t set_room_info(recv_param *param, void *recv_hand, int32_t param_len);
 static int32_t  get_stream_connect(stream_handle *stream_hand);
 
 static int32_t set_rec_status(stream_handle *stream_hand, uint8_t status);
+static int32_t set_usb_rec_status(stream_handle *stream_hand, uint8_t status);
+
 static int32_t set_live_status(stream_handle *stream_hand, uint8_t status);
 static int32_t get_stream_socket(stream_handle *stream_hand);
 static void * recv_real_print(void *recv_handle);
@@ -119,6 +123,10 @@ static int32_t set_stream_com_info(stream_handle *info)
 				info->pull_udp_port = UDP_SYN_TO_ROOM_SD;
 			}
 			info->port = TCP_SYN_TO_ROOM ;
+			info->rec_mode = RECODE_MODE_MOVIE;
+			info->rec_audio_falg = RECODE_AUDIO_ON;
+			info->live_audio_falg = RECODE_AUDIO_ON;
+			info->recv_audio_flag = RECODE_AUDIO_OFF;
 			ret = 0;
 			break;
 		case 2:									// SDI-1
@@ -126,6 +134,10 @@ static int32_t set_stream_com_info(stream_handle *info)
 			info->push_module = NO_COMMUNICATION;
 			info->pull_udp_port = UDP_SDI1_TO_ROOM;
 			info->port = TCP_SDI1_TO_ROOM;
+			info->rec_mode = RECODE_MODE_RES;
+			info->rec_audio_falg = RECODE_AUDIO_ON;
+			info->live_audio_falg = RECODE_AUDIO_OFF;
+			info->recv_audio_flag = RECODE_AUDIO_OFF;
 			ret = 0;
 			break;
 		case 3:									// SDI-2
@@ -133,6 +145,10 @@ static int32_t set_stream_com_info(stream_handle *info)
 			info->push_module = NO_COMMUNICATION;
 			info->pull_udp_port = UDP_SDI2_TO_ROOM;
 			info->port = TCP_SDI2_TO_ROOM;
+			info->rec_mode = RECODE_MODE_RES;
+			info->rec_audio_falg = RECODE_AUDIO_ON;
+			info->live_audio_falg = RECODE_AUDIO_OFF;
+			info->recv_audio_flag = RECODE_AUDIO_OFF;
 			ret = 0;
 			break;
 		case 4:									//VGA-H264(仿ENC1200)
@@ -140,13 +156,22 @@ static int32_t set_stream_com_info(stream_handle *info)
 			info->push_module = NO_COMMUNICATION;
 			info->pull_udp_port = UDP_ENC1200_TO_ROOM;
 			info->port = TCP_ENC1200_TO_ROOM;
+			info->rec_mode = RECODE_MODE_RES;
+			info->rec_audio_falg = RECODE_AUDIO_ON;
+			info->live_audio_falg = RECODE_AUDIO_OFF;
+			info->recv_audio_flag = RECODE_AUDIO_ON;
 			ret = 0;
 			break;
 		case 5:									//VGA-PPT(仿ENC120E)
 			info->pull_module = PULL_IN_UDP;
+		//	info->pull_module = PULL_IN_TCP;
 			info->push_module = NO_COMMUNICATION;
 			info->pull_udp_port = UDP_ENC120_TO_ROOM;
 			info->port = TCP_ENC120_TO_ROOM;
+			info->rec_mode = RECODE_MODE_ALL;
+			info->rec_audio_falg = RECODE_AUDIO_OFF;
+			info->live_audio_falg = RECODE_AUDIO_OFF;
+			info->recv_audio_flag = RECODE_AUDIO_OFF;
 			ret = 0;
 			break;
 		case 6:									//IP-Carame-1 (防 ENC1200)
@@ -155,6 +180,10 @@ static int32_t set_stream_com_info(stream_handle *info)
 			info->push_udp_port = UDP_ROOM_TO_SYN_IPENC1;
 			info->pull_udp_port = UDP_ROOM_TO_SYN_IPENC1_BIND;
 			info->port = TCP_IPENC1_TO_ROOM;
+			info->rec_mode = RECODE_MODE_RES;
+			info->rec_audio_falg = RECODE_AUDIO_OFF;
+			info->live_audio_falg = RECODE_AUDIO_OFF;
+			info->recv_audio_flag = RECODE_AUDIO_OFF;
 			ret = 0;
 			break;
 		case 7:									//IP-Carame-2 (防 ENC1200)
@@ -163,6 +192,10 @@ static int32_t set_stream_com_info(stream_handle *info)
 			info->push_udp_port = UDP_ROOM_TO_SYN_IPENC2;
 			info->pull_udp_port = UDP_ROOM_TO_SYN_IPENC2_BIND;
 			info->port = TCP_IPENC2_TO_ROOM;
+			info->rec_mode = RECODE_MODE_RES;
+			info->rec_audio_falg = RECODE_AUDIO_OFF;
+			info->live_audio_falg = RECODE_AUDIO_OFF;
+			info->recv_audio_flag = RECODE_AUDIO_OFF;
 			ret = 0;
 			break;
 		case 8:									//IP-Carame-3 (防 ENC1200)
@@ -171,6 +204,10 @@ static int32_t set_stream_com_info(stream_handle *info)
 			info->push_udp_port = UDP_ROOM_TO_SYN_IPENC3;
 			info->pull_udp_port = UDP_ROOM_TO_SYN_IPENC3_BIND;
 			info->port = TCP_IPENC3_TO_ROOM;
+			info->rec_mode = RECODE_MODE_RES;
+			info->rec_audio_falg = RECODE_AUDIO_OFF;
+			info->live_audio_falg = RECODE_AUDIO_OFF;
+			info->recv_audio_flag = RECODE_AUDIO_OFF;
 			ret = 0;
 			break;
 		case 9:									//IP-Carame-4 (防 ENC1200)
@@ -179,6 +216,10 @@ static int32_t set_stream_com_info(stream_handle *info)
 			info->push_udp_port = UDP_ROOM_TO_SYN_IPENC4;
 			info->pull_udp_port = UDP_ROOM_TO_SYN_IPENC4_BIND;
 			info->port = TCP_IPENC4_TO_ROOM;
+			info->rec_mode = RECODE_MODE_RES;
+			info->rec_audio_falg = RECODE_AUDIO_OFF;
+			info->live_audio_falg = RECODE_AUDIO_OFF;
+			info->recv_audio_flag = RECODE_AUDIO_OFF;
 			ret = 0;
 			break;
 		default:
@@ -191,6 +232,91 @@ static int32_t set_stream_com_info(stream_handle *info)
 		;
 	}
 	return ret;
+}
+
+static int32_t set_stream_audio_info(recv_room_handle *recv_handle)
+{
+	int32_t ret = -1;
+	int32_t enc_id = 0;
+	int32_t index = 0;
+	stream_handle *info = NULL;
+	int32_t vaild_index = 0;
+	if(recv_handle == NULL)
+	{
+		return ret;
+	}
+	for(index = 0;index <MAX_STREAM ;index ++)
+	{
+		if(recv_handle->stream_hand[index].media_flag == MEDIA_STREAM_INVALID)
+		{
+			continue;
+		}
+		if(recv_handle->stream_hand[index].recv_audio_flag == RECODE_AUDIO_ON)
+		{
+			// 就一路来声音
+			recv_handle->stream_hand[index].audio_info = (media_audio_info_t *)r_malloc(sizeof(media_audio_info_t));
+			r_memset(recv_handle->stream_hand[index].audio_info , 0 ,sizeof(media_audio_info_t));
+			info = &(recv_handle->stream_hand[index]);
+			break;
+		}
+	}
+	if(info == NULL)
+	{
+		return -1;
+	}
+	for(index = 0;index <MAX_STREAM ;index ++)
+	{
+		if(recv_handle->stream_hand[index].media_flag == MEDIA_STREAM_INVALID)
+		{
+			continue;
+		}
+
+		if(recv_handle->stream_hand[index].rec_audio_falg == RECODE_AUDIO_ON &&
+			(recv_handle->stream_hand[index].rec_mode == RECODE_MODE_MOVIE ||
+			recv_handle->stream_hand[index].rec_mode == RECODE_MODE_ALL))
+		{
+			vaild_index = info->audio_info->audio_tran_movie_info.stream_num ;
+			info->audio_info->audio_tran_movie_info.stream_handle_addr[vaild_index] = &(recv_handle->stream_hand[index]);
+			info->audio_info->audio_tran_movie_info.stream_num++;
+			nslog(NS_ERROR,"FUCK_GOD_1015 <RECODE_MOVIE_AUDIO> <AUDIO_INDEX : %d> <STREAM_INDEX : %d> <STREAM_ADDR : %p> <NUM : %d>\n",
+				info->stream_id ,
+				recv_handle->stream_hand[index].stream_id,
+				&(info->audio_info->audio_tran_movie_info.stream_handle_addr[vaild_index -1]),
+				info->audio_info->audio_tran_movie_info.stream_num);
+		}
+
+		if(recv_handle->stream_hand[index].rec_audio_falg == RECODE_AUDIO_ON &&
+			(recv_handle->stream_hand[index].rec_mode == RECODE_MODE_RES ||
+			recv_handle->stream_hand[index].rec_mode == RECODE_MODE_ALL))
+		{
+			vaild_index = info->audio_info->audio_tran_res_info.stream_num ;
+			info->audio_info->audio_tran_res_info.stream_handle_addr[vaild_index] = &(recv_handle->stream_hand[index]);
+			info->audio_info->audio_tran_res_info.stream_num++;
+
+			nslog(NS_ERROR,"FUCK_GOD_1015 <RECODE_RES_AUDIO> <AUDIO_INDEX : %d> <STREAM_INDEX : %d> <STREAM_ADDR : %p> <NUM : %d>\n",
+				info->stream_id ,
+				recv_handle->stream_hand[index].stream_id,
+				&(info->audio_info->audio_tran_res_info.stream_handle_addr[vaild_index -1]),
+				info->audio_info->audio_tran_res_info.stream_num);
+			
+		}
+
+		if(recv_handle->stream_hand[index].live_audio_falg == RECODE_AUDIO_ON)
+		{
+			vaild_index = info->audio_info->audio_tran_live_into.stream_num ;
+			info->audio_info->audio_tran_live_into.stream_handle_addr[vaild_index] = &(recv_handle->stream_hand[index]);
+			info->audio_info->audio_tran_live_into.stream_num++;
+
+			nslog(NS_ERROR,"FUCK_GOD_1015 <LIVE_AUDIO> <AUDIO_INDEX : %d> <STREAM_INDEX : %d> <STREAM_ADDR : %p> <NUM : %d>\n",
+				info->stream_id ,
+				recv_handle->stream_hand[index].stream_id,
+				&(info->audio_info->audio_tran_live_into.stream_handle_addr[vaild_index -1]),
+				info->audio_info->audio_tran_live_into.stream_num);
+		}
+	}
+
+	return 0;
+	
 }
 
 int32_t memset_pri_status(recv_print *pinfo)
@@ -248,6 +374,7 @@ recv_room_handle *register_room_receive_module(int32_t max_stream_num)
         nslog(NS_ERROR, "r_malloc");
         return NULL;
     }
+	
 
     r_memset(recv_handle, 0, RoomLen);
     recv_handle->init_room_module = init_room_module;
@@ -262,10 +389,13 @@ recv_room_handle *register_room_receive_module(int32_t max_stream_num)
     recv_handle->set_room_info = set_room_info;
 
     recv_handle->set_recv_to_rec_msgid = set_recv_to_rec_msgid;
+	recv_handle->set_recv_to_usb_rec_msgid = set_recv_to_usb_rec_msgid;
     recv_handle->set_recv_to_live_msgid = set_recv_to_live_msgid;
 
     recv_handle->set_rec_status = set_rec_status;
     recv_handle->get_rec_status = get_rec_status;
+    recv_handle->set_usb_rec_status = set_usb_rec_status;  //add zl
+    recv_handle->get_usb_rec_status = get_usb_rec_status;
     recv_handle->set_live_status = set_live_status;
     recv_handle->get_live_status = get_live_status;
 
@@ -365,7 +495,13 @@ static int32_t init_room_module(void *recv_handle)
         pthread_mutex_init(&recv_hand->stream_hand[index].alive_mutex, NULL);
         pthread_mutex_init(&recv_hand->stream_hand[index].status_mutex, NULL);
 		 pthread_mutex_init(&recv_hand->stream_hand[index].recv_pri.print_mutex, NULL);
-    }
+
+		// add zl
+		recv_hand->stream_hand[index].audio_info = NULL;
+		recv_hand->stream_hand[index].media_flag = MEDIA_STREAM_INVALID;
+
+	}
+	
 
     return OPERATION_SUCC;
 }
@@ -397,7 +533,9 @@ static int32_t deinit_room_module(void *recv_handle)
     {
         close_stream_connect(&recv_hand->stream_hand[index]);
         set_rec_status(&recv_hand->stream_hand[index], STOP_REC);
+		set_usb_rec_status(&recv_hand->stream_hand[index], STOP_USB_REC);
         set_live_status(&recv_hand->stream_hand[index], STOP_LIVE);
+		// add zl question???
         recv_hand->stream_hand[index].pthread_status = 0;
         pthread_mutex_destroy(&recv_hand->stream_hand[index].mutex);
         pthread_mutex_destroy(&recv_hand->stream_hand[index].alive_mutex);
@@ -443,9 +581,13 @@ static int32_t  set_room_info(recv_param *param, void *recv_hand, int32_t param_
 			recv_handle->stream_hand[index].pthread_status = 0;  // 结束空跑线程!!!
 			nslog(NS_ERROR,"FUCK ------ \n");
 
+			recv_handle->stream_hand[index].media_flag = MEDIA_STREAM_INVALID;  // add zl
+
 			continue;
 		}
-	
+		nslog(NS_ERROR,"FUCK-GOD SET FLAG IS OK !<streamid :%d>\n",param[index].stream_id);
+		recv_handle->stream_hand[index].media_flag = MEDIA_STREAM_VALID;	// add zl
+		
 	    if (CONNECT == get_stream_status(&recv_handle->stream_hand[index])) {
             close_stream_connect(&recv_handle->stream_hand[index]);
             //usleep(CLOSE_CONNECT_DELAY);
@@ -480,6 +622,7 @@ static int32_t  set_room_info(recv_param *param, void *recv_hand, int32_t param_
 				nslog(NS_ERROR,"IMPORT ERROR, <STREAM_ID : %d> <ENC_ID : %d>\n",param[index].stream_id,param[index].enc_id);
 				return OPERATION_ERR;
 			}
+
 			
 			// add zl
 			if(recv_handle->stream_hand[index].push_module == PUSH_IN_UDP)
@@ -499,6 +642,13 @@ static int32_t  set_room_info(recv_param *param, void *recv_hand, int32_t param_
 		  	}
         }
     }
+
+	
+	// add zl deal aduio transmit
+	if(set_stream_audio_info(recv_handle) < 0)
+	{
+		nslog(NS_ERROR,"SET STREAM AUDIO IS ERROR!\n");
+	}
 
 	nslog(NS_INFO, "set_room_info success");
     return OPERATION_SUCC;
@@ -669,6 +819,21 @@ static int32_t set_recv_to_rec_msgid(int32_t msgid, stream_handle *stream_hand)
     return OPERATION_SUCC;
 }
 
+static int32_t set_recv_to_usb_rec_msgid(int32_t msgid, stream_handle *stream_hand)
+{
+    if (NULL == stream_hand) {
+        nslog(NS_ERROR, "stream_hand = [%p]", stream_hand);
+        return OPERATION_ERR;
+    }
+
+    if(msgid >= 0 && (stream_hand->stream_id > 0 || stream_hand->stream_id < MAX_STREAM))
+    {
+        stream_hand->msg_recv_to_usb_rec = msgid;
+    }
+    return OPERATION_SUCC;
+}
+
+
 static int32_t get_stream_socket(stream_handle *stream_hand)
 {
     if (NULL == stream_hand) {
@@ -716,6 +881,40 @@ int32_t get_rec_status(stream_handle *stream_hand)
     return OPERATION_SUCC;
 }
 
+
+static int32_t set_usb_rec_status(stream_handle *stream_hand, uint8_t status)  //zl
+{
+    if (NULL == stream_hand) {
+        nslog(NS_ERROR, "stream_hand = [%p]", stream_hand);
+		
+        return OPERATION_ERR;
+    }
+
+    if( stream_hand->stream_id > 0 || stream_hand->stream_id < MAX_STREAM)
+    {
+    	
+        stream_hand->usb_rec_status = status;
+        nslog(NS_INFO, "set_usb_rec_status success, status= %d, stream_id = %d", status, stream_hand->stream_id);
+    }
+	
+    return OPERATION_SUCC;
+}
+
+int32_t get_usb_rec_status(stream_handle *stream_hand)    //zl
+{
+    if (NULL == stream_hand) {
+        nslog(NS_ERROR, "stream_hand = [%p]", stream_hand);
+        return OPERATION_ERR;
+    }
+
+    if(stream_hand->stream_id > 0 || stream_hand->stream_id < MAX_STREAM)
+    {
+        return stream_hand->usb_rec_status;
+    }
+
+    return OPERATION_SUCC;
+
+}
 static int32_t set_live_status(stream_handle *stream_hand, uint8_t status)
 {
     if (NULL == stream_hand) {
@@ -781,7 +980,7 @@ static int32_t receive_connect_server(stream_handle *M_handle)
     sockfd = socket(PF_INET, SOCK_STREAM, 0);
     bzero(&servaddr, sizeof(struct sockaddr_in));
 
-	nslog(NS_ERROR,"ip:%s  --------port : %d ---- stream_id : %d\n",M_handle->ipaddr,M_handle->port,M_handle->stream_id);
+//	nslog(NS_ERROR,"ip:%s  --------port : %d ---- stream_id : %d\n",M_handle->ipaddr,M_handle->port,M_handle->stream_id);
     servaddr.sin_family = PF_INET;
     servaddr.sin_port = htons(M_handle->port);
     servaddr.sin_addr.s_addr = inet_addr(M_handle->ipaddr);
@@ -859,7 +1058,11 @@ static int32_t receive_parse_stream(MSGHEAD *msg, stream_handle *M_handle, void 
     int32_t msg_len = 0;
 	int32_t msg_nMsg = msg->nMsg;
 
-	nslog(NS_ERROR,"MSG : %d\n",msg_nMsg);
+	msg_header_t auto_req_msg;
+	int8_t auto_req_buf[XML_MSG_LEN] ={0};
+	int32_t auto_req_len = 0;
+
+//	nslog(NS_ERROR,"MSG : %d\n",msg_nMsg);
     //assert(M_handle);
     r_memset(&m_meeting_msgque, 0, MsgqueLen);
 
@@ -868,7 +1071,7 @@ static int32_t receive_parse_stream(MSGHEAD *msg, stream_handle *M_handle, void 
             JPG_STREAM == msg_nMsg || AUDIO_STREAM == msg_nMsg ||
             LOW_STREAM_T == msg_nMsg)
     {
-    	nslog(NS_ERROR ,"SHIRT ----1 --------- %d \n",M_handle->stream_id);
+    //	nslog(NS_ERROR ,"SHIRT ----1 --------- %d \n",M_handle->stream_id);
         if (HIGH_STREAM == msg_nMsg) {
             M_handle->recv_pri.stream_type = 0;
             M_handle->recv_pri.data_type = R_VIDEO;
@@ -892,9 +1095,10 @@ static int32_t receive_parse_stream(MSGHEAD *msg, stream_handle *M_handle, void 
     }
     else if ( XML_TYPE == msg_nMsg)
     {
-    	nslog(NS_WARN,"ip:[%s] streamid:[%d] eid:[%d] len:[%d][%s]\n",
-			M_handle->ipaddr, M_handle->stream_id, M_handle->enc_id,
-			in_data_len, in_data);
+    	
+ //   	nslog(NS_WARN,"ip:[%s] streamid:[%d] eid:[%d] len:[%d][%s]\n",
+//			M_handle->ipaddr, M_handle->stream_id, M_handle->enc_id,
+//			in_data_len, in_data);
 
 		 if (in_data_len > XML_MSG_LEN) {
 				nslog(NS_WARN, "in_data_len = %d, XML_MSG_LEN = %d, msg_nMsg = %d,stream_id = %d", in_data_len, XML_MSG_LEN, msg_nMsg, M_handle->stream_id);
@@ -923,7 +1127,7 @@ static int32_t receive_parse_stream(MSGHEAD *msg, stream_handle *M_handle, void 
 
         msg_len = htons(in_data_len + MsgLen);
         r_memcpy(r_xml_msg_buf, msg, MsgLen);
-		nslog(NS_ERROR ,"SHIRT : %s \n",in_data);
+//		nslog(NS_ERROR ,"SHIRT : %s \n",in_data);
         r_memcpy(r_xml_msg_buf + MsgLen, in_data, in_data_len);
 
         m_meeting_msgque.msgtype = M_handle->stream_id; //the msg type of sending meeting room.
@@ -978,6 +1182,37 @@ static int32_t receive_parse_stream(MSGHEAD *msg, stream_handle *M_handle, void 
             nslog(NS_INFO, "%d stream connect %s encode success, sockfd = %d", M_handle->stream_id, M_handle->ipaddr, M_handle->sockfd);
             M_handle->recv_pri.status = 1;
             SET_FLAG_BIT_TRUE(M_handle->log_flag, LOGIN_BIT);
+
+#if 1
+			//add zl login 编码器成功后置位
+			M_handle->enc_login_flag = 1;
+			
+#endif 		
+		
+
+			
+#if 0
+			// add zl 连接编码器后自动请求码流
+			r_memset(auto_req_buf, 0, XML_MSG_LEN);
+			auto_req_len = 0;
+			room_auto_send_req(&(auto_req_buf[MsgLen]),&auto_req_len,M_handle->stream_id%2,M_handle->stream_id);
+			nslog(NS_ERROR ,"GOD --- AUTO_REQ :%s	  --- IP <%s>  stream_id :%d\n",&auto_req_buf[MsgLen],M_handle->ipaddr,M_handle->stream_id);
+			auto_req_msg.m_len = htons(auto_req_len + MsgLen);
+			auto_req_msg.m_ver = htons(ENC_VER);
+			auto_req_msg.m_msg_type = XML_TYPE;
+			
+			r_memcpy(auto_req_buf, &auto_req_msg, MsgLen);
+
+			pthread_mutex_lock(&M_handle->mutex);
+			if(r_send(M_handle->sockfd, auto_req_buf, auto_req_len + MsgLen, 0)< 0)
+			{
+				nslog(NS_ERROR, "r_send AUTO_REQ error, errno = %d, stream_id = %d", errno, M_handle->stream_id);
+				return_code = LOSE_CONNECT;
+				pthread_mutex_unlock(&M_handle->mutex);
+				goto EXIT;
+			}
+			pthread_mutex_unlock(&M_handle->mutex);
+#endif 
         }
 
 #if RECV_KEEPLIVE      //心跳机制
@@ -989,7 +1224,7 @@ static int32_t receive_parse_stream(MSGHEAD *msg, stream_handle *M_handle, void 
         }
 #endif
 
-		nslog(NS_ERROR,"SHIRT_FUCK ---- %s     -%d\n", m_meeting_msgque.msgbuf + MsgLen,M_handle->msg_recv_to_ctrl);
+//		nslog(NS_ERROR,"SHIRT_FUCK ---- %s     -%d\n", m_meeting_msgque.msgbuf + MsgLen,M_handle->msg_recv_to_ctrl);
         return_code = r_msg_send(M_handle->msg_recv_to_ctrl, &m_meeting_msgque, MsgqueLen - sizeof(long), IPC_NOWAIT);
 
         if (0 > return_code)
@@ -1114,6 +1349,7 @@ static void *room_receive_deal(void *arg)
 
 	int32_t login_send_falg = 0;
 
+	int32_t debug_print_num = 0;
 	
     if(NULL == M_handle)
     {
@@ -1130,12 +1366,22 @@ static void *room_receive_deal(void *arg)
     r_memset(in_data, 0, MAX_TCP_PACKAGE);
     //r_pthread_detach(r_pthread_self());     //用了pthread_join  这个就不能用了.
 
+	nslog(NS_INFO,"CONNECT_ENC <ENC_IP :%s> <SRM_ID : %d> <PORT : %d>  <PUSH_PORT :%d><PULL_PORT %d> <PUSH_IP :%s> <PUSH_MODE: %d> <PULL_MODE :%d>\n",
+		M_handle->ipaddr,
+		M_handle->stream_id,
+		M_handle->port,
+		M_handle->push_udp_port,
+		M_handle->pull_udp_port,
+		M_handle->push_ip,
+		M_handle->push_module,
+		M_handle->pull_module);
 	
     while(M_handle->pthread_status)
     {
 		
     	// add zl
 		login_send_falg = 0;
+		M_handle->enc_login_flag = 0;
 		M_handle->pull_module_flag = 0;
 		M_handle->push_module_flag = 0;
 		
@@ -1155,7 +1401,7 @@ static void *room_receive_deal(void *arg)
       	if(START_CONNECT == get_stream_status(M_handle))
         {
         
-#if 1
+#if 0
 		 if (PUSH_IN_UDP == M_handle->push_module && M_handle->push_module_flag == 0){
 					 udp_port = M_handle->pull_udp_port;
 					 src.video_port = M_handle->push_udp_port;
@@ -1169,7 +1415,8 @@ static void *room_receive_deal(void *arg)
 				recv_cond.port = M_handle->pull_udp_port;
 				recv_cond.func = recv_deal_udp_recv_data;
 				recv_cond.user_data = M_handle;
-				get_local_ip("eth0",recv_cond.ip);
+				// add zl question eth1 ???
+				get_local_ip("eth1",recv_cond.ip);
 				p_recv_hand = udp_recv_init(&recv_cond);
 				udp_recv_start(p_recv_hand);
 				M_handle->pull_module_flag = 1;
@@ -1182,8 +1429,8 @@ static void *room_receive_deal(void *arg)
 
                 goto EXIT;
             }
-			nslog(NS_INFO,"FUCK-CONNET IS OK!   IP : %s   ---- PORT : %d   --STREAM_ID : %d\n"
-				,M_handle->ipaddr,M_handle->port,M_handle->stream_id);
+			nslog(NS_INFO,"FUCK-CONNET IS OK!   IP : %s   ---- PORT : %d   --STREAM_ID : %d\n",
+				M_handle->ipaddr,M_handle->port,M_handle->stream_id,M_handle->port);
 			r_usleep(SLEEP_DELAY);
 			#if 0
             r_memset(&recv_xml_hand, 0, sizeof(recv_xml_handle));
@@ -1243,6 +1490,32 @@ static void *room_receive_deal(void *arg)
         M_handle->offset = 0;
         M_handle->audio_offset = 0;
 
+	
+#if 1
+	 if (PUSH_IN_UDP == M_handle->push_module && M_handle->push_module_flag == 0){
+				 udp_port = M_handle->pull_udp_port;
+				 src.video_port = M_handle->push_udp_port;
+				 src.audio_port = M_handle->push_udp_port;
+				 r_memcpy(src.ip,M_handle->push_ip,IP_LEN);
+				 udp_send_module_hand = UdpSend_init(&src);
+				 M_handle->push_module_flag = 1;
+	 }
+	//nslog(NS_WARN ,
+	 // add zl
+	 if (PULL_IN_UDP == M_handle->pull_module && M_handle->pull_module_flag == 0){
+			recv_cond.port = M_handle->pull_udp_port;
+			recv_cond.func = recv_deal_udp_recv_data;
+			recv_cond.user_data = M_handle;
+			// add zl question eth1 ???
+			get_local_ip("eth1",recv_cond.ip);
+
+//			printf("---recv_cond.port=%x.\n",recv_cond.port);
+			p_recv_hand = udp_recv_init(&recv_cond);
+			udp_recv_start(p_recv_hand);
+			M_handle->pull_module_flag = 1;
+	 }
+ #endif
+
         // add zl  !!!
 
         while (START_CONNECT == get_stream_status(M_handle))
@@ -1258,11 +1531,14 @@ static void *room_receive_deal(void *arg)
 				snprintf(recv_xml_hand.passkey, r_strlen(ENC_PASSKEY) + 1, "%s", ENC_PASSKEY);
 				snprintf(recv_xml_hand.user, r_strlen(ENC_USER) + 1, "%s", ENC_USER);
 				snprintf(recv_xml_hand.password, r_strlen(ENC_PASSWORD) + 1, "%s", ENC_PASSWORD);
+
+				// add zl 设定高清版同步时间只有高清版发送
+				
 				
 				r_memset(login_buf, 0, XML_MSG_LEN);
 				r_memset(&login_msg, 0, MsgLen);
-				receive_xml_login(&recv_xml_hand, login_buf, &out_len);
-				nslog(NS_ERROR ,"GOD --- LOGIN :%s	  --- IP <%s>  stream_id :%d\n",login_buf,M_handle->ipaddr,M_handle->stream_id);
+				receive_xml_login(&recv_xml_hand, login_buf, &out_len,M_handle->enc_id);
+				nslog(NS_ERROR ,"GOD --- LOGIN :%s	  --- IP <%s>  stream_id :%d   enc_id : %d\n",login_buf,M_handle->ipaddr,M_handle->stream_id,M_handle->enc_id);
 				login_msg.m_len = htons(out_len + MsgLen);
 				login_msg.m_ver = htons(ENC_VER);
 				login_msg.m_msg_type = XML_TYPE;
@@ -1355,7 +1631,7 @@ static void *room_receive_deal(void *arg)
                 }							
 			
 				data_len = ntohs_msglen - MsgLen;
-              	nslog(NS_DEBUG, "recv encode type = %d,ver : %d, msg_len = %d, stream_id = %d", msg.nMsg,ntohs_msgver, data_len, M_handle->stream_id);
+//              	nslog(NS_DEBUG, "recv encode type = %d,ver : %d, msg_len = %d, stream_id = %d", msg.nMsg,ntohs_msgver, data_len, M_handle->stream_id);
 
 				nRet = recv_enc_tcp_data(M_handle, in_data, data_len);
                 if (nRet <  data_len || data_len < 0)
@@ -1410,7 +1686,7 @@ static void *room_receive_deal(void *arg)
             }
         }
 EXIT:
-
+		debug_print_num ++;
     	 pthread_mutex_lock(&M_handle->mutex);
         if (M_handle->sockfd >= 0) {
             close_socket(M_handle->sockfd);
@@ -1424,17 +1700,33 @@ EXIT:
 		 }
         pthread_mutex_unlock(&M_handle->mutex);
 
-		nslog(NS_ERROR,"IP : %d   stream_id : %d\n",M_handle->ipaddr,M_handle->stream_id);
+		if(debug_print_num == 10 )
+		{
+			
+			nslog(NS_INFO,"RECONNECT_ENC <ENC_IP :%s> <SRM_ID : %d> <PORT : %d>  <PUSH_PORT :%d><PULL_PORT %d> <PUSH_IP :%s> <PUSH_MODE: %d> <PULL_MODE :%d>\n",
+				M_handle->ipaddr,
+				M_handle->stream_id,
+				M_handle->port,
+				M_handle->push_udp_port,
+				M_handle->pull_udp_port,
+				M_handle->push_ip,
+				M_handle->push_module,
+				M_handle->pull_module);
+			debug_print_num = 0 ;
+		}
+
 		// add zl
 		if (NULL != udp_send_module_hand)
 		{
 			UdpSend_deinit(udp_send_module_hand);
+			udp_send_module_hand = NULL;
 		}
 		if(NULL != p_recv_hand)
 		{
 			udp_recv_deinit(p_recv_hand);
+			p_recv_hand = NULL;
 		}
-
+		M_handle->enc_login_flag = 0;
 		M_handle->pull_module_flag = 0;
 		M_handle->push_module_flag = 0;
 
@@ -1508,6 +1800,12 @@ EXIT:
          r_free(M_handle->audio_data);
          M_handle->audio_data = NULL;
     }
+	if(M_handle->audio_info != NULL)
+	{
+    	nslog(NS_ERROR,"FUCK---1 FREE AUDIO_INFO  <%d>\n",M_handle->stream_id);
+		 r_free(M_handle->audio_info);
+         M_handle->audio_info = NULL;
+	}
 		
     return NULL;
 }
@@ -1652,6 +1950,7 @@ int8_t unregister_room_receive_module(recv_room_handle *recv_hand)
     recv_hand->set_recv_to_ctrl_msgid = NULL;
     recv_hand->get_stream_socket = NULL;
     recv_hand->set_recv_to_rec_msgid = NULL;
+	recv_hand->set_recv_to_usb_rec_msgid = NULL;
     recv_hand->set_recv_to_live_msgid = NULL;
     recv_hand->get_stream_connect = NULL;
     recv_hand->close_stream_connect = NULL;
@@ -1659,8 +1958,8 @@ int8_t unregister_room_receive_module(recv_room_handle *recv_hand)
 
     recv_hand->set_rec_status = NULL;
     recv_hand->get_rec_status = NULL;
-    recv_hand->set_rec_status = NULL;
-    recv_hand->get_rec_status = NULL;
+    recv_hand->set_usb_rec_status = NULL;
+    recv_hand->get_usb_rec_status = NULL;
 
     deinit_room_module(recv_hand);
     return OPERATION_SUCC;

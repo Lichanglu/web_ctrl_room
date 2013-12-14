@@ -10,7 +10,24 @@
 #include "reach_os.h"
 #include "reach_socket.h"
 #include "reach_udp_snd.h"
+
+// add zl
+//#define ROOM_AUTO_REQ							"ROOM_AUTO_REQ"
+
+// add zl
+#define RECODE_MODE_RES						2
+#define RECODE_MODE_MOVIE						1
+#define RECODE_MODE_ALL						0
+
+
+// add zl
+#define	 RECODE_AUDIO_ON						1
+#define  RECODE_AUDIO_OFF						0
+
 //add zl
+#define MEDIA_STREAM_VALID					1
+#define MEDIA_STREAM_INVALID					0
+
 
 #define THREAD_POOL_SIZE						(3*1024*1024)
 // add zl
@@ -28,10 +45,10 @@
 #define UDP_SDI2_TO_ROOM						(0x30A3)
 #define UDP_ENC1200_TO_ROOM					(0x30A4)
 #define UDP_ENC120_TO_ROOM					(0x30A5)
-#define UDP_ROOM_TO_SYN_IPENC1				7600//(0x30C6)   // debug zl
-#define UDP_ROOM_TO_SYN_IPENC2				7610//(0x30C7)
-#define UDP_ROOM_TO_SYN_IPENC3				7620//(0x30C8)
-#define UDP_ROOM_TO_SYN_IPENC4				7630//(0x30C9)
+#define UDP_ROOM_TO_SYN_IPENC1				(0x30C6)   // debug zl
+#define UDP_ROOM_TO_SYN_IPENC2				(0x30C7)
+#define UDP_ROOM_TO_SYN_IPENC3				(0x30C8)
+#define UDP_ROOM_TO_SYN_IPENC4				(0x30C9)
 
 #define UDP_ROOM_TO_SYN_IPENC1_BIND			(0x40C6)
 #define UDP_ROOM_TO_SYN_IPENC2_BIND			(0x40C7)
@@ -44,7 +61,7 @@
 #define TCP_SDI1_TO_ROOM						(0X20A2)
 #define TCP_SDI2_TO_ROOM						(0X20A3)
 #define TCP_ENC1200_TO_ROOM					(0X20A4)
-#define TCP_ENC120_TO_ROOM					3400//(0X20A5)
+#define TCP_ENC120_TO_ROOM					(0X20A5)
 #define TCP_IPENC1_TO_ROOM					3400//(0X20A6)
 #define TCP_IPENC2_TO_ROOM					3400//(0X20A7)
 #define TCP_IPENC3_TO_ROOM					3400//(0X20A8)
@@ -62,6 +79,9 @@
 #define START_LIVE							CONNECT
 #define START_REC								CONNECT
 #define STOP_REC								DISCONNECT
+#define START_USB_REC								CONNECT
+#define STOP_USB_REC								DISCONNECT
+
 #define STOP_LIVE								DISCONNECT
 #define RECV_SELECT_DELAY			(600000)
 #define SLEEP_DELAY							(100000)
@@ -81,7 +101,6 @@
 #define LOW_STREAM         				(0x95)     //enc1200
 #define LOW_STREAM_T						(0x96)    //enc110
 #define JPG_STREAM							(0x94)     //enc120
-#define JPG_CODEC_TYPE					(0x6765706A)
 
 #define AUDIO_LOW_SAMPLE			(44100)
 #define AUDIO_HIGH_SAMPLE			(48000)
@@ -150,7 +169,7 @@ typedef struct  __RECV_REAL_PRINT{
     uint8_t  data_type;//0:视频,1:音频,2:jpg
     uint8_t  stream_type; // 0高码流，1低码流.
     uint8_t  is_data;//是否有数据0无，1有.
-    uint8_t  frame_rate;
+    int32_t  frame_rate;
 	 uint8_t   to_rec;
 	 uint8_t  to_live;
     int32_t   width;//宽.
@@ -178,6 +197,21 @@ typedef struct __RECV_REAL_TIME{
 
 }recv_time;
 
+typedef struct audio_tran_info
+{
+	void *stream_handle_addr[MAX_STREAM];
+	int32_t stream_num;
+
+}audio_tran_info_t;
+
+typedef struct media_audio_info
+{
+	audio_tran_info_t audio_tran_movie_info;		// 用于存放需要转发电音模式的音频流句柄地址
+	audio_tran_info_t audio_tran_res_info;		// 用于存放需要转发录制的音频接受流句柄地址
+	audio_tran_info_t audio_tran_live_into;		// 用于存放需要转发直播的音频接受流句柄地址
+
+}media_audio_info_t;
+
 typedef struct room_stream_handle
 {
     uint8_t status;        //is going to connect encode
@@ -186,7 +220,9 @@ typedef struct room_stream_handle
     int32_t msg_recv_to_ctrl;  //receive data to live module
     int32_t msg_recv_to_live;
     int32_t msg_recv_to_rec;
+	int32_t msg_recv_to_usb_rec;
     uint8_t rec_status;
+	uint8_t usb_rec_status;
     uint8_t live_status;
     int32_t offset;		//a offset  for organizing  frame;
     int8_t *frame_data;//a buf  for organizing  frame .
@@ -216,6 +252,14 @@ typedef struct room_stream_handle
 
 	uint8_t		push_ip[IP_LEN];
 
+	int32_t 	recv_audio_flag;		// 标志是否有声音源
+	int32_t		rec_mode;				//zl 区分电影模式 资源模式
+	int32_t 	rec_audio_falg;		// zl 录制是否有声音
+	int32_t 	live_audio_falg;		// 直播是否有声音
+	int32_t		media_flag;			// 为了区分无效
+	int32_t     enc_login_flag;		// 标志是否登陆编码器有效
+
+	media_audio_info_t *audio_info;	// 附加用于处理复制音频流问题
 }stream_handle;
 
 typedef struct __RECV_PARAM {
@@ -240,8 +284,11 @@ typedef struct recve_room_handle
     int32_t (*set_recv_to_ctrl_msgid)(int32_t msgid, stream_handle *stream_hand);
     int32_t (*set_recv_to_live_msgid)(int32_t msgid, stream_handle *stream_hand);
     int32_t (*set_recv_to_rec_msgid)(int32_t msgid, stream_handle *stream_hand);
+	int32_t (*set_recv_to_usb_rec_msgid)(int32_t msgid, stream_handle *stream_hand);    //zl
     int32_t (*set_rec_status)(stream_handle *stream_hand, uint8_t status);
     int32_t (*get_rec_status)(stream_handle *stream_hand);
+	int32_t (*set_usb_rec_status)(stream_handle *stream_hand, uint8_t status);      //zl
+    int32_t (*get_usb_rec_status)(stream_handle *stream_hand);         				 //zl
     int32_t (*set_live_status)(stream_handle *stream_hand, uint8_t status);
     int32_t (*get_live_status)(stream_handle *stream_hand);
     int32_t (*get_stream_socket) (stream_handle *stream_hand);
@@ -274,6 +321,8 @@ typedef struct receive_xml_handle{
 
 int32_t  get_stream_status(stream_handle *stream_hand);
 int32_t get_rec_status(stream_handle *stream_hand);
+int32_t get_usb_rec_status(stream_handle *stream_hand);
+
 int32_t get_live_status(stream_handle *stream_hand);
 int32_t recv_print_status(recv_room_handle *recv_handle);
 int32_t recv_sleep_second(stream_handle *p_handle, int32_t count);

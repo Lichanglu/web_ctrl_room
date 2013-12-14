@@ -40,6 +40,27 @@ static int connectToDecodeServer()
 	return socketFd;
 }
 
+static int connectToDecodeServerEx(int port)
+{
+	int socketFd;
+	struct sockaddr_in serv_addr;
+	const char* pAddr  = "127.0.0.1";
+	socketFd= socket(PF_INET, SOCK_STREAM, 0);
+	if(socketFd < 1)
+		return -1;
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_port = htons(port);
+	inet_aton(pAddr,(struct in_addr *)&serv_addr.sin_addr);
+	bzero(&(serv_addr.sin_zero),8);
+	if (connect(socketFd, (struct sockaddr *)&serv_addr,sizeof(struct sockaddr)) == -1)	{
+//		PRINTF("Connet to server failed \n");
+		close(socketFd);
+		return -1;
+	}
+	return socketFd;
+}
+
+
 FILE *create_file_fd(char *file)
 {
 	FILE *fp_low = NULL;
@@ -49,7 +70,7 @@ FILE *create_file_fd(char *file)
 	}
 
 	return fp_low;
-	
+
 }
 
 unsigned int mid_clock(void)
@@ -68,7 +89,7 @@ unsigned int mid_clock(void)
 
 	msec = tp.tv_sec;
 	msec = msec * 1000 + tp.tv_nsec / 1000000;
-	
+
 	return msec;
 }
 
@@ -134,7 +155,7 @@ static int ReadData(int s, void *pBuf, int nSize)
 		nRet = recv(s, (char *)pBuf+nWriteLen, nSize-nWriteLen, 0);
 		nWriteLen += nRet;
 	}
-	
+
 	return nWriteLen;
 }
 //extern  FILE *TestFile;
@@ -147,7 +168,7 @@ int appCmdIntParse(int cmd,int invalue,int inlen,int *outvalue,int *outlen)
 	char retValue[4096] = {0};
 	int retcmd = 0;
 	//char tmpbuf[512] = {0};
-	
+
 	//write_local_file(TestFile,"appCmdIntParse connectToDecodeServer before\n");
 	if(Sockfd == 0)	{
 		Sockfd= connectToDecodeServer();
@@ -182,7 +203,7 @@ int appCmdIntParse(int cmd,int invalue,int inlen,int *outvalue,int *outlen)
 	if(ReadData(Sockfd, (void *)retValue,(outmsg.len - sizeof(webMsgInfo_1260))) < 0)
 	{
 		//PRINTF("retValue[0]:%d,retValue[1]:%d\n",retValue[0],retValue[1]);
-		close(Sockfd);	
+		close(Sockfd);
 		return CLIENT_ERR_TCPRECV;
 	}
 	close(Sockfd);
@@ -193,7 +214,66 @@ int appCmdIntParse(int cmd,int invalue,int inlen,int *outvalue,int *outlen)
 	//sprintf(tmpbuf,"retcmd:[%x],retval:[%x],outval:%d\n",retcmd,retVal,*outvalue);
 	//write_local_file(TestFile,tmpbuf);
 	return retVal;
-	
+
+}
+
+
+int appCmdIntParseEx(int port, int cmd,int invalue,int inlen,int *outvalue,int *outlen)
+{
+	webMsgInfo_1260  msg,outmsg;
+	int Sockfd  =  0,retVal=0;
+	char intemp[4096] ;//,outtmep[4096];
+	int valueLen = 0, cmdLen = 0;
+	char retValue[4096] = {0};
+	int retcmd = 0;
+	//char tmpbuf[512] = {0};
+
+	//write_local_file(TestFile,"appCmdIntParse connectToDecodeServer before\n");
+	if(Sockfd == 0)	{
+		Sockfd= connectToDecodeServerEx(port);
+	}
+	if(Sockfd <= 0)	{
+		return CLIENT_ERR_TCPCONNECT;
+	}
+	//write_local_file(TestFile,"appCmdIntParse connectToDecodeServer after\n");
+
+	msg.identifier = WEB_IDENTIFIER;
+	valueLen = inlen;
+	cmdLen	= sizeof(webparsetype);
+	msg.type = INT_TYPE;
+	msg.len = sizeof(webMsgInfo_1260)+valueLen + cmdLen;
+	memcpy(intemp,&msg,sizeof(webMsgInfo_1260));
+	memcpy(intemp+sizeof(webMsgInfo_1260),&cmd,cmdLen);
+	memcpy(intemp+(sizeof(webMsgInfo_1260) + cmdLen),&invalue,valueLen);
+	if(WriteData(Sockfd, (void*)intemp,msg.len) < 1)	{
+		close(Sockfd);
+		return CLIENT_ERR_TCPSEND;
+	}
+	//sprintf(tmpbuf,"cmd:[%x],type:[%d]\n",cmd,msg.type);
+	//write_local_file(TestFile,tmpbuf);
+	if(ReadData(Sockfd,(void *)&outmsg,sizeof(webMsgInfo_1260)) < sizeof(webMsgInfo_1260))
+	{
+		close(Sockfd);
+		return CLIENT_ERR_TCPRECV;
+	}
+	//memset(tmpbuf,0,strlen(tmpbuf));
+	//sprintf(tmpbuf,"outmsg.identifier:%x,outmsg.len:%d,outmsg.type:%d\n",outmsg.identifier,outmsg.len,outmsg.type);
+	//write_local_file(TestFile,tmpbuf);
+	if(ReadData(Sockfd, (void *)retValue,(outmsg.len - sizeof(webMsgInfo_1260))) < 0)
+	{
+		//PRINTF("retValue[0]:%d,retValue[1]:%d\n",retValue[0],retValue[1]);
+		close(Sockfd);
+		return CLIENT_ERR_TCPRECV;
+	}
+	close(Sockfd);
+	memcpy(&retcmd,&retValue,sizeof(webparsetype));
+	memcpy(&retVal,retValue + 4, sizeof(int));
+	memcpy(outvalue,retValue + 8,sizeof(int));
+	//memset(tmpbuf,0,strlen(tmpbuf));
+	//sprintf(tmpbuf,"retcmd:[%x],retval:[%x],outval:%d\n",retcmd,retVal,*outvalue);
+	//write_local_file(TestFile,tmpbuf);
+	return retVal;
+
 }
 
 
@@ -218,7 +298,7 @@ int appCmdStringParse(int cmd,char *invalue,int inlen,char  *outvalue,int *outle
 	valuelen = inlen;
 	cmdlen	= sizeof(webparsetype);
 	msg.type = STRING_TYPE;
-		
+
 	msg.len = sizeof(webMsgInfo_1260)+valuelen + cmdlen;
 	memcpy(intemp,&msg,sizeof(webMsgInfo_1260));
 	memcpy(intemp+sizeof(webMsgInfo_1260),&cmd,cmdlen);
@@ -243,7 +323,7 @@ int appCmdStringParse(int cmd,char *invalue,int inlen,char  *outvalue,int *outle
 	//PRINTF("outmsg.identifier:%x,outmsg.len:%d,outmsg.type:%d=%d\n",outmsg.identifier,outmsg.len,outmsg.type,(outmsg.len - sizeof(webMsgInfo_1260)));
 	if(ReadData(sockfd, (void *)retvalue,(outmsg.len - sizeof(webMsgInfo_1260))) < 0)
 	{
-		close(sockfd);	
+		close(sockfd);
 		return CLIENT_ERR_TCPRECV;
 	}
 	close(sockfd);
@@ -254,10 +334,68 @@ int appCmdStringParse(int cmd,char *invalue,int inlen,char  *outvalue,int *outle
 	//sprintf(tmpbuf,"retcmd:[%x],retval:[%x],outval:%s\n",retcmd,retval,outvalue);
 	//write_local_file(TestFile,tmpbuf);
 	return retval;
-	
+
 }
 
+int appCmdStringParseEx(int port, int cmd,char *invalue,int inlen,char  *outvalue,int *outlen)
+{
+	webMsgInfo_1260  msg,outmsg;
+	int sockfd  =  0,retcmd = 0,retval=0;
+	char intemp[4096] = {0};
+//	char outtmep[4096] = {0};
+	int valuelen = 0, cmdlen = 0;
+	char retvalue[4096] = {0};
+	//char tmpbuf[512] = {0};
+	//write_local_file(TestFile,"appCmdStringParse connectToDecodeServer before\n");
+	if(sockfd == 0)	{
+		sockfd= connectToDecodeServerEx(port);
+	}
+	if(sockfd <= 0)	{
+		return CLIENT_ERR_TCPCONNECT;
+	}
+	//write_local_file(TestFile,"appCmdStringParse connectToDecodeServer after\n");
+	msg.identifier = WEB_IDENTIFIER;
+	valuelen = inlen;
+	cmdlen	= sizeof(webparsetype);
+	msg.type = STRING_TYPE;
 
+	msg.len = sizeof(webMsgInfo_1260)+valuelen + cmdlen;
+	memcpy(intemp,&msg,sizeof(webMsgInfo_1260));
+	memcpy(intemp+sizeof(webMsgInfo_1260),&cmd,cmdlen);
+	if(invalue != NULL)
+	{
+		memcpy(intemp+(sizeof(webMsgInfo_1260) + cmdlen),invalue,valuelen);
+	}
+	if(WriteData(sockfd, (void*)intemp,msg.len) < 1)	{
+		close(sockfd);
+		return CLIENT_ERR_TCPSEND;
+	}
+	//sprintf(tmpbuf,"cmd:[%x],type:[%d]\n",cmd,msg.type);
+	//write_local_file(TestFile,tmpbuf);
+	if(ReadData(sockfd,(void *)&outmsg,sizeof(webMsgInfo_1260)) < sizeof(webMsgInfo_1260))
+	{
+		close(sockfd);
+		return CLIENT_ERR_TCPRECV;
+	}
+	//memset(tmpbuf,0,strlen(tmpbuf));
+	//sprintf(tmpbuf,"outmsg.identifier:%x,outmsg.len:%d,outmsg.type:%d\n",outmsg.identifier,outmsg.len,outmsg.type);
+	//write_local_file(TestFile,tmpbuf);
+	//PRINTF("outmsg.identifier:%x,outmsg.len:%d,outmsg.type:%d=%d\n",outmsg.identifier,outmsg.len,outmsg.type,(outmsg.len - sizeof(webMsgInfo_1260)));
+	if(ReadData(sockfd, (void *)retvalue,(outmsg.len - sizeof(webMsgInfo_1260))) < 0)
+	{
+		close(sockfd);
+		return CLIENT_ERR_TCPRECV;
+	}
+	close(sockfd);
+	memcpy(&retcmd,retvalue,cmdlen);
+	memcpy(&retval,retvalue + 4,sizeof(int));
+	memcpy(outvalue,retvalue+cmdlen+sizeof(int),(outmsg.len - sizeof(webMsgInfo_1260) - sizeof(webparsetype)));
+	//memset(tmpbuf,0,strlen(tmpbuf));
+	//sprintf(tmpbuf,"retcmd:[%x],retval:[%x],outval:%s\n",retcmd,retval,outvalue);
+	//write_local_file(TestFile,tmpbuf);
+	return retval;
+
+}
 
 
 int appCmdStructParse(int cmd,void  *invalue,int inlen,void *outvalue,int *outlen)
@@ -281,7 +419,7 @@ int appCmdStructParse(int cmd,void  *invalue,int inlen,void *outvalue,int *outle
 	valueLen = inlen;
 	cmdLen	= sizeof(int);
 	inmsg.type = STRUCT_TYPE;
-		
+
 	inmsg.len = msgHeadLen+valueLen + cmdLen;
 	memcpy(intemp,&inmsg,msgHeadLen);
 	memcpy(intemp+msgHeadLen,&cmd,cmdLen);
@@ -305,7 +443,7 @@ int appCmdStructParse(int cmd,void  *invalue,int inlen,void *outvalue,int *outle
 	//write_local_file(TestFile,tmpbuf);
 	if(ReadData(Sockfd, (void *)retValue,(outmsg.len - msgHeadLen)) < 0)
 	{
-		close(Sockfd);	
+		close(Sockfd);
 		return CLIENT_ERR_TCPRECV;
 	}
 	close(Sockfd);
@@ -317,8 +455,70 @@ int appCmdStructParse(int cmd,void  *invalue,int inlen,void *outvalue,int *outle
 	//sprintf(tmpbuf,"retcmd:[%x],retval:[%x]\n",retCmd,retval);
 	//write_local_file(TestFile,tmpbuf);
 	return retval;
-	
+
 }
+
+
+int appCmdStructParseEx(int port, int cmd,void  *invalue,int inlen,void *outvalue,int *outlen)
+{
+	webMsgInfo_1260  inmsg,outmsg;
+	int Sockfd  =  0,retCmd = 0,retval;
+	char intemp[4096];//,outtmep[4096];
+	int valueLen = 0, cmdLen = 0;
+	char retValue[4096] = {0};
+	//char tmpbuf[1024] = {0};
+	int msgHeadLen = sizeof(webMsgInfo_1260);
+	//write_local_file(TestFile,"appCmdStructParse connectToDecodeServer before\n");
+	if(Sockfd == 0)	{
+		Sockfd= connectToDecodeServerEx(port);
+	}
+	if(Sockfd <= 0)	{
+		return CLIENT_ERR_TCPCONNECT;
+	}
+	//write_local_file(TestFile,"appCmdStructParse connectToDecodeServer after\n");
+	inmsg.identifier = WEB_IDENTIFIER;
+	valueLen = inlen;
+	cmdLen	= sizeof(int);
+	inmsg.type = STRUCT_TYPE;
+
+	inmsg.len = msgHeadLen+valueLen + cmdLen;
+	memcpy(intemp,&inmsg,msgHeadLen);
+	memcpy(intemp+msgHeadLen,&cmd,cmdLen);
+	if(invalue !=NULL)
+	{
+		memcpy(intemp+(msgHeadLen + cmdLen),invalue,valueLen);
+	}
+	if(WriteData(Sockfd, (void*)intemp,inmsg.len) < 1)	{
+		close(Sockfd);
+		return CLIENT_ERR_TCPSEND;
+	}
+	//sprintf(tmpbuf,"cmd:[%x],type:[%d]\n",cmd,inmsg.type);
+	//write_local_file(TestFile,tmpbuf);
+	if(ReadData(Sockfd,(void *)&outmsg,msgHeadLen) < msgHeadLen)
+	{
+		close(Sockfd);
+		return CLIENT_ERR_TCPRECV;
+	}
+	//memset(tmpbuf,0,strlen(tmpbuf));
+	//sprintf(tmpbuf,"outmsg.identifier:%x,outmsg.len:%d,outmsg.type:%d\n",outmsg.identifier,outmsg.len,outmsg.type);
+	//write_local_file(TestFile,tmpbuf);
+	if(ReadData(Sockfd, (void *)retValue,(outmsg.len - msgHeadLen)) < 0)
+	{
+		close(Sockfd);
+		return CLIENT_ERR_TCPRECV;
+	}
+	close(Sockfd);
+	//need some check
+	memcpy(&retCmd,retValue,cmdLen);
+	memcpy(&retval,retValue+cmdLen,sizeof(int));
+	memcpy(outvalue,retValue+cmdLen+sizeof(int),outmsg.len-msgHeadLen-cmdLen-sizeof(int));
+	//memset(tmpbuf,0,strlen(tmpbuf));
+	//sprintf(tmpbuf,"retcmd:[%x],retval:[%x]\n",retCmd,retval);
+	//write_local_file(TestFile,tmpbuf);
+	return retval;
+
+}
+
 
 #if 0
 /*Test main function*/
@@ -359,13 +559,13 @@ int main()
 		WebSetVideoParam(&video);
 		strcpy(sys.strName,"enc1200");
 		sys.bType = 3;
-		WebSetSysParam(&sys);	
+		WebSetSysParam(&sys);
 		input = SDI;
-		PRINTF("SDI   input = %d \n",input);	
+		PRINTF("SDI   input = %d \n",input);
 		WebSetinputSource(input);
 		PRINTF("get input source \n");
 		WebGetinputSource(&input);
-		PRINTF("input = %d \n",input);	
+		PRINTF("input = %d \n",input);
 //		input = SDI;
 		WebSetinputSource(input);
 		WebGetkernelversion(version);

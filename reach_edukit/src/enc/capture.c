@@ -3,9 +3,7 @@
 #include <mcfw/interfaces/common_def/ti_vsys_common_def.h>
 #include <mcfw/interfaces/common_def/ti_vdis_common_def.h>
 #include <mcfw/src_linux/mcfw_api/reach_system_priv.h>
-#include <mcfw/src_linux/devices/inc/device_videoDecoder.h>
 #include <mcfw/src_linux/devices/inc/device.h>
-#include <mcfw/src_linux/devices/inc/device_videoDecoder.h>
 #include <mcfw/src_linux/devices/adv7441/inc/adv7441.h>
 #include <mcfw/src_linux/devices/adv7441/src/adv7441_priv.h>
 #include <mcfw/src_linux/devices/adv7442/inc/adv7442.h>
@@ -24,7 +22,7 @@
 #include "capture.h"
 #include "ppt_index.h"
 #include "nslog.h"
-
+#include "new_tcp_com.h"
 extern EduKitLinkStruct_t *gEduKit;
 extern int32_t audio_mute_flag;
 //extern RoomMsgEnv *pRoomInfo;
@@ -158,22 +156,79 @@ int capture_set_ColorTrans(int input, int ColorTrans)
 
 	return 0;
 }
+#define H_OFFSET_MAX  (100)
+#define H_OFFSET_MIN  (-100)
+#define V_OFFSET_MAX  (10)
+#define V_OFFSET_MIN  (-10)
+
+static int check_HV_valid(int res, int h_pos, int v_pos)
+{
+	int base_h = 0, base_v = 0, offset = 0;
+	get_signal_analog_base_hv(res, &base_h, &base_v);
+
+	if(h_pos != 0) {
+		offset = h_pos - base_h;
+
+		if(offset > H_OFFSET_MAX || offset < H_OFFSET_MIN) {
+			printf("WARNING:H value Too big! base_h= %d,h_pos=%d\n", base_h, h_pos);
+			return -1;
+		}
+
+		printf("h_pos - base_h=%d\n", offset);
+	}
+
+	if(v_pos != 0) {
+		offset = v_pos - base_v;
+
+		if(offset > V_OFFSET_MAX || offset < V_OFFSET_MIN) {
+			printf("WARNING:V value Too big! base_v= %d,v_pos=%d\n", base_v, v_pos);
+			return -1;
+		}
+
+		printf("v_pos - base_v=%d\n", offset);
+	}
+
+	return 0;
+}
+
+
 /*目前不支持数字信号*/
 int capture_set_vga_hv(int h, int v)
 {
 	short  h_pos = 0, v_pos = 0;
 	HVTable hv_table;
 	int pos = 0, new_pos = 0;
-
+	int ret = -1;
+	int rets = -1;
 	fprintf(stderr, "move H=%d,V=%d \n", h, v);
 	memset(&hv_table, 0, sizeof(HVTable));
 	get_HV_table(&hv_table);
+	Device_VideoDecoderExternInforms info = {{0}, 0};
+	rets = GetVgaSourceState(&info);
+
+	if(0 != rets) {
+		printf("[capture_set_vga_hv] GetVgaSourceState failed.\n");
+		return -1;
+	}
 
 	cap_get_adv7442_HV(&gEduKit->capLink.adv7442_phandle, &pos);
 	h_pos = (pos & 0xFFFF0000) >> 16;
 	v_pos = pos & 0xFFFF;
 	new_pos = ((h_pos + h) << 16) | (v_pos + v);
 
+	if(h == 0) {
+		ret = check_HV_valid(info.ModeID, 0, v_pos + v);
+	} else if(v == 0) {
+		ret = check_HV_valid(info.ModeID, h_pos + h, 0);
+	}
+
+	if(ret < 0) {
+		printf("check_HV_valid failed!\n");
+		return -1;
+	}
+
+	fprintf(stderr, "[capture_set_vga_hv]0Warning h_pos:[%d] h:[%d]\n", h_pos, h);
+	fprintf(stderr, "[capture_set_vga_hv]0Warning v_pos:[%d] v:[%d]\n", v_pos, v);
 	fprintf(stderr, "h_pos=%d,v_pos=%d,pos=%d\n", h_pos, v_pos, pos);
 	cap_set_adv7442_HV(&gEduKit->capLink.adv7442_phandle, new_pos);
 
@@ -181,13 +236,13 @@ int capture_set_vga_hv(int h, int v)
 		cap_invert_cbcr_adv7442_HV(&gEduKit->capLink.adv7442_phandle, 1);
 	}
 
-	Device_VideoDecoderExternInforms info = {{0}, 0};
-
-	if(0 == GetVgaSourceState(&info)) {
+	if(0 == rets) {
 		if(info.SignalTmds == 1) {
 			hv_table.digital[info.ModeID].hporch = h + h_pos;
 			hv_table.digital[info.ModeID].vporch = v + v_pos;
-		} else if(info.SignalTmds == 0) { //analog
+		} else if(info.SignalTmds == 0)
+			//analog
+		{
 			hv_table.analog[info.ModeID].hporch = h + h_pos;
 			hv_table.analog[info.ModeID].vporch = v + v_pos;
 		}
@@ -215,10 +270,14 @@ Int32 vgaResolutionChangeHV(void)
 	}
 
 	if(info.ModeID >= 0) {
-		if(info.SignalTmds == 1) { //digital
+		if(info.SignalTmds == 1)
+			//digital
+		{
 			h = hv_table.digital[info.ModeID].hporch;
 			v = hv_table.digital[info.ModeID].vporch;
-		} else if(info.SignalTmds == 0) { //analog
+		} else if(info.SignalTmds == 0)
+			//analog
+		{
 			h	= hv_table.analog[info.ModeID].hporch;
 			v	= hv_table.analog[info.ModeID].vporch;
 		}
@@ -390,16 +449,41 @@ vga_resolution_t dvi_res_support[] = {
 static int set_vga_resolution_src(int src_flag)
 {
 	SelectLink_OutQueChInfo select_prm;
-	select_prm.outQueId   = 1;
-	select_prm.numOutCh   = 1;
+	select_prm.outQueId   = 0;
+	select_prm.numOutCh   = 5;
 
 	if(src_flag) {
-		select_prm.inChNum[0] = 1;
+		select_prm.inChNum[0] = 0;
+		select_prm.inChNum[1] = 1;
+		select_prm.inChNum[2] = 2;
+		select_prm.inChNum[3] = 4;
+		select_prm.inChNum[4] = 5;
 	} else {
-		select_prm.inChNum[0] = 2;
+		select_prm.inChNum[0] = 0;
+		select_prm.inChNum[1] = 1;
+		select_prm.inChNum[2] = 3;
+		select_prm.inChNum[3] = 4;
+		select_prm.inChNum[4] = 5;
 	}
 
 	select_set_outque_chinfo2(SYSTEM_VPSS_LINK_ID_SELECT_0,  &select_prm);
+}
+
+static int set_vga_resolution(int width, int height)
+{
+	SclrLink_SclrMode sclrparams;
+	memset(&sclrparams, 0, sizeof(SclrLink_SclrMode));
+	sclrparams.chId = 2;
+	sclrparams.SclrMode = TRUE;
+	sclr_set_SclrMode(gEduKit->sclrLink.link_id, &sclrparams);
+	SclrLink_chDynamicSetOutRes out;
+	memset(&out, 0, sizeof(SclrLink_chDynamicSetOutRes));
+	out.chId = 2;
+	out.width = width;
+	out.height = height;
+	out.pitch[0] = width * 2;
+	sclr_set_output_resolution(gEduKit->sclrLink.link_id, &out);
+	sclr_set_framerate(gEduKit->sclrLink.link_id, 2, 60, 25);
 }
 
 static int check_vga_resolution_support(int SignalTmds, VCAP_VIDEO_SOURCE_CH_STATUS_S *videoStatus)
@@ -426,6 +510,18 @@ static int check_vga_resolution_support(int SignalTmds, VCAP_VIDEO_SOURCE_CH_STA
 	}
 
 	set_vga_resolution_src(src_flag);
+}
+
+static int gLockVgaResStatus = 0;
+
+int setLockVgaResStatus(int lock)
+{
+	gLockVgaResStatus = lock;
+}
+
+static int getLockVgaResStatus(void)
+{
+	return gLockVgaResStatus;
 }
 
 static Void *detect_video_tsk(Void *prm)
@@ -491,16 +587,29 @@ static Void *detect_video_tsk(Void *prm)
 						printf("input:[%d] capture_width:[%d]  capture_height:[%d]\n",
 						       0, capture_width, capture_height);
 
+						if(!get_fix_resolution(0)) {
+							set_vga_resolution(videoStatus[1].frameWidth, videoStatus[1].frameHeight);
+						}
+
 					}
 
-					setVGADetect(1);
-					check_vga_resolution_support(0, &videoStatus[i]);
+
+					if(!getVGADetect()) {
+						setVGADetect(1);
+						check_vga_resolution_support(0, &videoStatus[i]);
+					}
+
+
 				}
 			} else {
 				if(1 == i) {
 					if(getVGADetect()) {
 						setVGADetect(0);
 						set_vga_resolution_src(0);
+
+						if(!get_fix_resolution(0)) {
+							set_vga_resolution(historyStatus[1].frameWidth, historyStatus[1].frameHeight);
+						}
 					}
 				}
 			}

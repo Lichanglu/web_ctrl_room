@@ -148,6 +148,7 @@ typedef enum _platform_em_{
 	Mp4Repair,				/* MP4修复程序 */
 	WebCtrl,				/* WEB控制端 */
 	Director,				/*导播平台*/
+	NetControl,             /*网络中控*/
 	ThirdControl,			/* 其它 */
 	AllPlatform,			/* 所有平台 */
 	InvalidPlatform			/* 无效 */

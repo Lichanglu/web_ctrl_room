@@ -112,6 +112,35 @@ void forwardPageU(char * pagename, int page, char * username)
 {
 	fprintf(cgiOut,"<script language='JavaScript'>document.location='%s?actioncode=%d&u=%s'</script>",pagename,page,username);	
 }
+
+void showPage_xml(char *filename,char *appname)
+{
+	int ch=0;
+	int ch2 = 0;
+	char key[100];
+	char buf[300];
+	
+	FILE* html=NULL;	
+	html=fopen(filename,"r");
+	if(html==NULL){
+		fprintf(cgiOut,"\nfile %s not exist",filename);
+		return;
+	}
+	while((ch=getc(html)) != EOF)
+	{
+		if(ch == '\r' || ch == '\n' )
+		{
+			continue;
+			//putc(' ',cgiOut);
+		}
+		else
+			putc(ch,cgiOut);
+	}
+	fclose(html);
+}
+
+
+
 void showPage(char *filename,char *appname)
 {
 	int ch=0;

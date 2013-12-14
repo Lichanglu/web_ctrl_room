@@ -9,13 +9,13 @@
 
 
 #define WEBSERVER  		    (20010)
-#define WEB_ENC_LEVEL_PORT      (20020) 
+#define WEB_ENC_LEVEL_PORT      (20020)
 
 //#####################系统信息######################
 #define MSG_GETDEVINFO						(0X1000)
 #define MSG_GETDISKINFO						(0X1001)
 #define MSG_GET6467INFO						(0X1002)
-		
+
 
 
 //###################################################
@@ -48,8 +48,11 @@
 #define	MSG_SETUSB_SWITCH						(0X2023)//zyb
 #define MSG_GETUSB_SWITCH						(0X2024)
 
-#define	MSG_SET_SYSTEM_NAME					(0X2027)//zl
-#define	MSG_GET_SYSTEM_NAME					(0X2028)//zl
+#define	MSG_SET_NETCONTROL_IP					(0X2027)//zl
+#define	MSG_GET_NETCONTROL_IP					(0X2028)//zl
+
+#define	MSG_DEL_RECOURSE					(0X9027)//zl
+
 
 #define MSG_SETGUESTPASSWORD					(0X2029) // huang
 #define MSG_GETGUESTPASSWORD					(0X2030) // huang
@@ -57,6 +60,8 @@
 #define MSG_SET_THR_FTPINFO					(0X2031) // huang
 #define MSG_GET_THR_FTPINFO					(0X2032) // huang
 
+#define  MSG_DOWNLOAD_DIR					(0X2033)//lichl
+#define  MSG_DEVICE_RENAME					(0X2033)
 
 #define CONTROL_ROOM_SET_PREVIEW_PASS     	(0X9000)	  //ZL
 #define ROOM_CONTROL_GET_PREVIEW_PASS		(0X9001)	  //ZL
@@ -73,6 +78,9 @@
 #define MSG_SYSREBOOT						(0X200a)
 
 #define MSG_SETSERIALNUM					(0X200b)
+#define MSG_GETDISKNUM						(0X200C)
+#define MSG_USBCOPY							(0X200D)
+#define MSG_USBSTATUS						(0X200E)
 
 
 
@@ -85,12 +93,12 @@
 #define        		SERVER_RET_RECV_FAILED  			        0xf05
 #define        		SERVER_RET_SEND_FAILED  			        0xf06
 #define        		SERVER_RET_ID_ERROR  					    0xf07
-#define       		SERVER_RET_USER_INVALIED  		            0xf08 
+#define       		SERVER_RET_USER_INVALIED  		            0xf08
 #define 			SERVER_INTERNAL_ERROR					    0xf09
 #define             SERVER_VERIFYFILE_FAILED				    0XF0A
 #define             SERVER_SYSUPGRADE_FAILED				    0XF0B
 #define             SERVER_SYSROLLBACK_FAILED					0xF0C
-#define             SERVER_GETDEVINFO_FAILED       				0xF0D       
+#define             SERVER_GETDEVINFO_FAILED       				0xF0D
 #define             SERVER_HAVERECORD_FAILED					0xF0E
 
 //#####################客户端错误返回码######################
@@ -115,12 +123,14 @@ typedef struct _dev_info
 	char kernelversion[20];
 }DevInfo;
 
+
+
 typedef struct _dm6467_info
 {
 	char sysversion[64];
 	char uImageversion[64];
 	char fpgaversion[64];
-	
+
 }Dm6467Info;
 
 typedef struct _Proto_info
@@ -160,7 +170,7 @@ typedef struct _logo_config
 }LogoConfig;
 
 typedef struct _addr_bit_config  // zyb
-{	
+{
 	int  addr_1;
 	int  addr_2;
 	int  addr_3;
@@ -175,6 +185,15 @@ typedef struct _sys_time_config {   //zl
 	int sec;
 }SysTimeConfig;
 
+#define	MAX_IPCAMERA_NUM	4
+//0-板书
+//1-学生全景
+//2-老师全景
+typedef struct TRACER_INFO{
+	int num;
+	char ip[MAX_IPCAMERA_NUM][16];
+	int Status[MAX_IPCAMERA_NUM];
+}Tracer_Info_t;
 
 
 

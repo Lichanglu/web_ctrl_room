@@ -27,6 +27,54 @@ xmlNodePtr upper_msg_get_next_samename_node(xmlNodePtr curNode);
 int32_t upper_msg_package_resp_room_info(RoomMsgEnv *pRoom, int8_t *out_buf, int32_t msgcode, int32_t ret_code, int8_t *pass_key, int8_t *user_id);
 int32_t lower_msg_package_iFrame_req(int8_t *out_buf, int32_t room_id);
 
+
+#if 1
+int32_t room_auto_send_req(int8_t *out_buf,int32_t *out_len,int32_t quality,int32_t stream_id)
+{
+	int8_t passkeybuf[20] = {0};
+    int32_t return_code = OPERATION_ERR;
+	parse_xml_t send_xml;
+	xmlNodePtr New_node, New_node2,New_node3;
+    send_xml.pdoc = xmlNewDoc(BAD_CAST"1.0");
+
+	send_xml.proot = xmlNewNode(NULL, BAD_CAST"RequestMsg");
+    xmlDocSetRootElement(send_xml.pdoc, send_xml.proot);
+    New_node =  xmlNewNode(NULL, BAD_CAST "MsgHead");
+    xmlAddChild(send_xml.proot, New_node);
+    xmlNewTextChild(New_node, NULL, "MsgCode", "30011");
+	sprintf(passkeybuf, "%s%d","ROOM_AUTO_REQ" ,stream_id);
+    xmlNewTextChild(New_node, NULL, "PassKey", passkeybuf);
+    New_node2 =  xmlNewNode(NULL, BAD_CAST "MsgBody");
+	New_node3 =  xmlNewNode(NULL, BAD_CAST "StrmReq");
+    xmlAddChild(send_xml.proot, New_node2);
+    xmlAddChild(New_node2, New_node3);
+    xmlNewTextChild(New_node3, NULL, "RoomID", "0");
+	if(quality == 1)
+	{
+		xmlNewTextChild(New_node3, NULL, "Quality", "0");
+	}
+	else
+	{
+		xmlNewTextChild(New_node3, NULL, "Quality", "1");
+	}
+
+	xmlChar *temp_xml_buf = NULL;
+    xmlDocDumpFormatMemoryEnc(send_xml.pdoc, &temp_xml_buf, out_len,  "UTF-8", 1);
+    r_memcpy(out_buf, temp_xml_buf, *out_len);
+
+	release_dom_tree(send_xml.pdoc);
+    return_code = OPERATION_SUCC;
+	
+EXIT:
+	 if(temp_xml_buf)  {
+        xmlFree(temp_xml_buf);
+    }
+    return return_code;
+}
+#endif
+
+
+
 int32_t lower_msg_que_send(int32_t msqid, msgque *msg, int32_t len, int32_t msgflg)
 {
 	r_msg_send(msqid, msg, len, msgflg);
@@ -290,6 +338,7 @@ enc_info *lower_msg_get_enc_info_by_msgq_type(RoomMsgEnv *pRoom, long stream_id)
 		if (pRoom->RoomInfo.EncInfo[i].HD_QuaInfo.MsgQueType == stream_id) {
 			e_info = &pRoom->RoomInfo.EncInfo[i];
 			break;
+
 		}
 
 		if (pRoom->RoomInfo.EncInfo[i].SD_QuaInfo.MsgQueType == stream_id) {
@@ -363,106 +412,215 @@ int32_t lower_msg_iFrame_req(RoomMsgEnv *pRoom, int32_t stream_id)
 	return ROOM_RETURN_SUCC;
 }
 
-int32_t lower_msg_start_record(RoomMsgEnv *pRoom)
+int32_t lower_msg_start_record_res(RoomMsgEnv *pRoom ,int8_t *record_time,int8_t *record_file_time)
 {
 	int32_t i 		= 0;
 	int32_t req_num = 0;
 	int32_t val_num	= 0;
 	int32_t room_info_num = 0;
 	int32_t ret_val = 0;
-	int32_t rec_return_code = 1;
-	course_record_condition_t crc;
+	int32_t rec_return_code = 0;
+
+	course_record_condition_t crc_res;
 	uint32_t req_mask, valid_mask, room_info_mask;
 
-	r_memset(&crc, 0, sizeof(course_record_condition_t));
-	ret_val = upper_msg_set_record_condition(pRoom, &crc);
-	upper_msg_print_cinfo(&crc);
-
-	if (ret_val == ROOM_RETURN_FAIL) {
+	r_memset(&crc_res, 0, sizeof(course_record_condition_t));
+	ret_val = upper_msg_set_record_condition(pRoom, &crc_res,RESOURCES_HARD_DISK_MODE,record_time,record_file_time);
+	if (ret_val == ROOM_RETURN_FAIL)
+	{
 		pRoom->RoomInfo.record_stream_mask = 0;
 		nslog(NS_ERROR, "upper_msg_set_record_condition error!");
 		return 0;
 	}
+	upper_msg_print_cinfo(&crc_res);
 
-#if 1
-	//只要有一路流有效都启动录制
-	room_info_num	= upper_msg_get_mask_num(pRoom->RoomInfo.room_info_mask);
-	if (room_info_num) {
-		rec_return_code = 1;
-	} else {
+	pRoom->record_handle = register_course_record_mode(&crc_res);
+	if(NULL == pRoom->record_handle) {
+		nslog(NS_ERROR, "[%s] ---register_course_record_mode is failed !!!\n", __func__);
 		rec_return_code = 0;
 	}
-
-	nslog(NS_INFO, "room_info_num = %d, %s setup record...", room_info_num, room_info_num ? "will":"will not");
-#else
-	req_num 		= upper_msg_get_mask_num(pRoom->RoomInfo.req_stream_mask);
-	val_num 		= upper_msg_get_mask_num(pRoom->RoomInfo.valid_stream_mask);
-	room_info_num	= upper_msg_get_mask_num(pRoom->RoomInfo.room_info_mask);
-
-	nslog(NS_INFO, "--- req_num = %d,val_num = %d,room_info_num = %d,req_stream_mask = %d,valid_stream_mask = %d,room_info_mask = %d",\
-				req_num, val_num, room_info_num, pRoom->RoomInfo.req_stream_mask, pRoom->RoomInfo.valid_stream_mask, pRoom->RoomInfo.room_info_mask);
-
-	//请求流数和有效流数不等或与教室信息mask 不等或无流时，不启动录制
-	if ((req_num != val_num || req_num != room_info_num || val_num == 0)) {
-		nslog(NS_WARN, " ---req_num = %d,	val_num = %d, room_info_num = %d!!!\n", req_num, val_num, room_info_num);
-		rec_return_code = 0;
-	}
-
-	req_mask 		= pRoom->RoomInfo.req_stream_mask;
-	valid_mask 		= pRoom->RoomInfo.valid_stream_mask;
-	room_info_mask 	= pRoom->RoomInfo.room_info_mask;
-
-	if (((req_mask & valid_mask) == req_mask) && \
-		((req_mask & room_info_mask) == req_mask) && \
-		(req_mask != 0) ) {
-		nslog(NS_INFO, " ---req_mask = %d,	valid_mask = %d, room_info_mask = %d!!!\n", req_mask, valid_mask, room_info_mask);
+	else
+	{
 		rec_return_code = 1;
 	}
-#endif
-
-	if (rec_return_code == 1) {
-		pRoom->record_handle = register_course_record_mode(&crc);
-		if(NULL == pRoom->record_handle) {
-			nslog(NS_ERROR, "[%s] ---register_course_record_mode is failed !!!\n", __func__);
-			rec_return_code = 0;
-		}
-	} else {
-		pRoom->RoomInfo.record_stream_mask = 0;
-	}
-
-	if (rec_return_code == 1) {
+	if(rec_return_code == 1)
+	{
 		ret_val = pRoom->record_handle->record_start(pRoom->record_handle);
-		if (ret_val) {
+		if (ret_val)
+		{
 			nslog(NS_ERROR, "[%s] ---record_start is failed !!!\n", __func__);
 			rec_return_code = 0;
 			unregister_course_record_mode(&pRoom->record_handle);
 			pRoom->record_handle = NULL;
 		}
-	} else {
-		pRoom->RoomInfo.record_stream_mask = 0;
 	}
 
-	if (rec_return_code == 1) {
+	if (rec_return_code == 1)
+	{
 		pRoom->lowerEnv.msg_id[RECOMSGID] = pRoom->record_handle->course_data_msgid;
-		for (i = 0; i < pRoom->handle->stream_num; i++) {
-			if (pRoom->RoomInfo.record_stream_mask & (1 << pRoom->handle->stream_hand[i].stream_id)) {
+		for (i = 0; i < pRoom->handle->stream_num; i++)
+		{
+			// add zl 由于编码器是固定的
+			if(pRoom->handle->stream_hand[i].rec_mode != RECODE_MODE_RES && pRoom->handle->stream_hand[i].rec_mode != RECODE_MODE_ALL)
+			{
+				continue;
+			}
+			if (pRoom->RoomInfo.record_stream_mask & (1 << pRoom->handle->stream_hand[i].stream_id))
+			{
 				pRoom->handle->set_recv_to_rec_msgid(pRoom->lowerEnv.msg_id[RECOMSGID], &pRoom->handle->stream_hand[i]);
 				pRoom->handle->set_rec_status(&pRoom->handle->stream_hand[i], START_REC);
 
-
 				//强制I 帧
-				lower_msg_iFrame_req(pRoom, pRoom->handle->stream_hand[i].stream_id);
+			//	lower_msg_iFrame_req(pRoom, pRoom->handle->stream_hand[i].stream_id);
 			}
 		}
-	} else {
-		pRoom->RoomInfo.record_stream_mask = 0;
+
 	}
 
-	if (rec_return_code == 0) {
+	return rec_return_code;
+
+}
+
+int32_t lower_msg_start_record_movie(RoomMsgEnv *pRoom,int8_t *record_time,int8_t *record_file_time)
+{
+
+	int32_t i 		= 0;
+	int32_t req_num = 0;
+	int32_t val_num	= 0;
+	int32_t room_info_num = 0;
+	int32_t ret_val = 0;
+	int32_t rec_return_code = 0;
+
+	course_record_condition_t crc_movie;
+	uint32_t req_mask, valid_mask, room_info_mask;
+
+	r_memset(&crc_movie, 0, sizeof(course_record_condition_t));
+	ret_val = upper_msg_set_record_condition(pRoom, &crc_movie,RESOURCES_USB_DISK_MODE,record_time,record_file_time);
+	if (ret_val == ROOM_RETURN_FAIL)
+	{
 		pRoom->RoomInfo.record_stream_mask = 0;
+		nslog(NS_ERROR, "upper_msg_set_record_condition error!");
+		return 0;
+	}
+	upper_msg_print_cinfo(&crc_movie);
+
+	pRoom->usb_record_handle = register_course_record_mode(&crc_movie);
+	if(NULL == pRoom->usb_record_handle) {
+		nslog(NS_ERROR, "[%s] ---register_course_record_mode is failed !!!\n", __func__);
+		rec_return_code = 0;
+	}
+	else
+	{
+		rec_return_code = 1;
+	}
+	if(rec_return_code == 1)
+	{
+		ret_val = pRoom->usb_record_handle->record_start(pRoom->usb_record_handle);
+		if (ret_val)
+		{
+			nslog(NS_ERROR, "[%s] ---record_start is failed !!!\n", __func__);
+			rec_return_code = 0;
+			unregister_course_record_mode(&pRoom->usb_record_handle);
+			pRoom->usb_record_handle = NULL;
+		}
 	}
 
-	nslog(NS_INFO, "--- start record end.......%s", rec_return_code ? "SUCCESS" : "FAIL");
+	if (rec_return_code == 1)
+	{
+		pRoom->lowerEnv.msg_id[RECOMSGID_USB] = pRoom->usb_record_handle->course_data_msgid;
+		for (i = 0; i < pRoom->handle->stream_num; i++)
+		{
+			// add zl 由于编码器是固定的
+			if(pRoom->handle->stream_hand[i].rec_mode != RECODE_MODE_MOVIE && pRoom->handle->stream_hand[i].rec_mode != RECODE_MODE_ALL)
+			{
+				continue;
+			}
+			if (pRoom->RoomInfo.record_stream_mask & (1 << pRoom->handle->stream_hand[i].stream_id))
+			{
+				pRoom->handle->set_recv_to_usb_rec_msgid(pRoom->lowerEnv.msg_id[RECOMSGID_USB], &pRoom->handle->stream_hand[i]);
+				pRoom->handle->set_usb_rec_status(&pRoom->handle->stream_hand[i], START_USB_REC);
+
+				//强制I 帧
+		//		lower_msg_iFrame_req(pRoom, pRoom->handle->stream_hand[i].stream_id);
+			}
+		}
+
+	}
+
+	return rec_return_code;
+}
+
+
+
+int32_t lower_msg_start_record(RoomMsgEnv *pRoom)
+{
+
+	int32_t room_info_num = 0;
+	int32_t rec_return_code = 1;
+
+	int32_t rec_movie_flag = 0;
+	int32_t rec_res_flag = 0;
+	int32_t i = 0;
+
+	int32_t temp_flag= 0;
+	int8_t record_time[32]= {0};
+	int8_t record_file_time[32] = {0};
+	localtime_t t;
+
+	get_localtime(&t);
+	r_sprintf(record_time, "%04d-%02d-%02d %02d:%02d:%02d",\
+							t.tm_year, t.tm_mon, t.tm_mday,	t.tm_hour, t.tm_min, t.tm_sec);
+	r_sprintf(record_file_time, "%04d%02d%02d%02d%02d%02d",\
+							t.tm_year, t.tm_mon, t.tm_mday,	t.tm_hour, t.tm_min, t.tm_sec);
+
+	nslog(NS_ERROR ,"REC_TIME : %s  REC_FILE_TIME : %s\n",record_time,record_file_time);
+	for (i = 0; i < pRoom->handle->stream_num; i++)
+	{
+		// add zl 由于编码器是固定的
+		if(pRoom->handle->stream_hand[i].media_flag == MEDIA_STREAM_INVALID)
+		{
+			continue;
+		}
+	//	temp_flag = pRoom->RoomInfo.room_info_mask & (1 << pRoom->handle->stream_hand[i].stream_id);
+	//	nslog(NS_ERROR,"FUCK-GOD --------- <%d> <stream_id :%d>\n",temp_flag,pRoom->handle->stream_hand[i].stream_id);
+	//	if(temp_flag)
+		if (pRoom->RoomInfo.room_info_mask & (1 << pRoom->handle->stream_hand[i].stream_id))
+		{
+
+			if(pRoom->handle->stream_hand[i].rec_mode == RECODE_MODE_MOVIE || pRoom->handle->stream_hand[i].rec_mode == RECODE_MODE_ALL)
+			{
+				rec_movie_flag = 1;
+			}
+			if(pRoom->handle->stream_hand[i].rec_mode == RECODE_MODE_RES || pRoom->handle->stream_hand[i].rec_mode == RECODE_MODE_ALL)
+			{
+				rec_res_flag = 1;
+			}
+		}
+	}
+
+	nslog(NS_ERROR,"START_RECORD  <MODE_RES : %d> <MODE_MOVIE : %d>\n",rec_res_flag,rec_movie_flag);
+	pRoom->RoomInfo.record_stream_mask = 0;
+	nslog(NS_ERROR,"FUCK_SHIRT ----111------ <%d>\n",pRoom->RoomInfo.record_stream_mask);
+	if(rec_res_flag == 1)
+	{
+		rec_res_flag = lower_msg_start_record_res(pRoom ,record_time,record_file_time);
+		nslog(NS_ERROR,"FUCK_1019  RES\n");
+	}
+	nslog(NS_ERROR,"FUCK_SHIRT ----222------ <%d>\n",pRoom->RoomInfo.record_stream_mask);
+	if(rec_movie_flag == 1)
+	{
+		rec_movie_flag = lower_msg_start_record_movie(pRoom,record_time,record_file_time);
+		nslog(NS_ERROR,"FUCK_1019  MOVIE\n");
+	}
+	nslog(NS_ERROR,"FUCK_SHIRT ----333------ <%d>\n",pRoom->RoomInfo.record_stream_mask);
+
+	if(rec_movie_flag == 0 && rec_res_flag == 0)
+	{
+		pRoom->RoomInfo.record_stream_mask = 0;
+		rec_return_code = 0;
+	}
+
+	nslog(NS_INFO, "--- start record end.......%s  ----- <%u>", rec_return_code ? "SUCCESS" : "FAIL",pRoom->RoomInfo.record_stream_mask);
 
 	return rec_return_code;
 }
@@ -489,10 +647,11 @@ int32_t lower_msg_start_record_resp(RoomMsgEnv *pRoom, parse_xml_t *parseXml, ms
 	get_req_pass_key_node(&tmp_node, parseXml->proot);
 	get_current_node_value(ret_pass_key, ROOM_MSG_VAL_LEN, parseXml->pdoc, tmp_node);
 
-	if (pRoom->record_handle) {
-		pRoom->RecStatusInfo.RecStatus = lower_msg_opt_type_trans(pRoom->record_handle->get_record_status(pRoom->record_handle));
-		r_strcpy(rec_id, pRoom->record_handle->get_RecordID(pRoom->record_handle));
-		r_strcpy(rec_file, pRoom->record_handle->get_course_root_dir(pRoom->record_handle));
+	// add zl quesetion???
+	if (pRoom->usb_record_handle) {
+		pRoom->RecStatusInfo.RecStatus = lower_msg_opt_type_trans(pRoom->usb_record_handle->get_record_status(pRoom->usb_record_handle));
+		r_strcpy(rec_id, pRoom->usb_record_handle->get_RecordID(pRoom->usb_record_handle));
+		r_strcpy(rec_file, pRoom->usb_record_handle->get_course_root_dir(pRoom->usb_record_handle));
 	} else {
 		pRoom->RecStatusInfo.RecStatus = 0;
 		r_strcpy(rec_id, pRoom->RecInfo.RecordID);
@@ -527,7 +686,9 @@ void lower_msg_monitor_stream_status(RoomMsgEnv *pRoom)
 
 		//HD
 		if (e_info->HD_QuaInfo.Socket > 0) {
-			ret_val = upper_msg_monitor_time_out_status(&e_info->HD_QuaInfo.heart_time, ROOM_MSG_LOGIN_TIME_OUT_VAL);
+		//	ret_val = upper_msg_monitor_time_out_status(&e_info->HD_QuaInfo.heart_time, ROOM_MSG_LOGIN_TIME_OUT_VAL);
+
+			ret_val = upper_msg_monitor_time_out_status(&e_info->HD_QuaInfo.heart_time, 10);
 			if (ret_val == ROOM_RETURN_TIMEOUT) {
 				msg_ctrl_inet_ntoa(ip_buf, e_info->EncIP);
 				stream_hdl = lower_msg_get_stream_handle(pRoom, ip_buf, e_info->HD_QuaInfo.MsgQueType);
@@ -557,7 +718,7 @@ void lower_msg_monitor_stream_status(RoomMsgEnv *pRoom)
 
 		//SD
 		if (e_info->SD_QuaInfo.Socket > 0) {
-			ret_val = upper_msg_monitor_time_out_status(&e_info->SD_QuaInfo.heart_time, ROOM_MSG_LOGIN_TIME_OUT_VAL);
+			ret_val = upper_msg_monitor_time_out_status(&e_info->SD_QuaInfo.heart_time, 10);
 			if (ret_val == ROOM_RETURN_TIMEOUT) {
 				msg_ctrl_inet_ntoa(ip_buf, e_info->EncIP);
 				stream_hdl = lower_msg_get_stream_handle(pRoom, ip_buf, e_info->SD_QuaInfo.MsgQueType);
@@ -722,12 +883,16 @@ int32_t lower_msg_save_enc_info(RoomMsgEnv *pRoom, int8_t *xml_buf, long msgType
 	}
 
 
-	//AudioInfo, 只保存第一路编码器的音频信息
+	// add zl
+	//AudioInfo, 只保存第四路编码器的音频信息
+
+	nslog(NS_ERROR,"SHIRT_GOD_1016  <%d> <%d> <%d>\n",msgType,pRoom->RoomInfo.EncInfo[3].HD_QuaInfo.MsgQueType,
+	pRoom->RoomInfo.EncInfo[3].SD_QuaInfo.MsgQueType);
 	xmlNodePtr AudioInfo_ptr = NULL;
 	AudioInfo_ptr = get_children_node(RoomInfo_ptr, MSG_AUDIOINFO_KEY);
 	if (AudioInfo_ptr && \
-		(msgType == pRoom->RoomInfo.EncInfo[0].HD_QuaInfo.MsgQueType || msgType == pRoom->RoomInfo.EncInfo[0].SD_QuaInfo.MsgQueType)) {
-
+		(msgType == pRoom->RoomInfo.EncInfo[3].HD_QuaInfo.MsgQueType || msgType == pRoom->RoomInfo.EncInfo[3].SD_QuaInfo.MsgQueType)) {
+		nslog(NS_ERROR,"SHIRT_GOD_1016 \n");
 		//InputMode
 		ret = lower_msg_get_leaf_value(value, ROOM_MSG_VAL_LEN, MSG_INPUTMODE_KEY, AudioInfo_ptr, parse_xml_cfg->pdoc);
 		if (ret == ROOM_RETURN_SUCC)
@@ -920,6 +1085,18 @@ int32_t lower_msg_load_room_info(RoomMsgEnv *pRoom, int8_t *xml_buf)
 	ret = upper_msg_get_leaf_value(value, ROOM_MSG_VAL_LEN, MSG_RECMAXTIME_REP_KEY, RoomInfo_ptr, parse_xml_cfg->pdoc);
 	if (ret == ROOM_RETURN_SUCC)
 		pRoom->RoomInfo.RecordMaxTime = atoi(value);
+
+	// add zl picsyn_model
+	ret = upper_msg_get_leaf_value(value, ROOM_MSG_VAL_LEN, MSG_PICSYNC_MODEL_KEY, RoomInfo_ptr, parse_xml_cfg->pdoc);
+	if (ret == ROOM_RETURN_SUCC)
+	{
+		pRoom->RoomInfo.PicSynMode = atoi(value);
+		nslog(NS_ERROR,"GET_PICSYN_MODEL IS OK  <MODEL : %d>!\n",pRoom->RoomInfo.PicSynMode);
+	}
+	else
+	{
+		nslog(NS_ERROR,"GET_PICSYN_MODEL IS ERROR!\n");
+	}
 
 	//AudioInfo
 	xmlNodePtr AudioInfo_ptr = NULL;
@@ -1514,7 +1691,7 @@ int32_t lower_msg_package_enc_status_info(RoomMsgEnv *pRoom, int8_t *out_buf, in
 
 
 
-int32_t lower_msg_package_req_status_info(int8_t *out_buf, RecStatusInfo *st_info)
+int32_t lower_msg_package_req_status_info(int8_t *out_buf, RoomMsgEnv *pRoom)//RecStatusInfo *st_info)
 {
 	int32_t 	xmllen = 0;
 	int8_t		msgcode_buf[ROOM_MSG_VAL_LEN] = {0};
@@ -1525,10 +1702,14 @@ int32_t lower_msg_package_req_status_info(int8_t *out_buf, RecStatusInfo *st_inf
 	xmlNodePtr	head_node = NULL;
 	xmlNodePtr	body_node = NULL;
 
+	int32_t 	record_time = 0;
+
 	if(NULL == out_buf){
 		nslog(NS_ERROR, "[%s]---params is NULL!", __func__);
 		return ROOM_RETURN_FAIL;
 	}
+
+	RecStatusInfo *st_info = &(pRoom->RecStatusInfo);
 
 	pxml = xmlNewDoc(XML_DOC_VERSION);
 
@@ -1589,6 +1770,52 @@ int32_t lower_msg_package_req_status_info(int8_t *out_buf, RecStatusInfo *st_inf
 	r_bzero(msgcode_buf, ROOM_MSG_VAL_LEN);
 	sprintf((char *)msgcode_buf, "%s", st_info->RecName);
 	upper_msg_package_add_xml_leaf(RoomStatus_node, MSG_RECNAME_KEY, msgcode_buf);
+
+
+	//RecTime
+	r_bzero(msgcode_buf, ROOM_MSG_VAL_LEN);
+	if(pRoom->usb_record_handle == NULL)
+	{
+		record_time = 0;
+	}
+	else
+	{
+		record_time = pRoom->usb_record_handle->get_record_time(pRoom->usb_record_handle);
+	}
+	sprintf((char *)msgcode_buf, "%d", record_time);
+	upper_msg_package_add_xml_leaf(RoomStatus_node, MSG_RECTIME_KEY, msgcode_buf);
+
+
+	//PicsynMode
+	r_bzero(msgcode_buf, ROOM_MSG_VAL_LEN);
+	sprintf((char *)msgcode_buf, "%d", pRoom->RoomInfo.PicSynMode);
+	upper_msg_package_add_xml_leaf(RoomStatus_node, "Model", msgcode_buf);
+
+	//RecID  MSG_RECORDID_KEY
+	r_bzero(msgcode_buf, ROOM_MSG_VAL_LEN);
+	if(pRoom->usb_record_handle == NULL)
+	{
+		;
+	}
+	else
+	{
+		r_strcpy((char *)msgcode_buf, pRoom->usb_record_handle->get_RecordID(pRoom->usb_record_handle));
+	}
+	upper_msg_package_add_xml_leaf(RoomStatus_node, MSG_RECORDID_KEY, msgcode_buf);
+
+	//Recbasetime MSG_RECSTARTTIME_KEY
+	r_bzero(msgcode_buf, ROOM_MSG_VAL_LEN);
+	if(pRoom->usb_record_handle == NULL)
+	{
+		;
+	}
+	else
+	{
+		r_strcpy((char *)msgcode_buf, pRoom->usb_record_handle->get_record_start_time(pRoom->usb_record_handle));
+	}
+	upper_msg_package_add_xml_leaf(RoomStatus_node, MSG_RECSTARTTIME_KEY, msgcode_buf);
+
+
 
 	//IfMark
 	r_bzero(msgcode_buf, ROOM_MSG_VAL_LEN);
@@ -1905,6 +2132,9 @@ int32_t lower_msg_get_platfrom_key(parse_xml_t *parseXml)
 	else if (!r_strcmp(value, MSG_COMCTRL_PASSKEY)) {
 		ret_val = ComControl;
 	}
+	else if (!r_strcmp(value, MSG_NETCTRL_PASSKEY)) {
+		ret_val = NetControl;
+	}
 	else if (!r_strcmp(value, MSG_THIRDCTRL_PASSKEY)) {
 		ret_val = ThirdControl;
 	}
@@ -1914,7 +2144,9 @@ int32_t lower_msg_get_platfrom_key(parse_xml_t *parseXml)
 	else if (!r_strcmp(value, MSG_PLATFORM_DIRECTOR_PASSKEY)) {
 		ret_val = Director;
 	}
-	else {
+	else if (!r_strcmp(value, MSG_WEBCTRL_PASSKEY)) {
+		ret_val = WebCtrl;
+	}	else {
 		ret_val = -1;
 	}
 
@@ -1963,13 +2195,18 @@ int32_t lower_msg_get_record_platfrom_key(parse_xml_t *parseXml)
 	else if (!r_strcmp(value, MSG_COMCTRL_PASSKEY)) {
 		ret_val = ComControl;
 	}
+	else if (!r_strcmp(value, MSG_NETCTRL_PASSKEY)) {
+		ret_val = NetControl;
+	}
 	else if (!r_strcmp(value, MSG_THIRDCTRL_PASSKEY)) {
 		ret_val = ThirdControl;
 	}
 	else if (!r_strcmp(value, MSG_ALLPLATFORM_PASSKEY)) {
 		ret_val = AllPlatform;
 	}
-	else {
+	else if (!r_strcmp(value, MSG_WEBCTRL_PASSKEY)) {
+		ret_val = WebCtrl;
+	}	else {
 		ret_val = -1;
 	}
 
@@ -1991,6 +2228,9 @@ int32_t lower_msg_get_room_info_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, m
 		nslog(NS_ERROR, " ---[lower_msg_get_return_code = 0] error!");
 		return ROOM_RETURN_FAIL;
 	}
+
+//	nslog(NS_ERROR,"FUCK_GOD_1014 MSG : %s  <msgtype : %d>\n",xml,msgq->msgtype);
+
 
 	//存储编码器信息
 	lower_msg_save_enc_info(pRoom, xml, msgq->msgtype);
@@ -2043,7 +2283,12 @@ int32_t lower_msg_get_room_info_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, m
 int32_t lower_msg_resp_xml_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque *msgq, uint32_t *mask, uint32_t msgcode)
 {
 	//标记哪些编码器已上报信息
+
+	nslog(NS_ERROR,"FUCK_GOD_1018 <-----1> <MSG :%d> <STREAM_ID : %d> <MASK  :%d>\n",
+		msgcode,msgq->msgtype,*mask);
 	*mask &= ~(1 << msgq->msgtype);
+	nslog(NS_ERROR,"FUCK_GOD_1018 <-----2> <MSG :%d> <STREAM_ID : %d> <MASK  :%d>\n",
+		msgcode,msgq->msgtype,*mask);
 
 	//所有回应为成功，才回应成功
 	if (upper_msg_get_mask_bit_val(*mask, MSG_QUEUE_REC_FLG_BIT)) {
@@ -2052,6 +2297,10 @@ int32_t lower_msg_resp_xml_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque
 			upper_msg_set_mask_bit_val(mask, MSG_QUEUE_REC_FLG_BIT, 0);
 		}
 	}
+
+
+	nslog(NS_ERROR,"FUCK_GOD_1018 <-----3> <MSG :%d> <STREAM_ID : %d> <MASK  :%d>\n",
+		msgcode,msgq->msgtype,*mask);
 
 	//等待所有ENC 回应后才向上回应消息
 	if (upper_msg_is_all_enc_resp(*mask)) {
@@ -2163,9 +2412,12 @@ int32_t lower_msg_record_ctrl_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msg
 	int32_t index;
 	int32_t Result;
 	int8_t	*xml_buf	= NULL;
+	int32_t temp_debug = 0;
 
 	//不是开始录制的锁分辨率操作，不处理
 	Result = lower_msg_get_record_result(pRoom, parseXml);
+
+//	nslog(NS_ERROR,"FUCK-GOD-   RESULT : %d\n",Result);
 	if (Result != MSG_RECORD_CTRL_START) {
 		nslog(NS_INFO, " ---status = %d, it is not MSG_RECORD_CTRL_START, just return!", Result);
 		return ROOM_RETURN_SUCC;
@@ -2178,7 +2430,9 @@ int32_t lower_msg_record_ctrl_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msg
 	}
 
 	//标记哪些编码器已上报信息
+	nslog(NS_INFO, "FUCK-GOD-ANOTHER ---record_mask[%d] = %d, msgq->msgtype = %d, OptType = %d record_num : %d\n",index, pRoom->record_mask[index], msgq->msgtype,  pRoom->RecInfo.OptType,pRoom->record_mask_sum[index]);
 	pRoom->record_mask[index] &= ~(1 << msgq->msgtype);
+	pRoom->record_mask_sum[index]-- ;
 
 	//所有回应为成功，才回应成功
 	if (upper_msg_get_mask_bit_val(pRoom->record_mask[index], MSG_QUEUE_REC_FLG_BIT)) {
@@ -2188,12 +2442,15 @@ int32_t lower_msg_record_ctrl_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msg
 		}
 	}
 
-	nslog(NS_INFO, "[%s] ---record_mask[%d] = %d, msgq->msgtype = %d, OptType = %d \n", __func__, index, pRoom->record_mask[index], msgq->msgtype,  pRoom->RecInfo.OptType);
+	nslog(NS_INFO, "FUCK-GOD- ---record_mask[%d] = %d, msgq->msgtype = %d, OptType = %d \n",index, pRoom->record_mask[index], msgq->msgtype,  pRoom->RecInfo.OptType);
+	temp_debug = upper_msg_is_all_enc_resp(pRoom->record_mask[index]);
+	nslog(NS_ERROR,"FUCK-GOD- -----<%d>\n",temp_debug);
 
 	//等待所有ENC 回应后才向上回应消息
-	if (upper_msg_is_all_enc_resp(pRoom->record_mask[index])) {
+	if(temp_debug && pRoom->record_mask_sum[index] == 0){
+//	if (upper_msg_is_all_enc_resp(pRoom->record_mask[index])) {
 		int32_t ret_value 	= 0;
-
+		nslog(NS_ERROR,"junbao!!!!\n");
 		pRoom->record_mask[index] = MSG_QUEUE_REC_FLG;
 
 		if (upper_msg_get_mask_bit_val(pRoom->record_mask[index], MSG_QUEUE_REC_FLG_BIT)) {
@@ -2204,9 +2461,21 @@ int32_t lower_msg_record_ctrl_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msg
 
 		//启动录制
 		if (ret_value && Result == MSG_RECORD_CTRL_START){
+
+			nslog(NS_ERROR,"SHIRT_FUCK_2!!!!!!!!!!!!!\n");
 			ret_value = lower_msg_start_record(pRoom);
 		}
 
+		// add zl question ???
+		#if 1
+		if (pRoom->usb_record_handle) {
+			pRoom->RecStatusInfo.RecStatus = lower_msg_opt_type_trans(pRoom->usb_record_handle->get_record_status(pRoom->usb_record_handle));
+			r_strcpy(pRoom->RecStatusInfo.RecName, pRoom->usb_record_handle->get_course_root_dir(pRoom->usb_record_handle));
+		} else {
+			pRoom->RecStatusInfo.RecStatus = 0;
+			r_strcpy(pRoom->RecStatusInfo.RecName, pRoom->RecInfo.CourseName);
+		}
+		#else
 		if (pRoom->record_handle) {
 			pRoom->RecStatusInfo.RecStatus = lower_msg_opt_type_trans(pRoom->record_handle->get_record_status(pRoom->record_handle));
 			r_strcpy(pRoom->RecStatusInfo.RecName, pRoom->record_handle->get_course_root_dir(pRoom->record_handle));
@@ -2214,7 +2483,7 @@ int32_t lower_msg_record_ctrl_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msg
 			pRoom->RecStatusInfo.RecStatus = 0;
 			r_strcpy(pRoom->RecStatusInfo.RecName, pRoom->RecInfo.CourseName);
 		}
-
+		#endif
 		//回应
 		lower_msg_start_record_resp(pRoom, parseXml, msgq, ret_value);
 		upper_msg_time_que_del_node(pRoom, parseXml, head);
@@ -2236,7 +2505,8 @@ int32_t lower_msg_record_ctrl_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msg
 
 		//回复状态
 		r_bzero(xml_buf, ROOM_MSG_MAX_LEN);
-		lower_msg_package_req_status_info(xml_buf, &pRoom->RecStatusInfo);
+	//	lower_msg_package_req_status_info(xml_buf, &pRoom->RecStatusInfo);
+		lower_msg_package_req_status_info(xml_buf, pRoom);
 		nslog(NS_ERROR,"WAHT ----1\n");
 		upper_msg_tcp_send(pRoom->upperEnv.tcp_socket, &pRoom->upperEnv.tcp_socket_mutex, head, xml_buf);
 
@@ -2348,6 +2618,7 @@ int32_t lower_msg_iFrame_req_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgq
 
 int32_t lower_msg_send_logo_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque *msgq, MsgHeader *head, int8_t *xml)
 {
+	#if 0
 	int32_t index = lower_msg_get_platfrom_key(parseXml);
 	if (index == -1) {
 		nslog(NS_ERROR, "[%s] ---[lower_msg_get_platfrom_key] error!", __func__);
@@ -2355,10 +2626,51 @@ int32_t lower_msg_send_logo_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgqu
 	}
 
 	return lower_msg_resp_xml_deal(pRoom, parseXml, msgq, &pRoom->logoMask[index], MSG_SEND_LOGO_PIC);
+
+	#endif
+
+	MsgHeader	out_head;
+	int8_t file[ROOM_MSG_VAL_LEN] = {0};
+#if 0
+	int8_t *out_buf = (int8_t *)r_malloc(ROOM_MSG_MAX_LEN);
+	if (!out_buf) {
+		nslog(NS_ERROR, "[%s] ---[r_malloc] error!", __func__);
+		return ROOM_RETURN_FAIL;
+	}
+#endif
+
+	int32_t index = lower_msg_get_platfrom_key(parseXml);
+	if (index == -1) {
+		nslog(NS_ERROR, "[%s] ---[lower_msg_get_platfrom_key] error!", __func__);
+		return ROOM_RETURN_FAIL;
+	}
+
+	//存储编码器信息
+	//add zl 现阶段不存储
+	nslog(NS_ERROR,"FUCK_GOD_1018 ----1 mask :%d XML : %s\n",pRoom->logoMask[index],xml);
+
+
+//	pRoom->RoomInfo.setRemoteModeMask |= (1 << msgq->msgtype);
+
+	upper_msg_tcp_send(pRoom->upperEnv.tcp_socket, &pRoom->upperEnv.tcp_socket_mutex, &out_head, xml);
+
+
+	//标记哪些编码器已上报信息
+	pRoom->setRemoteModeMask[index] &= ~(1 << msgq->msgtype);
+
+
+	nslog(NS_ERROR,"FUCK_GOD_1018 ----2 mask :%d \n",pRoom->logoMask[index]);
+
+	if (pRoom->roomInfoMask[index] == MSG_QUEUE_REC_CLR) {
+		upper_msg_time_que_del_node(pRoom, parseXml, head);
+	}
+
+
 }
 
 int32_t lower_msg_add_title_req_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque *msgq, MsgHeader *head, int8_t *xml)
 {
+	#if 0
 	int32_t index = lower_msg_get_platfrom_key(parseXml);
 	if (index == -1) {
 		nslog(NS_ERROR, "[%s] ---[lower_msg_get_platfrom_key] error!", __func__);
@@ -2366,6 +2678,45 @@ int32_t lower_msg_add_title_req_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, m
 	}
 
 	return lower_msg_resp_xml_deal(pRoom, parseXml, msgq, &pRoom->titleMask[index], MSG_ADD_TITLE_REQ);
+	#endif
+
+	MsgHeader	out_head;
+	int8_t file[ROOM_MSG_VAL_LEN] = {0};
+#if 0
+	int8_t *out_buf = (int8_t *)r_malloc(ROOM_MSG_MAX_LEN);
+	if (!out_buf) {
+		nslog(NS_ERROR, "[%s] ---[r_malloc] error!", __func__);
+		return ROOM_RETURN_FAIL;
+	}
+#endif
+
+	int32_t index = lower_msg_get_platfrom_key(parseXml);
+	if (index == -1) {
+		nslog(NS_ERROR, "[%s] ---[lower_msg_get_platfrom_key] error!", __func__);
+		return ROOM_RETURN_FAIL;
+	}
+
+	//存储编码器信息
+	//add zl 现阶段不存储
+	nslog(NS_ERROR,"FUCK_GOD_1018 ----1 mask :%d XML : %s\n",pRoom->titleMask[index],xml);
+
+
+//	pRoom->RoomInfo.setRemoteModeMask |= (1 << msgq->msgtype);
+
+	upper_msg_tcp_send(pRoom->upperEnv.tcp_socket, &pRoom->upperEnv.tcp_socket_mutex, &out_head, xml);
+
+
+	//标记哪些编码器已上报信息
+	pRoom->setRemoteModeMask[index] &= ~(1 << msgq->msgtype);
+
+
+	nslog(NS_ERROR,"FUCK_GOD_1018 ----2 mask :%d \n",pRoom->titleMask[index]);
+
+	if (pRoom->roomInfoMask[index] == MSG_QUEUE_REC_CLR) {
+		upper_msg_time_que_del_node(pRoom, parseXml, head);
+	}
+
+
 }
 
 int32_t lower_msg_volume_req_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque *msgq, MsgHeader *head, int8_t *xml)
@@ -2417,46 +2768,198 @@ int32_t lower_msg_pic_adjust_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgq
 // add zl
 int32_t lower_msg_get_camctl_ctrl_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque *msgq, MsgHeader *head, int8_t *xml)
 {
-	int32_t index = lower_msg_get_platfrom_key(parseXml);
-	if (index == -1) {
-		nslog(NS_ERROR, "[%s] ---[lower_msg_get_platfrom_key] error!", __func__);
-		return ROOM_RETURN_FAIL;
-	}
+		MsgHeader	out_head;
+		int8_t file[ROOM_MSG_VAL_LEN] = {0};
+#if 0
+		int8_t *out_buf = (int8_t *)r_malloc(ROOM_MSG_MAX_LEN);
+		if (!out_buf) {
+			nslog(NS_ERROR, "[%s] ---[r_malloc] error!", __func__);
+			return ROOM_RETURN_FAIL;
+		}
+#endif
 
-	return lower_msg_resp_xml_deal(pRoom, parseXml, msgq, &pRoom->setRemoteCtrlMask[index], MSGCODE_GET_CAMCTL_PROLIST);
+		int32_t index = lower_msg_get_platfrom_key(parseXml);
+		if (index == -1) {
+			nslog(NS_ERROR, "[%s] ---[lower_msg_get_platfrom_key] error!", __func__);
+			return ROOM_RETURN_FAIL;
+		}
+
+		//存储编码器信息
+		//add zl 现阶段不存储
+		nslog(NS_ERROR,"FUCK_GOD_1018 ----1 mask :%d XML : %s\n",pRoom->getRemoteCtrlMask[index],xml);
+
+
+	//	pRoom->RoomInfo.setRemoteModeMask |= (1 << msgq->msgtype);
+
+		upper_msg_tcp_send(pRoom->upperEnv.tcp_socket, &pRoom->upperEnv.tcp_socket_mutex, &out_head, xml);
+
+
+		//标记哪些编码器已上报信息
+		pRoom->setRemoteModeMask[index] &= ~(1 << msgq->msgtype);
+
+
+		nslog(NS_ERROR,"FUCK_GOD_1018 ----2 mask :%d \n",pRoom->getRemoteCtrlMask[index]);
+
+		if (pRoom->roomInfoMask[index] == MSG_QUEUE_REC_CLR) {
+			upper_msg_time_que_del_node(pRoom, parseXml, head);
+		}
+
+		return ROOM_RETURN_SUCC;
 }
 
 int32_t lower_msg_set_camctl_ctrl_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque *msgq, MsgHeader *head, int8_t *xml)
 {
-	int32_t index = lower_msg_get_platfrom_key(parseXml);
-	if (index == -1) {
-		nslog(NS_ERROR, "[%s] ---[lower_msg_get_platfrom_key] error!", __func__);
-		return ROOM_RETURN_FAIL;
-	}
+		MsgHeader	out_head;
+		int8_t file[ROOM_MSG_VAL_LEN] = {0};
+#if 0
+		int8_t *out_buf = (int8_t *)r_malloc(ROOM_MSG_MAX_LEN);
+		if (!out_buf) {
+			nslog(NS_ERROR, "[%s] ---[r_malloc] error!", __func__);
+			return ROOM_RETURN_FAIL;
+		}
+#endif
 
-	return lower_msg_resp_xml_deal(pRoom, parseXml, msgq, &pRoom->getRemoteCtrlMask[index], MSGCODE_SET_CAMCTL_PRO);
+		int32_t index = lower_msg_get_platfrom_key(parseXml);
+		if (index == -1) {
+			nslog(NS_ERROR, "[%s] ---[lower_msg_get_platfrom_key] error!", __func__);
+			return ROOM_RETURN_FAIL;
+		}
+
+		//存储编码器信息
+		//add zl 现阶段不存储
+		nslog(NS_ERROR,"FUCK_GOD_1018 ----1 mask :%d XML : %s\n",pRoom->setRemoteCtrlMask[index],xml);
+
+
+	//	pRoom->RoomInfo.setRemoteModeMask |= (1 << msgq->msgtype);
+
+		upper_msg_tcp_send(pRoom->upperEnv.tcp_socket, &pRoom->upperEnv.tcp_socket_mutex, &out_head, xml);
+
+
+		//标记哪些编码器已上报信息
+		pRoom->setRemoteModeMask[index] &= ~(1 << msgq->msgtype);
+
+
+		nslog(NS_ERROR,"FUCK_GOD_1018 ----2 mask :%d \n",pRoom->setRemoteCtrlMask[index]);
+
+		if (pRoom->roomInfoMask[index] == MSG_QUEUE_REC_CLR) {
+			upper_msg_time_que_del_node(pRoom, parseXml, head);
+		}
+
+		return ROOM_RETURN_SUCC;
 }
 
 int32_t lower_msg_image_synthesis_req_node(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque *msgq, MsgHeader *head, int8_t *xml)
 {
+	MsgHeader	out_head;
+	int8_t file[ROOM_MSG_VAL_LEN] = {0};
+	uint32_t temp_mode = 0;
+	int32_t ret = 0;
+
+	int8_t 	*xml_buf = NULL;
+#if 0
+	int8_t *out_buf = (int8_t *)r_malloc(ROOM_MSG_MAX_LEN);
+	if (!out_buf) {
+		nslog(NS_ERROR, "[%s] ---[r_malloc] error!", __func__);
+		return ROOM_RETURN_FAIL;
+	}
+#endif
+
 	int32_t index = lower_msg_get_platfrom_key(parseXml);
 	if (index == -1) {
 		nslog(NS_ERROR, "[%s] ---[lower_msg_get_platfrom_key] error!", __func__);
 		return ROOM_RETURN_FAIL;
 	}
 
-	return lower_msg_resp_xml_deal(pRoom, parseXml, msgq, &pRoom->getPictureSynMask[index], MSG_ENC_IMAGE_SYNTHESIS);
+	ret = upper_msg_package_get_picsyn_mode_info(parseXml,0,&temp_mode);
+	if(ret != ROOM_RETURN_SUCC)
+	{
+		nslog(NS_ERROR,"GET PICYSN MODE IS ERROR!\n");
+	}
+	else
+	{
+
+		xml_buf = (int8_t *)r_malloc(ROOM_MSG_MAX_LEN);
+		if (!xml_buf) {
+			nslog(NS_ERROR, "[%s] ---[r_malloc] error!", __func__);
+			return ROOM_RETURN_FAIL;
+		}
+	}
+
+	//存储编码器信息
+	//add zl 现阶段不存储
+	nslog(NS_ERROR,"FUCK_GOD_1018 ----1 mask :%d XML : %s\n",pRoom->setRemoteModeMask[index],xml);
+
+//	pRoom->RoomInfo.setRemoteModeMask |= (1 << msgq->msgtype);
+
+	upper_msg_tcp_send(pRoom->upperEnv.tcp_socket, &pRoom->upperEnv.tcp_socket_mutex, &out_head, xml);
+
+
+	//标记哪些编码器已上报信息
+	pRoom->setRemoteModeMask[index] &= ~(1 << msgq->msgtype);
+
+
+	nslog(NS_ERROR,"FUCK_GOD_1018 ----2 mask :%d \n",pRoom->setRemoteModeMask[index]);
+
+	if (pRoom->roomInfoMask[index] == MSG_QUEUE_REC_CLR) {
+		upper_msg_time_que_del_node(pRoom, parseXml, head);
+	}
+
+	// add zl 合成编码器合成模式
+	if(temp_mode != pRoom->RoomInfo.PicSynMode)
+	{
+		pRoom->RoomInfo.PicSynMode = temp_mode ;
+		r_bzero(xml_buf, ROOM_MSG_MAX_LEN);
+		lower_msg_package_req_status_info(xml_buf, pRoom);
+		upper_msg_tcp_send(pRoom->upperEnv.tcp_socket, &pRoom->upperEnv.tcp_socket_mutex, head, xml_buf);
+	}
+	if (xml_buf)
+		r_free(xml_buf);
+
+	return ROOM_RETURN_SUCC;
+
+
+//return lower_msg_resp_xml_deal(pRoom, parseXml, msgq, &pRoom->getPictureSynMask[index], MSG_ENC_IMAGE_SYNTHESIS);
 }
 
 int32_t lower_msg_director_mode_ctrl_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque *msgq, MsgHeader *head, int8_t *xml)
 {
-	int32_t index = lower_msg_get_platfrom_key(parseXml);
-	if (index == -1) {
-		nslog(NS_ERROR, "[%s] ---[lower_msg_get_platfrom_key] error!", __func__);
-		return ROOM_RETURN_FAIL;
-	}
+		MsgHeader	out_head;
+		int8_t file[ROOM_MSG_VAL_LEN] = {0};
+#if 0
+		int8_t *out_buf = (int8_t *)r_malloc(ROOM_MSG_MAX_LEN);
+		if (!out_buf) {
+			nslog(NS_ERROR, "[%s] ---[r_malloc] error!", __func__);
+			return ROOM_RETURN_FAIL;
+		}
+#endif
 
-	return lower_msg_resp_xml_deal(pRoom, parseXml, msgq, &pRoom->setRemoteModeMask[index], MSG_ECN_DIRECTOR_MODE);
+		int32_t index = lower_msg_get_platfrom_key(parseXml);
+		if (index == -1) {
+			nslog(NS_ERROR, "[%s] ---[lower_msg_get_platfrom_key] error!", __func__);
+			return ROOM_RETURN_FAIL;
+		}
+
+		//存储编码器信息
+		//add zl 现阶段不存储
+		nslog(NS_ERROR,"FUCK_GOD_1018 ----12 mask :%d XML : %s\n",pRoom->getPictureSynMask[index],xml);
+
+
+	//	pRoom->RoomInfo.setRemoteModeMask |= (1 << msgq->msgtype);
+
+		upper_msg_tcp_send(pRoom->upperEnv.tcp_socket, &pRoom->upperEnv.tcp_socket_mutex, &out_head, xml);
+
+
+		//标记哪些编码器已上报信息
+		pRoom->setRemoteModeMask[index] &= ~(1 << msgq->msgtype);
+
+
+		nslog(NS_ERROR,"FUCK_GOD_1018 ----22 mask :%d \n",pRoom->getPictureSynMask[index]);
+
+		if (pRoom->roomInfoMask[index] == MSG_QUEUE_REC_CLR) {
+			upper_msg_time_que_del_node(pRoom, parseXml, head);
+		}
+
+		return ROOM_RETURN_SUCC;
 }
 
 
@@ -2539,24 +3042,8 @@ int32_t lower_msg_enc_login_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgqu
 
 	#endif
 
-	//教室连接状态
-	for (i = 0, num = 0; i < ROOM_ENC_NUM; i ++) {
-		if (pRoom->RoomInfo.EncInfo[i].ID == 0) {
-			continue;
-		}
-
-		if (pRoom->RoomInfo.EncInfo[i].Status == 1)
-			num++;
-	}
-
-//	if (num < pRoom->RoomInfo.EncNum) {
-	if(num == 0) {
-		pRoom->RoomInfo.ConnectStatus = 0;
-		pRoom->RecStatusInfo.ConnStatus = 0;
-	} else {
 		pRoom->RoomInfo.ConnectStatus = 1;
 		pRoom->RecStatusInfo.ConnStatus = 1;
-	}
 
 
 	msg_ctrl_inet_ntoa(ip_buf, e_info->EncIP);
@@ -2613,31 +3100,93 @@ int32_t lower_msg_enc_login_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgqu
 
 	//登录回应后，设置直播信息
 	ret_val = lower_msg_set_live_info(pRoom, msgq->msgtype);
-	nslog(NS_INFO, "ret_val = %d, q_info->Socket = %d", ret_val, q_info->Socket);
+	nslog(NS_INFO, "ret_val = %d, q_info->Socket = %d,q_info->RateType : %d", ret_val, q_info->Socket,q_info->RateType);
 	if (xml_buf && ret_val == 1 && q_info->Socket > 0) {
 		nslog(NS_INFO, " ---[request stream again] !");
 
+		#if 0
 		//登录成功后，如果该路有直播用户，则请求码流
 		r_bzero(xml_buf, ROOM_MSG_MAX_LEN);
 		upper_msg_package_req_stream_info(pRoom, xml_buf, "0", q_info->RateType);
 		upper_msg_tcp_send(q_info->Socket, q_info->mutex, head, xml_buf);
 		pRoom->RoomInfo.req_stream_mask |= (1 << msgq->msgtype);
+		#endif
 	}
 
 	//登录上后，设置高低质量带宽(只设置高码流)
-	if (xml_buf) {
+	if (xml_buf) 
+	{
 		r_bzero(xml_buf, ROOM_MSG_MAX_LEN);
-		ret_val = upper_msg_package_set_quality_info(pRoom, xml_buf, "0", e_info->ID);
+		#if 0
+		ret_val = upper_msg_package_set_quality_info(pRoom, xml_buf, "0",q_info->RateType,e_info->ID);
+
 		if (ret_val == ROOM_RETURN_SUCC) {
 			upper_msg_tcp_send(q_info->Socket, q_info->mutex, head, xml_buf);
 		} else {
 			//请求教室信息
 			lower_msg_req_room_info(pRoom, msgq, head, MSG_ROOMCTRL_PASSKEY);
 		}
+		#endif
+		//设置高低质量带宽(只设置高码流)
+		if(q_info->RateType == 0)
+		{
+			ret_val = upper_msg_package_set_quality_info(pRoom, xml_buf, "0",q_info->RateType,e_info->ID);
+
+			if (ret_val == ROOM_RETURN_SUCC) {
+				upper_msg_tcp_send(q_info->Socket, q_info->mutex, head, xml_buf);
+			} else {
+				//请求教室信息
+				lower_msg_req_room_info(pRoom, msgq, head, MSG_ROOMCTRL_PASSKEY);
+			}
+		}
+		//设置高低质量带宽(只设置高码流)
+		nslog(NS_ERROR,"FUCK_GOD_1104  ------ FIRST SET 30047!\n");
+		r_bzero(xml_buf, ROOM_MSG_MAX_LEN);
+		// add zl 连接成功编码器后设定合成编码器合成信息
+		if(q_info->RateType == 0)
+		{
+			if(upper_msg_package_set_picsyn_mode_info(pRoom, xml_buf, "0", e_info->ID) != ROOM_RETURN_SUCC)
+			{
+				nslog(NS_ERROR,"SET ENC PICSYN MODE IS ERROR!\n");
+			}
+			else
+			{
+				upper_msg_tcp_send(q_info->Socket, q_info->mutex, head, xml_buf);
+				nslog(NS_ERROR,"SET ENC PICSYN MODE IS OK!	------------ %s\n",xml_buf);
+			}
+		}
 	}
 
 	if (xml_buf)
 		r_free(xml_buf);
+
+	msg_header_t auto_req_msg;
+	int8_t auto_req_buf[XML_MSG_LEN] ={0};
+	int32_t auto_req_len = 0;
+#if 1
+	// add zl 连接编码器后自动请求码流
+	r_memset(auto_req_buf, 0, XML_MSG_LEN);
+	auto_req_len = 0;
+	room_auto_send_req(&(auto_req_buf[MsgLen]),&auto_req_len,stream_hdl->stream_id%2,stream_hdl->stream_id);
+	nslog(NS_ERROR ,"GOD --- AUTO_REQ :%s	  --- IP <%s>  stream_id :%d\n",&auto_req_buf[MsgLen],stream_hdl->ipaddr,stream_hdl->stream_id);
+	auto_req_msg.m_len = htons(auto_req_len + MsgLen);
+	auto_req_msg.m_ver = htons(ENC_VER);
+	auto_req_msg.m_msg_type = XML_TYPE;
+	
+	r_memcpy(auto_req_buf, &auto_req_msg, MsgLen);
+
+	pthread_mutex_lock(&stream_hdl->mutex);
+	if(r_send(stream_hdl->sockfd, auto_req_buf, auto_req_len + MsgLen, 0)< 0)
+	{
+		nslog(NS_ERROR, "r_send AUTO_REQ error, errno = %d, stream_id = %d", errno, stream_hdl->stream_id);
+		//return_code = LOSE_CONNECT;
+		pthread_mutex_unlock(&stream_hdl->mutex);
+		//goto EXIT;
+	}
+	pthread_mutex_unlock(&stream_hdl->mutex);
+#endif 
+	
+
 
 	return lower_msg_resp_xml_deal(pRoom, parseXml, msgq, &pRoom->loginMask, MSG_CONNECT_ROOM_REQ);
 }
@@ -2662,8 +3211,125 @@ int32_t lower_msg_record_req_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgq
 	int32_t status 		= 0;
 	int32_t rec_return_code 			= 0;
 	int8_t  rec_id[ROOM_MSG_VAL_LEN] 	= {0};
+	int8_t *xml_buf = NULL;
+
+	//对录制操作进行上锁，防止多线程并行操作
+	if (upper_mutex_status(&pRoom->RecInfo.opt_mutex_lock)){
+		nslog(NS_WARN, " --- upper_mutex_status lock, just return");
+		return ROOM_RETURN_FAIL;
+	} else {
+		upper_mutex_lock(&pRoom->RecInfo.opt_mutex_lock);
+	}
+
 
 	//如录制完成，则停止录制
+
+	status = lower_msg_get_record_status(pRoom, parseXml);
+
+	if(status == MSG_RECORD_CTRL_STOP && (pRoom->record_handle != NULL || pRoom->usb_record_handle != NULL))
+	{
+		// add zl question ???
+		#if 1
+		if(pRoom->usb_record_handle != NULL)
+		{
+			r_strcpy(pRoom->RecStatusInfo.RecName, pRoom->usb_record_handle->get_course_root_dir(pRoom->usb_record_handle));
+			r_strcpy(rec_id, pRoom->usb_record_handle->get_RecordID(pRoom->usb_record_handle));
+		}
+		#else
+		if(pRoom->record_handle != NULL || pRoom->usb_record_handle != NULL)
+		{
+			if(pRoom->record_handle != NULL)
+			{
+				r_strcpy(pRoom->RecStatusInfo.RecName, pRoom->record_handle->get_course_root_dir(pRoom->record_handle));
+				r_strcpy(rec_id, pRoom->record_handle->get_RecordID(pRoom->record_handle));
+				nslog(NS_ERROR,"FUCK_GOD_1019_30061-1 RecName : %s  rec_id:%s\n",pRoom->RecStatusInfo.RecName,rec_id);
+			}
+			if(pRoom->usb_record_handle != NULL)
+			{
+				r_strcpy(pRoom->RecStatusInfo.RecName, pRoom->usb_record_handle->get_course_root_dir(pRoom->usb_record_handle));
+				r_strcpy(rec_id, pRoom->usb_record_handle->get_RecordID(pRoom->usb_record_handle));
+				nslog(NS_ERROR,"FUCK_GOD_1019_30061-2 RecName : %s  rec_id:%s\n",pRoom->RecStatusInfo.RecName,rec_id);
+			}
+		}
+		else
+		{
+			r_strcpy(pRoom->RecStatusInfo.RecName, pRoom->RecInfo.CourseName);
+			r_strcpy(rec_id, pRoom->RecInfo.RecordID);
+			nslog(NS_ERROR,"FUCK_GOD_1019_30061-3 RecName : %s	rec_id:%s\n",pRoom->RecStatusInfo.RecName,rec_id);
+		}
+		#endif
+
+		nslog(NS_ERROR,"FUCK_GOD_1019_30061-4 RecName : %s	rec_id:%s\n",pRoom->RecStatusInfo.RecName,rec_id);
+
+		if(pRoom->record_handle != NULL)
+		{
+			for(i = 0; i < pRoom->handle->stream_num; i++)
+			{
+				pRoom->handle->set_rec_status(&pRoom->handle->stream_hand[i], DISCONNECT);
+			}
+			pRoom->record_handle->record_close(pRoom->record_handle);
+			unregister_course_record_mode(&pRoom->record_handle);
+			pRoom->record_handle = NULL;
+
+		}
+
+		if(pRoom->usb_record_handle)
+		{
+			for(i = 0; i < pRoom->handle->stream_num; i++)
+			{
+				pRoom->handle->set_usb_rec_status(&pRoom->handle->stream_hand[i], DISCONNECT);
+			}
+
+			pRoom->usb_record_handle->record_close(pRoom->usb_record_handle);
+			unregister_course_record_mode(&pRoom->usb_record_handle);
+			pRoom->usb_record_handle = NULL;
+		}
+
+
+
+		rec_return_code = 1;
+		//记录操作状态到本地
+		pRoom->RecStatusInfo.RecStatus	= 0;
+		pRoom->RecInfo.OptType			= status;
+		pRoom->RoomInfo.record_stream_mask = 0;
+
+		//记录停止时间
+//			pRoom->RecInfo.RecordStopTime.tv_sec	= 0;
+//			pRoom->RecInfo.RecordStopTime.tv_usec	= 0;
+//			gettimeofday(&pRoom->RecInfo.RecordStopTime, 0);
+
+		//告诉编码器解锁分辨率
+		xml_buf = (int8_t *)r_malloc(ROOM_MSG_MAX_LEN);
+		if (!xml_buf) {
+			nslog(NS_ERROR, "[%s] ---[r_malloc] error!", __func__);
+			upper_mutex_unlock(&pRoom->RecInfo.opt_mutex_lock);
+			return ROOM_RETURN_FAIL;
+		}
+
+		r_bzero(xml_buf, ROOM_MSG_MAX_LEN);
+		lower_msg_package_record_req(xml_buf, NULL, 0);
+		lower_msg_send_xml_to_enc(pRoom, xml_buf);
+
+		//回复服务端
+		r_bzero(xml_buf, ROOM_MSG_MAX_LEN);
+		upper_msg_package_record_xml(xml_buf, rec_return_code, pRoom->RecStatusInfo.RecName, MSG_ALLPLATFORM_PASSKEY, pRoom->RecInfo.userid, rec_id, pRoom->RecInfo.OptType, pRoom->RecStatusInfo.RecStatus);
+		upper_msg_tcp_send(pRoom->upperEnv.tcp_socket, &pRoom->upperEnv.tcp_socket_mutex, head, xml_buf);
+
+		//回复状态
+		r_bzero(xml_buf, ROOM_MSG_MAX_LEN);
+		//lower_msg_package_req_status_info(xml_buf, &pRoom->RecStatusInfo);
+		lower_msg_package_req_status_info(xml_buf, pRoom);
+		nslog(NS_ERROR,"WAHT ----2\n");
+		upper_msg_tcp_send(pRoom->upperEnv.tcp_socket, &pRoom->upperEnv.tcp_socket_mutex, head, xml_buf);
+
+		if (xml_buf)
+			r_free(xml_buf);
+	}
+
+
+
+	#if 0
+
 	if (pRoom->record_handle) {
 		//获取录制状态
 		status = lower_msg_get_record_status(pRoom, parseXml);
@@ -2680,6 +3346,18 @@ int32_t lower_msg_record_req_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgq
 			} else {
 				r_strcpy(pRoom->RecStatusInfo.RecName, pRoom->RecInfo.CourseName);
 				r_strcpy(rec_id, pRoom->RecInfo.RecordID);
+			}
+
+			// add zl
+			if(pRoom->usb_record_handle)
+			{
+				for(i = 0; i < pRoom->handle->stream_num; i++)
+				{
+					pRoom->handle->set_usb_rec_status(&pRoom->handle->stream_hand[i], DISCONNECT);
+				}
+				unregister_course_record_mode(&pRoom->usb_record_handle);
+				pRoom->usb_record_handle->record_close(pRoom->usb_record_handle);
+				pRoom->usb_record_handle = NULL;
 			}
 
 			//关闭录制流
@@ -2731,7 +3409,10 @@ int32_t lower_msg_record_req_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgq
 //			return upper_msg_tcp_send(pRoom->upperEnv.tcp_socket, &pRoom->upperEnv.tcp_socket_mutex, head, xml);
 		}
 	}
+	#endif
 
+	
+	upper_mutex_unlock(&pRoom->RecInfo.opt_mutex_lock);
 	return ROOM_RETURN_SUCC;
 }
 
@@ -2748,10 +3429,13 @@ int32_t lower_msg_enc_status_info_req_deal(RoomMsgEnv *pRoom, parse_xml_t *parse
 
 	//回复心跳
 	q_info = lower_msg_get_quality_info_by_msgq_type(pRoom, msgq->msgtype);
-	if (q_info) {
+	if (q_info) 
+	{
 		if (q_info->Socket > 0)
+		{
 			upper_msg_tcp_send(q_info->Socket, q_info->mutex, head, xml);
-
+		//	nslog(NS_ERROR,"FUCK_GOD_1210_HEART ---<streamid : %d>-------- %s\n",msgq->msgtype,xml);
+		}
 		upper_msg_set_time(&q_info->heart_time);
 	}
 
@@ -2845,24 +3529,8 @@ int32_t lower_msg_status_req_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgq
 		//e_info->EncodeType = EncodeType_INVALID;
 	}
 
-	//教室连接状态
-	for (i = 0, num = 0; i < ROOM_ENC_NUM; i ++) {
-		if (pRoom->RoomInfo.EncInfo[i].ID == 0) {
-			continue;
-		}
-
-		if (pRoom->RoomInfo.EncInfo[i].Status == 1)
-			num++;
-	}
-
-//	if (num < pRoom->RoomInfo.EncNum) {
-	if(num == 0) {
-		pRoom->RoomInfo.ConnectStatus = 0;
-		pRoom->RecStatusInfo.ConnStatus = 0;
-	} else {
-		pRoom->RoomInfo.ConnectStatus = 1;
-		pRoom->RecStatusInfo.ConnStatus = 1;
-	}
+	pRoom->RoomInfo.ConnectStatus = 1;
+	pRoom->RecStatusInfo.ConnStatus = 1;
 
 	nslog(NS_INFO, "ret_val = %d, q_info->Status = %d, e_info->Status = %d, e_info->EncodeType = %d, ConnectStatus = %d", ret_val, q_info->Status, e_info->Status, e_info->EncodeType, pRoom->RoomInfo.ConnectStatus);
 
@@ -2889,12 +3557,12 @@ int32_t lower_msg_status_req_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgq
 	st_info.Status3		= pRoom->RoomInfo.EncInfo[2].Status;
 
 	// add zl
-	st_info.Status4		= pRoom->RoomInfo.EncInfo[4].Status;
-	st_info.Status5		= pRoom->RoomInfo.EncInfo[5].Status;
-	st_info.Status6		= pRoom->RoomInfo.EncInfo[6].Status;
-	st_info.Status7		= pRoom->RoomInfo.EncInfo[7].Status;
-	st_info.Status8		= pRoom->RoomInfo.EncInfo[8].Status;
-	st_info.Status9		= pRoom->RoomInfo.EncInfo[9].Status;
+	st_info.Status4		= pRoom->RoomInfo.EncInfo[3].Status;
+	st_info.Status5		= pRoom->RoomInfo.EncInfo[4].Status;
+	st_info.Status6		= pRoom->RoomInfo.EncInfo[5].Status;
+	st_info.Status7		= pRoom->RoomInfo.EncInfo[6].Status;
+	st_info.Status8		= pRoom->RoomInfo.EncInfo[7].Status;
+	st_info.Status9		= pRoom->RoomInfo.EncInfo[8].Status;
 
 
 	st_info.IfMark		= 1;
@@ -2926,7 +3594,8 @@ int32_t lower_msg_status_req_deal(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgq
 
 	//回复状态改变
 	r_bzero(xml_buf, ROOM_MSG_MAX_LEN);
-	lower_msg_package_req_status_info(xml_buf, &st_info);
+//	lower_msg_package_req_status_info(xml_buf, &st_info);
+	lower_msg_package_req_status_info(xml_buf, pRoom);
 
 	nslog(NS_ERROR,"WAHT ----3\n");
 	// debug zl
@@ -2956,7 +3625,7 @@ int32_t lower_msg_deal_response(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque
 	msgCodeValue = upper_msg_get_msg_code_value(parseXml);
 
 	if (msgCodeValue != 30019)
-		nslog(NS_INFO, "->->->response->->->->->->[ MsgCode = %d , msgtype = %d]->->->->->->->->", msgCodeValue, msgq->msgtype);
+		nslog(NS_INFO, "->->->response->->->->->->[ MsgCode = %d , msgtype = %d]->->->->->->->->  %s", msgCodeValue, msgq->msgtype,xml);
 
 	switch (msgCodeValue) {
 		case MSG_GET_ROOM_INFO:
@@ -2991,6 +3660,7 @@ int32_t lower_msg_deal_response(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque
 
 		case MSG_RECORD_CTRL:
 			{
+				nslog(NS_ERROR,"FUCK-GOD- ----------------2\n");
 				status = lower_msg_record_ctrl_deal(pRoom, parseXml, msgq, head, xml);
 			}
 			break;
@@ -3119,12 +3789,17 @@ int32_t lower_msg_deal_request(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque 
 
 	msgCodeValue = upper_msg_get_msg_code_value(parseXml);
 
-	nslog(NS_ERROR,"GOD -----------1  <%d>\n",msgCodeValue);
+//	nslog(NS_ERROR,"GOD -----------1  <%d>\n",msgCodeValue);
 
 
 	if (msgCodeValue != MSG_ENC_STATUSINFO_REQ)
 		nslog(NS_INFO, "->->->->->request->->->->[ MsgCode = %d, msgq_id = %d, msgtype = %d]->->->->->->->->",\
 											msgCodeValue, pRoom->lowerEnv.msg_id[ROOMMSGID], msgq->msgtype);
+
+	if(msgCodeValue == 30010)
+	{
+		nslog(NS_ERROR,"FUCK_GOD_1130 MSG_RECORD : %s\n",xml);
+	}
 
 	switch (msgCodeValue) {
 		case MSG_ENC_STATUS_REQ:
@@ -3142,7 +3817,7 @@ int32_t lower_msg_deal_request(RoomMsgEnv *pRoom, parse_xml_t *parseXml, msgque 
 		case MSG_ENC_STATUSINFO_REQ:
 			{
 
-				nslog(NS_ERROR,"GOD -----------2\n");
+			//	nslog(NS_ERROR,"GOD -----------2\n");
 
 				status = lower_msg_enc_status_info_req_deal(pRoom, parseXml, msgq, head, xml);
 			}

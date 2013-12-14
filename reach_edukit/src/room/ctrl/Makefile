@@ -12,7 +12,8 @@ INCLUDE := -fpic -I./\
  -I../../reach_share/xml/\
  -I../../reach_share/xml/libxml/\
  -I../../reach_share/libmedia/\
- -I../../reach_share/
+ -I../../reach_share/\
+ -I../../recourse/
 TARGETS=room
 SRC := $(wildcard ./*.c)\
 		 $(wildcard ../../reach_share/reach_os.c)\
@@ -24,6 +25,7 @@ SRC := $(wildcard ./*.c)\
 	   $(wildcard ../../msg/*.c)\
 	   $(wildcard ../../md5/*.c)\
 	   $(wildcard ../lives/*.c)\
+	   $(wildcard ../../recourse/*.c)
 
 SRC += ../receive/media_frame.c\
 	../receive/receive_module.c\

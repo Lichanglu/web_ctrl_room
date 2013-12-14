@@ -1,9 +1,31 @@
 #ifndef _WEBINTERFACE_H
-#define _WEBINTERFACE_H 
+#define _WEBINTERFACE_H
 
 
 
 #include "../../enc/middle_control.h"
+
+#define FTP_MAX_USERNAME_LENGTH				(256)
+#define FTP_MAX_PASSWD_LENGTH				(256)
+#define FTP_MAX_FTPPATH_LENGTH				(512)
+#define FTP_MODE_MEDIACENTER				(0)
+#define FTP_MODE_THIRDFTP					(1)
+
+typedef struct _ftp_info_
+{
+	uint16_t	Mode;
+	uint16_t	MCFTPPort;
+	uint8_t		MCFTPAddr[24];
+	uint8_t		MCFTPUserName[FTP_MAX_USERNAME_LENGTH];
+	uint8_t		MCFTPPassword[FTP_MAX_PASSWD_LENGTH];
+	uint8_t		MCFTPPath[FTP_MAX_FTPPATH_LENGTH];
+
+	uint16_t	THRFTPPort;
+	uint8_t		THRFTPAddr[24];
+	uint8_t		THRFTPUserName[FTP_MAX_USERNAME_LENGTH];
+	uint8_t		THRFTPPassword[FTP_MAX_PASSWD_LENGTH];
+	uint8_t		THRFTPPath[FTP_MAX_FTPPATH_LENGTH];
+} ftp_info;
 
 
 /*Ìí¼Ó×ÖÄ»*/
@@ -102,7 +124,7 @@ int WebGetTextPos(int type,int *x,int *y);
 int WebGetLogoPos(int type,int *x,int *y);
 int WebGetLogoPos(int type,int *x,int *y);
 int WebSetLogoOsd(LogoInfo *ininfo,LogoInfo *outinfo,int channel);
-//int webGetSysInfo(Enc2000_Sys* out,int *outlen);
+//int WebGetNetwork(Enc2000_Sys* out,int *outlen);
 int WebgetEncodetime(DATE_TIME_INFO *outval);
 int webGetEncodingFrofile(int *status);
 int webGetScaleMode(int *status);
@@ -116,5 +138,5 @@ int WebSetinputSource(int inval,int *outval,int channel);
 int webSetColorSpace(int inval,int *outval,int channel);
 
 int webSDIRevisePicture(short hporch,short vporch,int channel);
-
+int WebGetNetControlIp(char* name);
 #endif

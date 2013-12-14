@@ -42,6 +42,7 @@
 #include "process_xml_cmd.h"
 #include "reach_udp_snd.h"
 #include "ppt_index.h"
+#include "weblisten.h"
 #define CAPTURE_CONFIG_FILE_1			("./input.config_1")
 #define CAPTURE_CONFIG_FILE_2			("./input.config_2")
 
@@ -49,13 +50,25 @@
 #define NSLOG_CNAME		"edukit_app"
 #define NSLOG_OUT		">stdout;"
 
+#if 0
+//如修改 请同步修改
+#define STU_CHID			0
+#define STUSIDE_CHID		1
+#define TEACH_CHID		2
+#define VGA_CHID			3
+#define JPEG_CHID			4
+#endif
+
 EduKitLinkStruct_t	*gEduKit = NULL;
 zlog_category_t     *ptrackzlog  = NULL;
 extern track_encode_info_t    g_track_encode_info;
 extern track_save_file_info_t g_track_save_file;
 extern track_strategy_info_t  g_track_strategy_info;
 extern stutrack_encode_info_t	  g_stutrack_encode_info;
-extern int teachorstu;
+extern stusidetrack_encode_info_t	  g_stusidetrack_encode_info;
+extern rightside_trigger_info_t	g_rightside_trigger_info;
+extern int teachorstu[6];
+extern int studentFlag;
 int gRemoteFD = -1;
 int gStuRemoteFD = -1;
 static SystemVideo_Ivahd2ChMap_Tbl systemVid_encDecIvaChMapTbl = {
@@ -212,6 +225,7 @@ Int32 Ioctl_Led(int gpio, Int32 led, Int32 state)
 }
 
 
+
 typedef	void SIGFUNC(int);
 
 /*信号包裹函数*/
@@ -225,6 +239,7 @@ Sigfunc *SIGNAL(int signo, SIGFUNC *func)
 
 	return(sigfunc);
 }
+
 
 int ListenSeries(void *pParam)
 {
@@ -245,9 +260,9 @@ int ListenSeries(void *pParam)
 		szData[2] = 48;
 		szData[3] = data[3];
 		//printf( "read comm\n");
-		//printf( "get_cam_position 0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10]);
+		//printf( "tea get_cam_position 0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10]);
 		save_position_zoom(data);
-		
+
 	}
 
 	return len;
@@ -263,7 +278,7 @@ int StuListenSeries(void *pParam)
 
 	while(1) {
 
-		memset(data,0,256);
+		memset(data, 0, 256);
 		FD_ZERO(&rfds);
 		FD_SET(gStuRemoteFD, &rfds);
 		select(gStuRemoteFD + 1, &rfds, NULL, NULL, NULL);
@@ -272,19 +287,22 @@ int StuListenSeries(void *pParam)
 		szData[1] = 3 + 1;
 		szData[2] = 48;
 		szData[3] = data[3];
-		printf( "read comm\n");
-		printf( "get_cam_position 0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10]);
+		//	printf("read comm\n");
+		//printf("get_cam_position 0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10]);
 
-	
+
 		//save_position_zoom(data);
 		stusave_position_zoom(data);
-		
+
 	}
 
 	return len;
 }
 
 #define	XML_CMD
+
+
+
 
 Int32 EduKitInit(EduKitLinkStruct_t **phand)
 {
@@ -319,65 +337,53 @@ Int32 EduKitInit(EduKitLinkStruct_t **phand)
 		goto FAIL;
 	}
 
+
+
+
 	init_config_file();
 	init_HV_table();
+	init_kernel_version();
+	ReadHDMICfgFile();
 	StartEncoderMangerServer();
-
-#ifdef XML_CMD
-	int ret = 0;
-	pthread_t new_tcp_thread_id[2];
-	int index1 = 0, index2 = 1;
-	pthread_t st_report_id[2];
-
-	ret = pthread_create(&new_tcp_thread_id[index1], NULL, open_new_tcp_task, (void *)&index1);
-
-	if(ret < 0) {
-		printf("create DSP1TCPTask() failed\n");
-		return 0;
-	}
-
-	ret = pthread_create(&st_report_id[index1], NULL, report_pthread_fxn, (void *)&index1);
-
-	if(ret < 0) {
-		printf("create DSP1TCPTask() failed\n");
-		return 0;
-	}
-
-	ret = pthread_create(&new_tcp_thread_id[index2], NULL, open_new_tcp_task, (void *)&index2);
-
-	if(ret < 0) {
-		printf("create DSP2TCPTask() failed\n");
-		return 0;
-	}
-
-	ret = pthread_create(&st_report_id[index2], NULL, report_pthread_fxn, (void *)&index2);
-
-	if(ret < 0) {
-		printf("create DSP2TCPTask() failed\n");
-		return 0;
-	}
-
-#endif
-
-
 	RtpParmLockInit(0);
 	RtpParmLockInit(1);
 	pthread_mutex_init(&pEduKit->LockResolution.rtlock, NULL);
 	pthread_mutex_init(&pEduKit->ledrtlock, NULL);
+	hdmiDisplayResolution_t *pHDRes = getHdmiDisplayResolution();
+	pEduKit->HDMIRes.ResIdx = pHDRes->res;
+	pEduKit->HDMIRes.width = atoi(pHDRes->width);
+	pEduKit->HDMIRes.height = atoi(pHDRes->height);
+	stream_send_cond_t ssc[MAX_UDP_SEND_NUM];
+	udp_send_module_handle *pUdpSend[MAX_UDP_SEND_NUM];
 
-
-	stream_send_cond_t ssc;
-	get_local_ip(ETH_NAME, ssc.ip);
-	//strcpy(ssc.ip, "192.168.4.26");
-	ssc.video_port = UDP_SEND_PORT;
-	ssc.audio_port = UDP_SEND_PORT;
+	get_local_ip("eth1", ssc[0].ip);
+	//send to room
+	ssc[0].video_port = UDP_SEND_ROOM_PORT;
+	ssc[0].audio_port = UDP_SEND_ROOM_PORT;
 	printf("[EduKitInit] ip:[%s] video_port:[%d] audio_port:[%d]",
-	       ssc.ip, ssc.video_port, ssc.audio_port);
-	udp_send_module_handle *pUdpSend = NULL;
-	pUdpSend = UdpSend_init(&ssc);
+	       ssc[0].ip, ssc[0].video_port, ssc[0].audio_port);
+	pUdpSend[0] = UdpSend_init(&ssc[0]);
+	pEduKit->sendhand[0] = pUdpSend[0];
 
-	pEduKit->sendhand = pUdpSend;
-	printf("[EduKitInit] pUdpSend:[%p]\n", pUdpSend);
+	r_strcpy(ssc[1].ip, UDP_SEND_HD_IP);
+	ssc[1].video_port = UDP_SEND_HD_PORT;
+	ssc[1].audio_port = UDP_SEND_HD_PORT;
+	printf("[EduKitInit] ip:[%s] video_port:[%d] audio_port:[%d]",
+	       ssc[1].ip, ssc[1].video_port, ssc[1].audio_port);
+	pUdpSend[1] = UdpSend_init(&ssc[1]);
+	pEduKit->sendhand[1] = pUdpSend[1];
+
+
+#ifdef HAVE_JPEG
+	r_strcpy(ssc[2].ip, ssc[0].ip);
+	ssc[2].video_port = UDP_SEND_JPEG_ROOM_PORT;
+	ssc[2].audio_port = UDP_SEND_JPEG_ROOM_PORT;
+	printf("[EduKitInit] ip:[%s] video_port:[%d] audio_port:[%d]",
+	       ssc[2].ip, ssc[2].video_port, ssc[2].audio_port);
+	pUdpSend[2] = UdpSend_init(&ssc[2]);
+	pEduKit->sendhand[2] = pUdpSend[2];
+#endif
+	printf("[EduKitInit] pUdpSend[0]:[%p] pUdpSend[1]:[%p]\n", pUdpSend[0], pUdpSend[1]);
 	pEduKit->encoderLink.bitsparam.appdata = pUdpSend;
 	pEduKit->encoderLink.bits_callback_fxn = inHostStreamUdpSendProcess;
 
@@ -426,78 +432,118 @@ Int32 EduKitInit(EduKitLinkStruct_t **phand)
 	}
 
 #ifdef TRACK
+	pthread_t id_teacher ;
+	pthread_t id_student ;
+	pthread_t id_listen ;
+	pthread_t id_stulisten ;
+	pthread_t id_webtcp ;
 
 	ptrackzlog = zlog_get_category("TRACK");
-	if (!ptrackzlog)
-	{
-		assert(0);
+
+	if(!ptrackzlog) {
+		return 1;
 	}
 
-	zlog_info(ptrackzlog,"TRACK STUTRACK IS CREATE SUCCESSFUL!!!\n");
+	zlog_info(ptrackzlog, "TRACK STUTRACK IS CREATE ING!!!\n");
+
 
 	//跟踪机新加部分
 	InitRemoteStruct(4);
-	
+
 	gRemoteFD    = CameraCtrlInit(0);
 	gStuRemoteFD = CameraCtrlInit(1);
 
-	if(gRemoteFD < 0 || gStuRemoteFD < 0)
-	{
-		printf( "Initial CameraCtrlInit() Error\n");
+	if(gRemoteFD < 0 || gStuRemoteFD < 0) {
+		printf("Initial CameraCtrlInit() Error\n");
+		zlog_info(ptrackzlog, "Initial CameraCtrlInit() Error\n");
+		return 1;
 	}
-	else
-	{
-		pthread_t id_teacher ;
-		pthread_t id_student ;
-		pthread_t id_listen ;
-		pthread_t id_stulisten ;
-		pthread_t id_webtcp ;
-
-		init_save_track_mutex();
-		stuinit_save_track_mutex();
-		track_init(&pEduKit->osd_dspAlg_Link[0].create_params.trackCreateParams.TrackParms);
-		stutrack_init(&pEduKit->osd_dspAlg_Link[0].create_params.stutrackCreateParams.StuTrackParms);
-		g_stutrack_encode_info.is_encode = 0;
-		g_track_encode_info.is_encode = 0;
-			
-		if(pthread_create(&id_listen, NULL, (void *)ListenSeries, (void *)NULL)) {
-			printf("create ListenSeries() failed\n");
-			exit(0);
-		}
 
 
-		if(pthread_create(&id_stulisten, NULL, (void *)StuListenSeries, (void *)NULL)) {
-			printf("create StuListenSeries() failed\n");
-			exit(0);
-		}
+	init_save_track_mutex();
+	init_save_stutrack_mutex();
+	init_save_stusidetrack_mutex();
+	track_init(&pEduKit->osd_dspAlg_Link[0].create_params.trackCreateParams.TrackParms);
+	stutrack_init(&pEduKit->osd_dspAlg_Link[0].create_params.stutrackCreateParams.StuTrackParms);
+	stusidetrack_init(&pEduKit->osd_dspAlg_Link[0].create_params.stusidetrackCreateParams.StuSideTrackParms);
+	init_limit_position_set();
+	g_stusidetrack_encode_info.is_encode = 0;
+	g_stutrack_encode_info.is_encode = 0;
+	g_track_encode_info.is_encode = 0;
 
+	SD_Demo_AllocBufInfo bufInfo;
+	SD_Demo_allocBuf(0, 1920 * 1080 * 2, 128, &bufInfo);
 
-	
-		if( pthread_create(&id_student, NULL, (void *)studentTrace, (void *)NULL))
-		{
-			printf( "create studentTrace() failed\n");
-			exit(0);
-		}
+	if(bufInfo.virtAddr == NULL) {
 
+		zlog_info(ptrackzlog, "SD_Demo_allocBuf Is Error!!!\n");
+		return 1;
 
-		if( pthread_create(&id_teacher, NULL, (void *)TEACHERTRACER, (void *)NULL))
-		{
-			printf( "create TEACHERTRACER() failed\n");
-			exit(0);
-		}
-
-		#if 0
-		if( pthread_create(&id_webtcp, NULL, (void *)WebListen, (void *)NULL))
-		{
-			printf( "create studentTrace() failed\n");
-			exit(0);
-		}
-		#endif
-
-		__call_preset_position(TRIGGER_POSITION1);
-		__stucall_preset_position(TRIGGER_POSITION42);
-		zlog_info(ptrackzlog, "TRACK STUTRACK IS CREATE SUCCESSFUL!!!\n");
 	}
+
+	AlgLink_StuSideTrackCreateParams *pParams = NULL;
+	pParams = &pEduKit->osd_dspAlg_Link[0].create_params.stusidetrackCreateParams;
+	pParams->StuSideAddr[0][0] = bufInfo.physAddr;
+	pParams->StuSideAddr[0][1] = bufInfo.virtAddr;
+	printf("SD_Demo_allocBuf %p %d\n", bufInfo.physAddr, bufInfo.bufsize);
+	FILE *fp = fopen(CLASS_VIEW_JPG, "r");
+
+	if(NULL != fp) {
+		fread((unsigned char *)bufInfo.virtAddr,
+		      1920 * 1080, 1, fp);
+		fclose(fp);
+	}
+
+	if(pthread_create(&id_listen, NULL, (void *)ListenSeries, (void *)NULL)) {
+		printf("create ListenSeries() failed\n");
+		exit(0);
+	}
+
+
+	if(pthread_create(&id_stulisten, NULL, (void *)StuListenSeries, (void *)NULL)) {
+		printf("create StuListenSeries() failed\n");
+		exit(0);
+	}
+
+
+
+	if(pthread_create(&id_student, NULL, (void *)studentTrace, (void *)NULL)) {
+		printf("create studentTrace() failed\n");
+		exit(0);
+	}
+
+
+	if(pthread_create(&id_teacher, NULL, (void *)TEACHERTRACER, (void *)NULL)) {
+		printf("create TEACHERTRACER() failed\n");
+		exit(0);
+	}
+
+#if 0
+
+	if(pthread_create(&id_webtcp, NULL, (void *)WebListen, (void *)NULL)) {
+		printf("create studentTrace() failed\n");
+		exit(0);
+	}
+
+#endif
+
+	__call_preset_position(TRIGGER_POSITION1);
+	__stucall_preset_position(TRIGGER_POSITION42);
+	zlog_info(ptrackzlog, "TRACK STUTRACK IS CREATE SUCCESSFUL!!![%s]\n", GetTrackVersion);
+
+
+	pEduKit->osd_dspAlg_Link[0].create_params.enableSTUTRACKAlg = TRUE;
+	pEduKit->osd_dspAlg_Link[0].create_params.enableTRACKAlg	 = TRUE;
+	pEduKit->osd_dspAlg_Link[0].create_params.enableSTUSIDETRACKAlg	 = TRUE;
+
+	#if 0
+	gEduKit->SupportStuSide = 0;
+	if(pEduKit->osd_dspAlg_Link[0].create_params.stusidetrackCreateParams.StuSideTrackParms.dynamic_param.control_mode == AUTO_CONTROL) {
+		pEduKit->osd_dspAlg_Link[0].create_params.enableSTUSIDETRACKAlg	 = TRUE;
+		gEduKit->SupportStuSide = 1;
+	}
+	#endif
+
 
 #endif
 
@@ -515,69 +561,113 @@ Int32 Track_eventHandler(UInt32 eventId, Ptr pPrm, Ptr appData)
 {
 	static unsigned int				flag = 0;
 	char data[20] = {0};
-   	if(eventId == VSYS_EVENT_TRACK_STATUS)
-   	{
+
+	if(eventId == VSYS_EVENT_TRACK_STATUS) {
 		AlgLink_TrackChStatus *pTrackStat = (AlgLink_TrackChStatus *)pPrm;
 		AlgLink_TrackChStatus  TrackStat = {0};
 
-		memcpy(&TrackStat, pTrackStat,sizeof(AlgLink_TrackChStatus));
-		
-		//printf("Ch[%d] cmd_type[%d] track_status[%d] server_cmd[%d] move_direction[%d] move_distance[%d]\n",\
-		 //	pTrackStat->chId,pTrackStat->args.cmd_type,pTrackStat->args.track_status,\
-		 //	pTrackStat->args.server_cmd,pTrackStat->args.move_direction,pTrackStat->args.move_distance);
-		if(gEduKit->osd_dspAlg_Link[0].create_params.trackCreateParams.TrackParms.dynamic_param.control_mode == AUTO_CONTROL)
-		{
+		memcpy(&TrackStat, pTrackStat, sizeof(AlgLink_TrackChStatus));
 
-			if(g_track_encode_info.track_status)
-			{
+		//printf("Ch[%d] cmd_type[%d] track_status[%d] server_cmd[%d] move_direction[%d] move_distance[%d]\n",\
+		//	pTrackStat->chId,pTrackStat->args.cmd_type,pTrackStat->args.track_status,\
+		//	pTrackStat->args.server_cmd,pTrackStat->args.move_direction,pTrackStat->args.move_distance);
+		if(gEduKit->osd_dspAlg_Link[0].create_params.trackCreateParams.TrackParms.dynamic_param.control_mode == AUTO_CONTROL) {
+
+			if(g_track_encode_info.track_status) {
 				flag ++;
-				if((flag % 25) == 0)
-				{
+
+				if((flag % 25) == 0) {
 					g_track_save_file.set_cmd = GET_CUR_POSITION;
 					__get_cam_position();
 				}
-			}
-			else
-			{
+			} else {
 				g_track_strategy_info.blackboard_region_flag1 = 0;
 				g_track_strategy_info.blackboard_region_flag2 = 0;
 			}
 
-			if(TrackStat.args.position1_mv_status!=0)
-			{
+			if(TrackStat.args.position1_mv_status != 0) {
 				g_track_strategy_info.position1_mv_flag = 1;
 				//DEBUG(DL_DEBUG, "position1_mv_flag==1\n");
-			}
-			else
-			{
+			} else {
 				g_track_strategy_info.position1_mv_flag = 0;
 			}
-			
+
 			//if(teachorstu == 1)
 			{
 				cam_ctrl_cmd(&TrackStat.args);
 			}
 		}
-	}
-	else if(eventId == VSYS_EVENT_STUTRACK_STATUS)
-	{
-		 AlgLink_StuTrackChStatus *pstuTrackStat = (AlgLink_StuTrackChStatus *)pPrm;
-		 AlgLink_StuTrackChStatus  stuTrackStat;
+	} else if(eventId == VSYS_EVENT_STUTRACK_STATUS) {
+		AlgLink_StuTrackChStatus *pstuTrackStat = (AlgLink_StuTrackChStatus *)pPrm;
+		AlgLink_StuTrackChStatus  stuTrackStat;
 
-		memcpy(&stuTrackStat, pstuTrackStat,sizeof(AlgLink_StuTrackChStatus));
+		memcpy(&stuTrackStat, pstuTrackStat, sizeof(AlgLink_StuTrackChStatus));
+
 		// printf("Ch[%d] cmd_type[%d] cam_position[%d] server_cmd[%d] size[%d] x[%d] y[%d]\n",\
-		 //	pTrackStat->chId,pTrackStat->args.cmd_type,pTrackStat->args.cam_position,\
+		//	pTrackStat->chId,pTrackStat->args.cmd_type,pTrackStat->args.cam_position,\
 		//	pTrackStat->args.server_cmd,pTrackStat->args.size,pTrackStat->args.c_x,pTrackStat->args.c_y);
-		if(gEduKit->osd_dspAlg_Link[0].create_params.stutrackCreateParams.StuTrackParms.dynamic_param.control_mode == AUTO_CONTROL)
-		{
-			//if(teachorstu == 0)
-			{
+		if((gEduKit->osd_dspAlg_Link[0].create_params.stutrackCreateParams.StuTrackParms.dynamic_param.control_mode == AUTO_CONTROL)
+		   && ((g_track_strategy_info.students_track_flag == 1) || (studentFlag == 1))) {
+
+			if(gEduKit->osd_dspAlg_Link[0].create_params.stusidetrackCreateParams.StuSideTrackParms.dynamic_param.control_mode == AUTO_CONTROL) {
+				cam_ctrl_cmd_rightside(&stuTrackStat.args);
+			} else {
 				stucam_ctrl_cmd(&stuTrackStat.args);
 			}
 		}
-		
+
+	} else if(eventId == VSYS_EVENT_STUSIDETRACK_STATUS) {
+		AlgLink_StuSideTrackChStatus *pstuSideTrackStat = (AlgLink_StuSideTrackChStatus *)pPrm;
+		AlgLink_StuSideTrackChStatus  stuSideTrackStat;
+
+		memcpy(&stuSideTrackStat, pstuSideTrackStat, sizeof(AlgLink_StuSideTrackChStatus));
+
+
+		if(gEduKit->osd_dspAlg_Link[0].create_params.stusidetrackCreateParams.StuSideTrackParms.dynamic_param.control_mode == AUTO_CONTROL) {
+			static int32_t	track_status = 0;
+
+			if(stuSideTrackStat.args.cmd_type != track_status) {
+
+				track_status = stuSideTrackStat.args.cmd_type;
+
+				if(gEduKit->osd_dspAlg_Link[0].create_params.stusidetrackCreateParams.StuSideTrackParms.dynamic_param.track_mode == 0) {
+					printf("g_rightside_trigger_info.nTriggerVal = %d \n", stuSideTrackStat.args.cmd_type);
+				//	g_rightside_trigger_info.nTriggerType = 0;
+					g_rightside_trigger_info.nTriggerVal  = stuSideTrackStat.args.cmd_type;
+				} 
+				else 
+				{
+					if(stuSideTrackStat.args.cmd_type == STUDENTS_UP) {
+
+						printf("g_rightside_trigger_info.nTriggerVal = %d \n", stuSideTrackStat.args.cmd_type);
+						//g_rightside_trigger_info.nTriggerType = 1;
+						g_rightside_trigger_info.nTriggerVal  = stuSideTrackStat.args.cmd_type;
+					}
+				}
+			}
+
+		}
+
+
+	} else if(eventId == VSYS_EVENT_STUSIDETRACK_SAVE_VIEW) {
+		Int8 *addr = gEduKit->osd_dspAlg_Link[0].create_params.stusidetrackCreateParams.StuSideAddr[0][1];
+		Int32 w = gEduKit->osd_dspAlg_Link[0].create_params.stusidetrackCreateParams.StuSideTrackParms.static_param.video_width;
+		Int32 h = gEduKit->osd_dspAlg_Link[0].create_params.stusidetrackCreateParams.StuSideTrackParms.static_param.video_height;
+
+		if(addr != NULL) {
+			FILE *fp = fopen(CLASS_VIEW_JPG, "w");
+
+			if(NULL != fp) {
+				fwrite(addr, w * h, 1, fp);
+				fclose(fp);
+				system("sync");
+				//printf("VSYS_EVENT_STUSIDETRACK_SAVE_VIEW wxh %dx%d \n",w,h);
+			}
+		}
+
 	}
-    return 0;
+
+	return 0;
 }
 
 
@@ -671,6 +761,58 @@ static Int32 ipcamera_sclr_cutout(Int32 sclrLinkId, Int32 chid, Int32 width, Int
 	return 0;
 }
 
+static xml_new_tcp_task_cmd(void)
+{
+	int ret = -1;
+	pthread_t new_tcp_thread_id[2];
+	int index1 = 0, index2 = 1;
+	pthread_t st_report_id[2];
+
+	ret = pthread_create(&new_tcp_thread_id[index1], NULL, open_new_tcp_task, (void *)&index1);
+
+	if(ret < 0) {
+		printf("create DSP1TCPTask() failed\n");
+		return 0;
+	}
+
+	ret = pthread_create(&st_report_id[index1], NULL, report_pthread_fxn, (void *)&index1);
+
+	if(ret < 0) {
+		printf("create DSP1TCPTask() failed\n");
+		return 0;
+	}
+
+	ret = pthread_create(&new_tcp_thread_id[index2], NULL, open_new_tcp_task, (void *)&index2);
+
+	if(ret < 0) {
+		printf("create DSP2TCPTask() failed\n");
+		return 0;
+	}
+
+	ret = pthread_create(&st_report_id[index2], NULL, report_pthread_fxn, (void *)&index2);
+
+	if(ret < 0) {
+		printf("create DSP2TCPTask() failed\n");
+		return 0;
+	}
+
+	return ret;
+}
+
+
+static void setHDMIOutRes(EduKitLinkStruct_t *pstruct)
+{
+	SclrLink_SclrMode sclrparams;
+	sclrparams.chId = 4;
+	sclrparams.SclrMode = TRUE;
+	sclr_set_SclrMode(pstruct->sclrLink.link_id, &sclrparams);
+	SclrLink_chDynamicSetOutRes out;
+	out.chId = 4;
+	out.width = pstruct->HDMIRes.width;
+	out.height = pstruct->HDMIRes.height;
+	out.pitch[0] = pstruct->HDMIRes.width * 2;
+	sclr_set_output_resolution(pstruct->sclrLink.link_id, &out);
+}
 int main()
 {
 	Int32 ret = -1;
@@ -693,7 +835,7 @@ int main()
 
 	//RegDiskDetectMoudle();
 
-	//CL300 初始化
+	//edukit 初始化
 	ret = EduKitInit(&gEduKit);
 
 	if(ret != 1) {
@@ -708,36 +850,77 @@ int main()
 
 	reach_edukit_create_and_start(gEduKit);
 	reach_audio_enc_process(gEduKit);
+
+
 	//源检测任务
 	reach_video_detect_task_process(gEduKit);
-
+	sleep(3);
+	gEduKit->Start = 1;
 
 #if WRITE_YUV_TASK
 	reach_writeyuv_process(gEduKit);
 #endif
-
+	/*(0,0)(768,0)(0,624)(768,624)*/
 	System_LinkChInfo2 params;
 	params.chid = 0;
 	params.chinfo.startX = 0;
 	params.chinfo.startY = 0;
 	params.chinfo.width = 704;
-	params.chinfo.height = 288; //pal 288 n 240
+	params.chinfo.height = 512; //pal 288 n 240
 	sclr_set_inchinfo(gEduKit->sclrLink.link_id, &params);
 
+	params.chid = 1;
+	params.chinfo.startX = 768;
+	params.chinfo.startY = 0;
+	params.chinfo.width = 704;
+	params.chinfo.height = 512; //pal 288 n 240
+	sclr_set_inchinfo(gEduKit->sclrLink.link_id, &params);
+
+	SclrLink_SclrMode sclrparams;
+	sclrparams.chId = 3;//2;
+	sclrparams.SclrMode = TRUE;
+	//sclr_set_SclrMode(gEduKit->sclrLink.link_id, &sclrparams);
+
+	//学生
 	SclrLink_chDynamicSetOutRes out;
 	out.chId = 0;
 	out.width = 704;
 	out.height = 576;
 	out.pitch[0] = 1408;
-	sclr_set_output_resolution(gEduKit->sclrLink.link_id,&out);
-	sclr_set_framerate(gEduKit->sclrLink.link_id, 0, 30,20);
 
+	sclr_set_output_resolution(gEduKit->sclrLink.link_id, &out);
+	sclr_set_framerate(gEduKit->sclrLink.link_id, 0, 30, 22);
+
+	//学生辅助
 	out.chId = 1;
 	out.width = 704;
 	out.height = 576;
 	out.pitch[0] = 1408;
-	sclr_set_output_resolution(gEduKit->sclrLink.link_id,&out);
-	sclr_set_framerate(gEduKit->sclrLink.link_id, 1, 30,20);
+
+	sclr_set_output_resolution(gEduKit->sclrLink.link_id, &out);
+	sclr_set_framerate(gEduKit->sclrLink.link_id, 1, 30, 10);
+
+	//老师
+	out.chId = 3;//2;
+	out.width = 704;
+	out.height = 576;
+	out.pitch[0] = 1408;
+
+	sclr_set_output_resolution(gEduKit->sclrLink.link_id, &out);
+	sclr_set_framerate(gEduKit->sclrLink.link_id, 3, 30, 22);
+
+	setHDMIOutRes(gEduKit);
+	char date[128] = {0};
+	int temp= 0;
+	app_init_fpga_version();
+#if 0
+	//HDMI
+	out.chId = 3;
+	out.width = gEduKit->HDMIRes.width;
+	out.height = gEduKit->HDMIRes.height;
+	out.pitch[0] = 1408;
+	sclr_set_output_resolution(gEduKit->sclrLink.link_id, &out);
+#endif
 	//hdmiDisplaySetResolution(gEduKit->disLink.link_id, SYSTEM_STD_XGA_60);
 
 	//ipcamera_sclr_cutout(gEduKit->sclrLink[0].link_id, 2, 1280, 720);
@@ -747,19 +930,32 @@ int main()
 
 	g_track_encode_info.is_encode    = 0;
 	g_stutrack_encode_info.is_encode = 0;
-	enc_disable_channel(gEduKit->encoderLink.encLink.link_id, 1);
-	
-	enc_disable_channel(gEduKit->encoderLink.encLink.link_id, 2);
-	
+	g_stusidetrack_encode_info.is_encode = 0;
+	enc_disable_channel(gEduKit->encoderLink.encLink.link_id, TEACH_CHID);
 
-	
-	sleep(10);
+	enc_disable_channel(gEduKit->encoderLink.encLink.link_id, STU_CHID);
+
+	enc_disable_channel(gEduKit->encoderLink.encLink.link_id, STUSIDE_CHID);
+	sleep(2);
+	xml_new_tcp_task_cmd();
+	int index = 0;
+	enc_app_weblisten_init((void *)&index);
 	dsp_calc_cpuload_start();
 	EncLink_GetDynParams pEncParams;
 	int chid = 0;
-	enc_set_fps(gEduKit->encoderLink.encLink.link_id, 0, 25, 2500000);
+	enc_set_fps(gEduKit->encoderLink.encLink.link_id, VGA_CHID, 25, 2500 * 1000);
+	enc_set_fps(gEduKit->encoderLink.encLink.link_id, STU_CHID, 22, 512 * 1000);
+	enc_set_fps(gEduKit->encoderLink.encLink.link_id, STUSIDE_CHID, 22, 512 * 1000);
+	enc_set_fps(gEduKit->encoderLink.encLink.link_id, TEACH_CHID, 22, 512 * 1000);
+	enc_set_interval(gEduKit->encoderLink.encLink.link_id, STU_CHID, 44);
+	enc_set_interval(gEduKit->encoderLink.encLink.link_id, STUSIDE_CHID, 20);
+	enc_set_interval(gEduKit->encoderLink.encLink.link_id, TEACH_CHID, 44);
+	enc_set_interval(gEduKit->encoderLink.encLink.link_id, JPEG_CHID, 12);
+	sleep(10);
 
 	while(1) {
+
+#if 0
 		pEncParams.chId = chid;
 		enc_get_dynparams(gEduKit->encoderLink.encLink.link_id, &pEncParams);
 		nslog(NS_DEBUG, "EncLink_GetDynParams chId:[%d] width:[%d] height:[%d] bitrate:[%d] fps:[%d] int:[%d]\n",
@@ -769,6 +965,8 @@ int main()
 		if(2 == chid ++) {
 			chid = 0;
 		}
+
+#endif
 
 		sleep(1);
 		dec_print_statistics(gEduKit->decoderLink.decLink.link_id);
@@ -800,5 +998,4 @@ int main()
 
 	return 0;
 }
-
 

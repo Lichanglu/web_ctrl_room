@@ -11,6 +11,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include "reach_debug.h"
 #include "reach_udp_recv.h"
 #include "nslog.h"
 static int32_t create_data_udp_sokcet(udp_recv_handle *p_handle);
@@ -36,6 +37,19 @@ static void udp_recv_close_sock(int32_t fd)
 	shutdown(fd, SHUT_RDWR);
 	close(fd);
 }
+int32_t set_recv_timeout(int32_t socket, uint32_t time)
+{
+	struct timeval timeout;
+	int32_t ret = 0;
+
+	timeout.tv_sec = time;
+	timeout.tv_usec = 0;
+
+	ret = setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(struct timeval));
+
+	return ret;
+}
+
 
 static int32_t create_data_udp_sokcet(udp_recv_handle *p_handle)
 {
@@ -72,6 +86,12 @@ static int32_t create_data_udp_sokcet(udp_recv_handle *p_handle)
 
 	if(ret < 0) {
 		udp_recv_err_print("GET_SOCKET RECV_BUF IS ERROR! <SOCKET : %d> <SEND_BUF : %d > <ERROR_MESSAGE : %s >", udp_fd, upd_max_buf, strerror(errno));
+	}
+
+	if(set_recv_timeout(udp_fd, 1) < 0) {
+		nslog(NS_ERROR, "SET RECV_TIME IS ERROR!\n");
+	} else {
+		nslog(NS_ERROR, "SET RECV_TIME IS OK!\n");
 	}
 
 	UdpRecv_PRINT("udp_fd = %d, upd_max_buf = %d, id = %d, ip = %s, port = %d\n", udp_fd, upd_max_buf, p_handle->stream_num,
@@ -173,17 +193,31 @@ void *udp_recv_deal(void *data)
 	p_udp_recv_hand->stream_info.udp_fd = create_data_udp_sokcet(p_udp_recv_hand);
 
 	if(0 > p_udp_recv_hand->stream_info.udp_fd) {
-		udp_recv_err_print("create_data_udp_sokcet, udp_fd = %d", p_udp_recv_hand->stream_info.udp_fd);
+		udp_recv_err_print("create_data_udp_sokcet, udp_fd = %d==port=%x", p_udp_recv_hand->stream_info.udp_fd, p_udp_recv_hand->stream_info.port);
 		return NULL;
 	}
+
+	nslog(NS_WARN, "create_data_udp_sokcet, udp_fd = %d==port=%x", p_udp_recv_hand->stream_info.udp_fd, p_udp_recv_hand->stream_info.port);
 
 	while(1 == p_udp_recv_hand->pthread_status) {
 
 		if(STREAM_START == p_udp_recv_hand->stream_status) {
+			//			if(p_udp_recv_hand->stream_info.port == 0x30a5) {
+			//nslog(NS_WARN, "2p_udp_recv_hand->stream_info.udp_fd:[%d]\n", p_udp_recv_hand->stream_info.udp_fd);
+			//			}
+
 			recv_bytes = recv(p_udp_recv_hand->stream_info.udp_fd, recv_buf, UdpRecv_MAX_UDP_LEN, 0);
 
-			//	nslog(NS_WARN, "p_udp_recv_hand->stream_info.udp_fd:[%d]\n", p_udp_recv_hand->stream_info.udp_fd);
+			//			if(p_udp_recv_hand->stream_info.port == 0x30a5) {
+			//nslog(NS_WARN, "p_udp_recv_hand->stream_info.udp_fd:[%d]\n", p_udp_recv_hand->stream_info.udp_fd);
+			//			}
+
 			if(recv_bytes < 1) {
+				if(errno == EAGAIN || errno == EINTR) {
+					//nslog(NS_ERROR,"RECV TIME OUT !\n");
+					continue;
+				}
+
 				goto EXIT;
 			}
 
@@ -201,7 +235,7 @@ void *udp_recv_deal(void *data)
 			//malloc data space
 			if(!(p_udp_recv_hand->video_data && p_udp_recv_hand->audio_data)) {
 				if(!p_udp_recv_hand->video_data) {
-					p_udp_recv_hand->video_data = (uint8_t *)malloc(UdpRecv_MAX_FRAME_LEN);
+					p_udp_recv_hand->video_data = (uint8_t *)r_malloc(UdpRecv_MAX_FRAME_LEN);
 
 					if(NULL == p_udp_recv_hand->video_data) {
 						udp_recv_err_print("malloc");
@@ -210,7 +244,7 @@ void *udp_recv_deal(void *data)
 				}
 
 				if(!p_udp_recv_hand->audio_data) {
-					p_udp_recv_hand->audio_data = (uint8_t *)malloc(UdpRecv_MAX_FRAME_LEN);
+					p_udp_recv_hand->audio_data = (uint8_t *)r_malloc(UdpRecv_MAX_FRAME_LEN);
 
 					if(NULL == p_udp_recv_hand->audio_data) {
 						udp_recv_err_print("malloc");
@@ -378,6 +412,7 @@ void *udp_recv_deal(void *data)
 				//	r_free(frame_buf);
 				//	frame_buf =NULL;
 				//	continue;
+				//	printf("-------------frame_ptr->m_data_codec == UdpRecv_JPEG_CODEC_TYPE-------------------\n");
 				// 获取音频数据
 				get_jpeg_frame_data(recv_buf, recv_bytes, (in_data + UdpRecv_FH_LEN + Ur_MsgLen), &data_len);
 
@@ -458,7 +493,7 @@ udp_recv_handle *udp_recv_init(stream_recv_cond_t *src)
 		udp_recv_err_print("src = [%p]", src);
 	}
 
-	p_udp_recv_hand = (udp_recv_handle *)malloc(sizeof(udp_recv_handle));
+	p_udp_recv_hand = (udp_recv_handle *)r_malloc(sizeof(udp_recv_handle));
 
 	if(NULL == p_udp_recv_hand) {
 		udp_recv_err_print("malloc error");
@@ -549,7 +584,7 @@ static int32_t get_audio_frame_data_head(udp_recv_freame_head_t *frame_ptr, UdpR
 
 	if(rtp_frame_ptr->reserve == 1) {
 		frame_ptr->m_frame_rate = frame_ptr->m_frame_rate * 2;
-		//printf("need to *2 !----- frame_ptr->m_frame_rate : %d\n",frame_ptr->m_frame_rate);
+		nslog(NS_ERROR, "need to *2 !----- frame_ptr->m_frame_rate : %d\n", frame_ptr->m_frame_rate);
 	}
 
 	return 0;
@@ -714,7 +749,7 @@ static int OnAudioAacFrame(int samplerate, int frame_length, unsigned char *adts
 	/* buffer fullness (0x7FF for VBR) continued over 6 first bits + 2 zeros
 	 * number of raw data blocks */
 	adts_header[6] = 0x8c;// one raw data blocks .
-	adts_header[6] |= num_data_block & 0x00; //Set raw Data blocks.
+	adts_header[6] |= num_data_block & 0x03; //Set raw Data blocks.
 
 
 	return 0;
@@ -786,7 +821,7 @@ static int32_t get_audio_frame_data(int8_t *recv_buf, int32_t recv_len, int8_t *
 	}
 
 	//ret = aac_payload_demux(recv_buf + 28, recv_len - 28, 1, config,  6, frame_buf, (unsigned int *)frame_len);
-	ret = aac_payload_demux(6, recv_buf + 28, recv_len - 28, 1, frame_buf, frame_len);
+	ret = aac_payload_demux(4, recv_buf + 28, recv_len - 28, 1, frame_buf, frame_len);
 
 	// nslog(NS_WARN, "ret = %d,recv_len = %d,frame_len = %d", ret ,recv_len,  *frame_len);
 	return 0;
@@ -920,19 +955,19 @@ void udp_recv_deinit(udp_recv_handle *p_udp_recv_hand)
 	}
 
 	if(p_udp_recv_hand->video_data) {
-		free(p_udp_recv_hand->video_data);
+		r_free(p_udp_recv_hand->video_data);
 		p_udp_recv_hand->video_data = NULL;
 	}
 
 	if(p_udp_recv_hand->audio_data) {
-		free(p_udp_recv_hand->audio_data);
+		r_free(p_udp_recv_hand->audio_data);
 		p_udp_recv_hand->audio_data = NULL;
 	}
 
 	p_udp_recv_hand->func = NULL;
 
 	if(p_udp_recv_hand) {
-		free(p_udp_recv_hand);
+		r_free(p_udp_recv_hand);
 		p_udp_recv_hand = NULL;
 	}
 

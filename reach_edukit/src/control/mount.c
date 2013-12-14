@@ -13,24 +13,24 @@ int GetDiskState(char *name, unsigned  long *totalsize, unsigned  long *freesize
 
 	list_head *pcurnode = NULL;
 	DevAtt *pdevattr = NULL;
-	
+
 	/* 上报消息 */
-	list_for_each_item(pcurnode, pheadnode)  
-	{  
-        if(NULL != pcurnode)  
-        {  
-            pdevattr = list_entry(pcurnode, DevAtt, stlist);  
+	list_for_each_item(pcurnode, pheadnode)
+	{
+        if(NULL != pcurnode)
+        {
+            pdevattr = list_entry(pcurnode, DevAtt, stlist);
 			if(0 == strcmp("",pdevattr->devname))
 			{
 				*totalsize = pdevattr->total_size;
 				*freesize  = pdevattr->free_size;
-				printf("devname [%s] total[%lld] free[%lld] percent[%d%%]\n",\
+				//printf("devname [%s] total[%lld] free[%lld] percent[%d%%]\n",\
 				pdevattr->devname,pdevattr->total_size,pdevattr->free_size,pdevattr->percent);
 				return 1;
 			}
-			
-		}  
-    }  
+
+		}
+    }
 
 	return 0;
 }
@@ -45,18 +45,20 @@ int GetUsbDevState(int *num, MNUsbDeb *stat, int max)
 	{
 		return 0;
 	}
-	
+	printf("-------------->pcurnode%p\n",pheadnode);
 	/* 上报消息 */
-	list_for_each_item(pcurnode, pheadnode)  
-	{  
-        if(NULL != pcurnode)  
-        {  
-            pdevattr = list_entry(pcurnode, DevAtt, stlist);  
+	list_for_each_item(pcurnode, pheadnode)
+	{
+	printf("-------------->pcurnode%p\n",pcurnode);
+        if(NULL != pcurnode)
+        {
+            pdevattr = list_entry(pcurnode, DevAtt, stlist);
+		printf("-------------->drv=%s\n",pdevattr->devname);
 
 
 			//是usb设备
 			if(0 == strncmp(pdevattr->devname,"/media/s",strlen("/media/s")))
-			{	
+			{
 				if(i >= max)
 				{
 					break;
@@ -68,9 +70,9 @@ int GetUsbDevState(int *num, MNUsbDeb *stat, int max)
 				pdevattr->devname,pdevattr->total_size,pdevattr->free_size,pdevattr->percent);
 				i++;
 			}
-			
-		}  
-    }  
+
+		}
+    }
 	*num = i;
 
 	return 0;
@@ -79,7 +81,7 @@ int GetUsbDevState(int *num, MNUsbDeb *stat, int max)
 
 static int detection(char *p, list_head *pnode)
 {
-	
+
 //	char *pstart = NULL;
 //	char tmp[20];
 	char Mdev[100] = {0};
@@ -120,10 +122,10 @@ static int detection(char *p, list_head *pnode)
 		return 1;
 	}
 	#endif
-	
+
 	while(1)
 	{
-		
+
 		sscanf(p,"%s%s",Mdev,Mname);
 		p = strchr(p, '\n');
 		if(p == NULL)
@@ -154,25 +156,25 @@ static int detection(char *p, list_head *pnode)
 	pstart = pstart + len;
 
 	#endif
-	
+
 	/* 查找是否存在该设备 */
-	list_for_each_item(pcurnode, pnode)  
-    {  
-        if(NULL != pcurnode)  
-        {  
-            pdevatt = list_entry(pcurnode, DevAtt, stlist);  
+	list_for_each_item(pcurnode, pnode)
+    {
+        if(NULL != pcurnode)
+        {
+            pdevatt = list_entry(pcurnode, DevAtt, stlist);
 			if(0 == strcmp(pdevatt->devname, Mname))
 			{
 				ptmpdevatt = pdevatt;
 				DevFound++;
 			}
-        }  
-    }  
-	
+        }
+    }
+
 	/* 不存在则新添加节点 */
 	if(DevFound == 0)
 	{
-		pdevatt = (DevAtt *)malloc(sizeof(DevAtt)); 
+		pdevatt = (DevAtt *)malloc(sizeof(DevAtt));
 		strcpy(pdevatt->devname,Mname);
 		pdevatt->IsExist = 1;
 		pdevatt->neednotice = 1;
@@ -182,12 +184,12 @@ static int detection(char *p, list_head *pnode)
 	else
 	/* 存在则重新赋值 */
 	{
-		pdevatt	= ptmpdevatt;		
+		pdevatt	= ptmpdevatt;
 		strcpy(pdevatt->devname,Mname);
 		pdevatt->IsExist = 1;
 		pdevatt->neednotice = 0;
 	}
-	
+
 	if(-1 != statfs(Mname,&stat))
 	{
 		pdevatt->total_size = (uint64_t)((uint64_t)stat.f_blocks*(uint64_t)stat.f_bsize)/1024;//(stat.f_blocks - stat.f_bfree);
@@ -202,11 +204,22 @@ static int detection(char *p, list_head *pnode)
 		pdevatt->percent    = 0;
 	}
 
-	
+
 	detection(p,pnode);
 	return 1;
 }
 
+static DevAtt s_dev_info;
+int disk_get_usb_devname(char* mount_path)
+{
+	DevAtt dev;
+	if(NULL!=mount_path && 1 == s_dev_info.IsExist){
+		memcpy(mount_path,s_dev_info.devname,sizeof(s_dev_info.devname));
+		printf("mount_path=%s,%s!\n",mount_path,s_dev_info.devname);
+		return 0;
+	}
+	return -1;
+}
 
 static void *DiskDetection(void *args)
 {
@@ -215,35 +228,39 @@ static void *DiskDetection(void *args)
 	char tmp[FILE_SIZE]={0};
 	list_head *pcurnode = NULL;
 	DevAtt *pdevattr = NULL;
-
+	DevAtt temp_dev;
+	
 	file = open("/proc/mounts", O_RDONLY, 0);
 	if(-1 == file)
 	{
 		printf("open fail!!!\n");
 		assert(0);
 	}
-	
+
 	pheadnode = (list_head *)malloc(sizeof(list_head));
 	if(NULL == pheadnode)
 	{
 		assert(0);
 	}
-
+	printf("pheadnode=%p...........\n",pheadnode);
 	list_init(pheadnode);
 	while(1)
     {
+		
+		int cur_free=0;
+		int max_free=0;
 		unsigned int len = 0;
 		lseek(file,0,0);
 		len = read(file,tmp,FILE_SIZE-1);
 		detection(tmp,pheadnode);
 
 		/* 查找是否存在该设备 */
-		list_for_each_item(pcurnode, pheadnode)  
-	    {  
-	        if(NULL != pcurnode)  
-	        {  
-	            pdevattr = list_entry(pcurnode, DevAtt, stlist);  
-	         
+		list_for_each_item(pcurnode, pheadnode)
+	    {
+	        if(NULL != pcurnode)
+	        {
+	            pdevattr = list_entry(pcurnode, DevAtt, stlist);
+
 				if(0 == pdevattr->IsExist)
 				{
 					printf("del node %s\n",pdevattr->devname);
@@ -262,7 +279,7 @@ static void *DiskDetection(void *args)
 							sprintf(cmd,"  Warning: Sata Dev Umount  ");
 							pserial_handle->LedState = MENUINFO;
 							pserial_handle->LedFLUSH = 1;
-							YinCodeShowString(pserial_handle->ledfd,cmd, 5, 30);
+							//YinCodeShowString(pserial_handle->ledfd,cmd, 5, 30);
 						}
 					}
 					else
@@ -273,27 +290,27 @@ static void *DiskDetection(void *args)
 							sprintf(cmd,"    Unmount usb dev    ");
 							pserial_handle->LedState = MENUINFO;
 							pserial_handle->LedFLUSH = 1;
-							YinCodeShowString(pserial_handle->ledfd,cmd, 5, 30);
+							//YinCodeShowString(pserial_handle->ledfd,cmd, 5, 30);
 							memset(&pserial_handle->UsdStat,0, sizeof(UsbDev));
 						}
 					}
-					
+
 					list_remove(pcurnode);
 					free(pdevattr);
 					pdevattr = NULL;
 				}
-	        }  
-	    }  
-
+	        }
+	    }
+	//	memset(&s_dev_info,0,sizeof(DevAtt));
+		s_dev_info.IsExist=0;
 		/* 上报消息 */
-		list_for_each_item(pcurnode, pheadnode)  
-		{  
-	        if(NULL != pcurnode)  
-	        {  
-	            pdevattr = list_entry(pcurnode, DevAtt, stlist);  
+		list_for_each_item(pcurnode, pheadnode)
+		{
+	        if(NULL != pcurnode)
+	        {
+	            pdevattr = list_entry(pcurnode, DevAtt, stlist);
 				//if(pdevattr->neednotice == 1)
 				{
-
 					if(0 == strncmp(pdevattr->devname,"/opt/Rec",strlen("/opt/Rec")))
 					{
 						//sata设备
@@ -307,52 +324,50 @@ static void *DiskDetection(void *args)
 					}
 					else
 					{
-						//printf("pserial_handle->IsUsbDev %p\n",pserial_handle);
 						if(pserial_handle != NULL)
 						{
 							if(pserial_handle->UsdStat.IsUsbDev == 0)
-							{	
+							{
 								char cmd[256] = {0};
-								//printf("pserial_handle->IsUsbDev %d\n",pserial_handle->UsdStat.IsUsbDev);
 								pserial_handle->UsdStat.IsUsbDev = 1;
-								//strcpy((char *)pserial_handle->UsdStat.UsbDevName,pdevattr->devname);
-								//pserial_handle->UsdStat.TotalSize= pdevattr->total_size;
-								//pserial_handle->UsdStat.FreeSize = pdevattr->free_size;
-
-
 								//这里只是发现USB设备，不做其他处理
 								sprintf(cmd,"    Found usb dev plugin...   ");
 								pserial_handle->LedState = MENUINFO;
 								pserial_handle->LedFLUSH = 1;
-								YinCodeShowString(pserial_handle->ledfd,cmd, 5, 30);
-								
+							//	YinCodeShowString(pserial_handle->ledfd,cmd, 5, 30);
 							}
 							//YinCodeShowString(pserial_handle->ledfd,"U", 60, 0);
 						}
-					
 						//usb设备
 					}
-					printf("control: devname [%s] total[%lld] free[%lld] percent[%d%%] \n",
-							pdevattr->devname,pdevattr->total_size,pdevattr->free_size,pdevattr->percent);
+					if(0 ==cur_free){
+						if( 0 == strncmp(pdevattr->devname,"/media",strlen("/media"))){
+							memcpy(&s_dev_info,pdevattr,sizeof(DevAtt));
+							cur_free=1;
+							s_dev_info.IsExist =1;
+						}
+					}
+//					max_free= max_free>cur_free?max_free:cur_free;
+				//	printf("control: devname [%s] total[%lld] free[%lld] percent[%d%%] \n",
+				//			pdevattr->devname,pdevattr->total_size,pdevattr->free_size,pdevattr->percent);
 				}
 				pdevattr->IsExist = 0;
 				pdevattr->neednotice = 0;
-			}  
-	    }  
-		
+			}
+	    }
 		memset(tmp,0,2000);
-		sleep(6);
-		
+		sleep(3);
+
 	}
 
 	free(pheadnode);
 	pheadnode = NULL;
 	close(file);
-}	
+}
 
 int RegDiskDetectMoudle()
 {
-	
+
 	int ret = -1;
 	pthread_attr_t		attr;
 	pthread_t			pthid;
@@ -364,12 +379,12 @@ int RegDiskDetectMoudle()
 		return -1;
 	}
 	pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
-	
+
 	ret = pthread_create(&pthid, &attr, DiskDetection, NULL);
 	if(ret != 0)
 	{
 		fprintf(stderr, "start_task pthread_create failed, ret = %d, errmsg = %s\n", ret, strerror(errno));
-	
+
 	}
 
 	pthread_attr_destroy(&attr);

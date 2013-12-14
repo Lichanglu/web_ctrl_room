@@ -63,7 +63,7 @@ int  ScnDir(Ftp_Hand *pFtpHand, char *DirPath, char *RomteFilePath , int DirLen,
 	{
 		if(ent->d_type & DT_DIR)
 		{
-		
+
 			if(strcmp(ent->d_name,".")==0 || strcmp(ent->d_name,"..")==0)
 				continue;
 				

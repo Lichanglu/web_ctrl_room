@@ -852,7 +852,8 @@ int rtp_build_audio_data(RTP_BUILD_HANDLE handle,int nLen, unsigned char *pData,
 			frame_head->codec     	= data_info->codec;
 			frame_head->samplerate	= data_info->samplerate;
 			frame_head->framerate 	= data_info->framerate;
-			frame_head->height		= htons(data_info->height);
+		//	frame_head->height		= htons(data_info->height);
+			frame_head->height		= htons(samplerate);
 			frame_head->width		= htons(data_info->width);
 			frame_head->Iframe		= data_info->Iframe;
 			/* reserve为1时，接收端的采样率需要X2 */

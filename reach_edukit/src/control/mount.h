@@ -98,7 +98,7 @@ typedef struct _DevAtt
 }DevAtt;
 
 
-
+int disk_get_usb_devname(char*);
 extern int GetDiskState(char *name, unsigned  long *totalsize, unsigned  long *freesize);
 extern int RegDiskDetectMoudle();
 extern int GetUsbDevState(int *num, MNUsbDeb *stat, int max);

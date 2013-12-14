@@ -293,6 +293,8 @@ unsigned int GetIPaddr(char *interface_name)
 
 	memcpy(&ip, &ptr->sin_addr, 4);
 
+	close(s);
+
 	return ip;
 }
 
@@ -324,6 +326,8 @@ unsigned int GetNetmask(char *interface_name)
 
 	memcpy(&ip, &ptr->sin_addr, 4);
 
+	close(s);
+
 	return ip;
 }
 
@@ -354,6 +358,8 @@ unsigned int GetBroadcast(char *interface_name)
 	printf("        Broadcast:%s\n", inet_ntoa(ptr->sin_addr));
 
 	memcpy(&ip, &ptr->sin_addr, 4);
+
+	close(s);
 
 	return ip;
 
@@ -567,3 +573,4 @@ void SetEthDhcp()
 	system("ifconfig eth0");
 	return ;
 }
+

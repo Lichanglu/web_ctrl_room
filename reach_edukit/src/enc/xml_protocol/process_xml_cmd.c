@@ -1080,7 +1080,7 @@ int parse_fix_resolution_msg(int index, int pos, parse_xml_t *parse_xml_info, in
 
 	if((atoi(roomid) == 0) || (atoi(roomid) == 1) || (atoi(roomid) == 2)) {
 		SET_FIX_RESOLUTION_FLAG(index, pos, atoi(roomid));
-		set_fix_resolution(atoi(roomid));
+		set_fix_resolution(index, atoi(roomid));
 	}
 
 	if(parse_xml_user_id_msg(parse_xml_info, user_id) < 0) {
@@ -1355,6 +1355,20 @@ int parse_xml_msgbody_msg(int index, int pos, parse_xml_t *parse_xml_info, int m
 		}
 		break;
 
+		case NEW_FIX_RESOLUTION: {
+			nslog(NS_WARN, "NEW_MSG_RECORD");
+
+			if(parse_fix_resolution_msg(index, pos, parse_xml_info, &roomid, user_id) < 0) {
+				PRINTF("parse REQUEST_IFRAME  failed\n");
+				memset(tmpbuf, 0, sizeof(tmpbuf));
+				package_head_msg(tmpbuf, NEW_FIX_RESOLUTION, passkey, "0", user_id);
+				tcp_send_data(sockfd, tmpbuf);
+				return -1;
+			}
+
+			process_fix_resolution_msg(index, pos, send_buf, NEW_FIX_RESOLUTION, passkey, user_id, &roomid);
+		}
+		break;
 
 		case NEW_MSG_SET_QUALITY_INFO: {
 			nslog(NS_WARN, "NEW_MSG_SET_QUALITY_INFO parse set quality info msg rate_info=%p,&rate_info=%p\n",

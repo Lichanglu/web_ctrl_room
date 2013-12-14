@@ -1,12 +1,12 @@
 /*-------------------------------------------------------------------------
-          Copyright (C), 2012-2013, Reach Tech. Co., Ltd.   
-          File name:              
+          Copyright (C), 2012-2013, Reach Tech. Co., Ltd.
+          File name:
           Author: 徐崇      Version:        Date: 2012.11.13 19:02:20
-	      Description:           
-	      Function List:         
-	      History:               
-		    1. Date: 
-  			   Author: 
+	      Description:
+	      Function List:
+	      History:
+		    1. Date:
+  			   Author:
   			   Modification:
 -------------------------------------------------------------------------*/
 #include "sercenterctrl.h"
@@ -72,7 +72,7 @@ SerialHandle *pserial_handle = NULL;
 //暂时保存发生状态
 Int32  RtRecordState = 0;
 
-zlog_category_t *MLOG;		//zlog 
+zlog_category_t *MLOG;		//zlog
 static Int32   SerialOperate(UInt32 num,void *prm);
 static Int32   serial_msg_record(Int8 *send_buf, void *pcmd);
 static Int32   Analyze_State(Int8 *recv_buf, void *pparm);
@@ -197,7 +197,7 @@ static SerialComnd globalSerialCmd[]=
 		SerialOperate,
 		0
 	},
-	
+
 	//录制状态消息
 	{
 		RECORDSTATE,
@@ -240,7 +240,7 @@ static SerialComnd globalSerialCmd[]=
 		Analyze_replay,
 		SerialOperate,
 		0
-	},	
+	},
 
 	//重启回复消息
 	{
@@ -251,7 +251,7 @@ static SerialComnd globalSerialCmd[]=
 		Analyze_reboot,
 		SerialOperate,
 		0
-	},	
+	},
 };
 
 static uint32_t list_dir(int8_t *SrcPath)
@@ -273,7 +273,7 @@ static uint32_t list_dir(int8_t *SrcPath)
 		printf("Cannot open directory:[ %s ]\n",SrcPath);
 		return 0;
 	}
-	
+
 	while((ent = readdir(pDir))!=NULL)
 	{
 		if(ent->d_type & DT_DIR)
@@ -281,7 +281,7 @@ static uint32_t list_dir(int8_t *SrcPath)
 			struct stat stat_buf;
 			if(r_strcmp((const int8_t *)ent->d_name, (const int8_t *)".")==0 || r_strcmp((const int8_t *)ent->d_name, (const int8_t *)"..")==0)
 				continue;
-				
+
 			sprintf(Srcchildpath,"%s/%s",SrcPath,ent->d_name);
 
 			lstat(Srcchildpath, &stat_buf);
@@ -289,29 +289,29 @@ static uint32_t list_dir(int8_t *SrcPath)
 	//		printf("%s %u\n",Srcchildpath,(int)stat_buf.st_size);
 			totalsize = totalsize + stat_buf.st_size/1024;
 			ret = list_dir((int8_t *)Srcchildpath);
-		
+
 			totalsize = totalsize + ret;
 		}
 		else
 		{
-		
+
 			int8_t LocalFilePath[1024] = {0};
 			struct stat stat_buf;
 			sprintf((char *)LocalFilePath,"%s/",SrcPath);
-	
+
 			r_strncat(LocalFilePath, (const int8_t *)ent->d_name, (size_t)r_strlen((const int8_t *)ent->d_name));
 			lstat((const char *)LocalFilePath, &stat_buf);
 			totalsize = totalsize + stat_buf.st_size/1024;
-			
+
 			//printf("%s %u\n",LocalFilePath,stat_buf.st_size);
 		}
 	}
-	
+
 	if(0 != closedir(pDir))
 	{
 		assert(0);
 	}
-	
+
 	return totalsize;
 }
 
@@ -337,15 +337,15 @@ static int32_t CopyDirectory_ex(int8_t *SrcPath,int8_t *DstPath)    //zl
 		printf("Cannot open directory:[ %s ]\n",SrcPath);
 		return -1;
 	}
-	
+
 	while((ent = readdir(pDir))!=NULL)
 	{
 		if(ent->d_type & DT_DIR)
 		{
-		
+
 			if(r_strcmp((const int8_t *)ent->d_name,(const int8_t *)".")==0 || r_strcmp((const int8_t *)ent->d_name,(const int8_t *)"..")==0)
 				continue;
-				
+
 			sprintf(Srcchildpath,"%s/%s",SrcPath,ent->d_name);
 			sprintf(Dstchildpath,"%s/%s",DstPath,ent->d_name);
 			mkdir(Dstchildpath,   0777);
@@ -356,18 +356,18 @@ static int32_t CopyDirectory_ex(int8_t *SrcPath,int8_t *DstPath)    //zl
 			}
 			printf("------> %s\n",Dstchildpath);
 			//num = num + ret;
-			
+
 		}
 		else
 		{
-		
+
 			int8_t LocalFilePath[1024] = {0};
 			int8_t DstFilePath[1024]  = {0};
 			FILE *SrcFile = NULL;
 			FILE *DstFile = NULL;
 			int8_t buffer[4096] = {0};
 			int retrun  = 0;
-			
+
 			sprintf((char *)LocalFilePath,"%s/",SrcPath);
 			sprintf((char *)DstFilePath,"%s/",DstPath);
 			r_strncat(LocalFilePath, (const int8_t *)ent->d_name, r_strlen((const int8_t *)ent->d_name));
@@ -385,7 +385,7 @@ static int32_t CopyDirectory_ex(int8_t *SrcPath,int8_t *DstPath)    //zl
 				  ret = -1;
 				   break;
 			}
-			
+
 			DstFile = fopen((const char *)DstFilePath, "w");
 			if(DstFile == NULL)
 			{
@@ -403,7 +403,7 @@ static int32_t CopyDirectory_ex(int8_t *SrcPath,int8_t *DstPath)    //zl
 					retrun = -1;
 					break;
 				}
-				
+
 				int n,m= 0;
 				n = fread(buffer, 1, 4096 , SrcFile);
 				if(n <= 0)
@@ -412,7 +412,7 @@ static int32_t CopyDirectory_ex(int8_t *SrcPath,int8_t *DstPath)    //zl
 					//retrun = -1;
 					break;
 				}
-				
+
 				m = fwrite(buffer,1,n,DstFile);
 				if(m != n)
 				{
@@ -431,7 +431,7 @@ static int32_t CopyDirectory_ex(int8_t *SrcPath,int8_t *DstPath)    //zl
 				ret = -1;
 				break;
 			}
-			
+
 		}
 	}
 
@@ -439,7 +439,7 @@ static int32_t CopyDirectory_ex(int8_t *SrcPath,int8_t *DstPath)    //zl
 	{
 		closedir(pDir);
 	}
-	
+
 	return ret;
 }
 #endif
@@ -456,7 +456,7 @@ static int32_t CopyMp4File(int8_t *SrcPath,int8_t *DstPath, int32_t fd)
 	int8_t	string_data[102] = {' '};
 	int8_t	procee_data[102] = {0};
 	int8_t	complete_rate_num[16] = {0};
-	
+
 	int32_t 	ret = 1;
 	uint32_t	totalsize_count = 0;
 	uint32_t	cur_count = 0;
@@ -477,13 +477,13 @@ static int32_t CopyMp4File(int8_t *SrcPath,int8_t *DstPath, int32_t fd)
 			memset(Srcchildpath, 0, 1024);
 			sprintf((char *)Srcchildpath,"%s/",SrcPath);
 			r_strncat(Srcchildpath, (const int8_t *)ent->d_name, r_strlen((const int8_t *)ent->d_name));
-			
+
 			stat((char *)Srcchildpath, &stat_buf);
 			totalsize_count = totalsize_count + stat_buf.st_size/4096;
 		}
 	}
 	seekdir(pDir, 0);
-	ShowString(fd,(char *)"0",51,50);
+//	ShowString(fd,(char *)"0",51,50);
 	while((ent = readdir(pDir))!=NULL){
 		// 只拷贝根目录下的mp4文件
 		if((r_strstr((int8_t *)ent->d_name,(int8_t *)".mp4") != NULL)
@@ -510,7 +510,7 @@ static int32_t CopyMp4File(int8_t *SrcPath,int8_t *DstPath, int32_t fd)
 				ret = -1;
 				break;
 			}
-			
+
 			DstFile = fopen((const char *)Dstchildpath, "w");
 			if(DstFile == NULL){
 				ret = -1;
@@ -518,14 +518,14 @@ static int32_t CopyMp4File(int8_t *SrcPath,int8_t *DstPath, int32_t fd)
 				break;
 			}
 			printf("------> %s\n",Dstchildpath);
-			
+
 			while(1){
 				if(pserial_handle->UsdStat.IsUsbDev != 1){
 					printf("pserial_handle->UsdStat.IsUsbDev != 1\n");
 					retrun = -1;
 					break;
 				}
-				
+
 				int n,m= 0;
 				n = fread(buffer, 1, 4096 , SrcFile);
 				if(n <= 0){
@@ -533,7 +533,7 @@ static int32_t CopyMp4File(int8_t *SrcPath,int8_t *DstPath, int32_t fd)
 					//retrun = -1;
 					break;
 				}
-				
+
 				m = fwrite(buffer,1,n,DstFile);
 				if(m != n){
 					retrun = -1;
@@ -550,9 +550,9 @@ static int32_t CopyMp4File(int8_t *SrcPath,int8_t *DstPath, int32_t fd)
 						r_memset(complete_rate_num, 0, 16);
 						r_strncpy(procee_data, string_data, complete_rate+1);
 						sprintf((char *)complete_rate_num, "%2d", cur_count/totalsize_count);
-						YinCodeShowString(fd,(char *)procee_data,0,50);
+						//YinCodeShowString(fd,(char *)procee_data,0,50);
 						r_usleep(2000);
-						ShowString(fd,(char *)complete_rate_num,51,50);
+						//ShowString(fd,(char *)complete_rate_num,51,50);
 						fprintf(stderr, "\n\ncur_copy.....   = %2d%%, procee_data = %d\n\n\n", cur_count/totalsize_count, complete_rate);
 					}
 					last_complete_rate = complete_rate;
@@ -568,18 +568,18 @@ static int32_t CopyMp4File(int8_t *SrcPath,int8_t *DstPath, int32_t fd)
 			}
 		}
 	}
-	
+
 	if(pDir != NULL){
 		closedir(pDir);
 	}
 
 //	YinCodeShowString(fd,(char *)"100% complete !",6,50);
-	
+
 	return ret;
 }
 
 
-static int32_t CopyDir(int8_t *SrcPath, int8_t *DstPath, int fd)
+int32_t CopyDir(int8_t *SrcPath, int8_t *DstPath, int fd)
 {
 	int8_t buffer[1024] = {0};
 	if(SrcPath == NULL || DstPath == NULL)
@@ -592,7 +592,7 @@ static int32_t CopyDir(int8_t *SrcPath, int8_t *DstPath, int fd)
 	printf("----->buffer %s\n",buffer);
 
 	mkdir((char *)buffer,0777);
-	
+
 	return CopyMp4File(SrcPath,buffer, fd);
 
 }
@@ -608,7 +608,7 @@ static Int32 serial_msg_fecctest(Int8 *send_buf, void *pcmd)
 	UInt8 speed[10]  = {0};
 	UInt8 Num[10]    = {0};
 
-	
+
 
 	sprintf((char *)roomid,"%d", 0);
 	sprintf((char *)encid, "%d", 3);
@@ -616,7 +616,7 @@ static Int32 serial_msg_fecctest(Int8 *send_buf, void *pcmd)
 	sprintf((char *)addr,  "%d", 1);
 	sprintf((char *)speed, "%d", 5);
 	sprintf((char *)Num,   "%d", 0);
-		
+
 	xmlDocPtr doc = xmlNewDoc(BAD_CAST"1.0");
 
 	xmlNodePtr root_node = xmlNewNode(NULL, BAD_CAST"RequestMsg");
@@ -643,12 +643,12 @@ static Int32 serial_msg_fecctest(Int8 *send_buf, void *pcmd)
 
 	Roomifo = xmlNewNode(NULL, BAD_CAST "RoomInfo");
 	xmlAddChild(RemoteCtrlReq, Roomifo);
-	
+
 	package_add_xml_leaf(Roomifo, (const xmlChar *)"RoomID", (const int8_t *)roomid);
-	
+
 	EncInfo = xmlNewNode(NULL, BAD_CAST "EncInfo");
 	xmlAddChild(Roomifo, EncInfo);
-	
+
 	package_add_xml_leaf(EncInfo, (const xmlChar *)"ID",   (const int8_t *)encid);
 	package_add_xml_leaf(EncInfo, (const xmlChar *)"Type", (const int8_t *)type);
 	package_add_xml_leaf(EncInfo, (const xmlChar *)"Addr", (const int8_t *)addr);
@@ -812,7 +812,7 @@ int32_t upper_msg_monitor_time_out_status(struct  timeval *time, uint32_t time_o
 	time_old.tv_usec = time->tv_usec;
 
 	if(-1 == upper_msg_tim_subtract(&delta_time, &time_old, &time_now)) {
-	
+
 		return -1;
 	}
 
@@ -823,15 +823,15 @@ int32_t upper_msg_monitor_time_out_status(struct  timeval *time, uint32_t time_o
 	}
 
 	//未超时
-	return 0;	
+	return 0;
 }
 
 int32_t AddTimeOut(SerialHandle *pSerialHandle,SERIAL_MSGCODE msgcode, UInt8 state)
 {
 	TimeOut *pattr = NULL;
-	
+
 	TimeoutLock();
-	pattr = (TimeOut *)malloc(sizeof(TimeOut)); 
+	pattr = (TimeOut *)malloc(sizeof(TimeOut));
 	pattr->msgcode = msgcode;
 	pattr->state = state;
 	upper_msg_set_time(&pattr->starttime);
@@ -848,11 +848,11 @@ int32_t DelTimeOut(SerialHandle *pSerialHandle,SERIAL_MSGCODE msgcode)
 
 	TimeoutLock();
 	/* 查找是否存在该设备 */
-	list_for_each_item(pcurnode, pSerialHandle->pheadnode)  
-    {  
-        if(NULL != pcurnode)  
-        {  
-            pattr = list_entry(pcurnode, TimeOut, stlist);  
+	list_for_each_item(pcurnode, pSerialHandle->pheadnode)
+    {
+        if(NULL != pcurnode)
+        {
+            pattr = list_entry(pcurnode, TimeOut, stlist);
 
 		 	if(pattr->msgcode == msgcode)
 		 	{
@@ -865,7 +865,7 @@ int32_t DelTimeOut(SerialHandle *pSerialHandle,SERIAL_MSGCODE msgcode)
 				g_rtprm.close = 2;
 				g_rtprm.start = 2;
 				g_rtprm.stop  = 2;
-				
+
 				if(pattr->state == 1)
 				{
 					g_rtprm.start = 1;
@@ -881,13 +881,13 @@ int32_t DelTimeOut(SerialHandle *pSerialHandle,SERIAL_MSGCODE msgcode)
 				#endif
 				list_remove(pcurnode);
 				free(pattr);
-				
+
 				TimeoutunLock();
 				//此消息等待超时
 				return 1;
 			}
-        }  
-    }  
+        }
+    }
 	TimeoutunLock();
 
 	return 0;
@@ -895,94 +895,94 @@ int32_t DelTimeOut(SerialHandle *pSerialHandle,SERIAL_MSGCODE msgcode)
 
 #if 0
 static int setSerialParity(int fd,int databits,int stopbits,int parity)
-{ 
-	struct termios options;	if(tcgetattr(fd,&options)  !=  0) { 
-		return(FALSE);  
+{
+	struct termios options;	if(tcgetattr(fd,&options)  !=  0) {
+		return(FALSE);
        }
 
-    options.c_cflag &= ~HUPCL;	
+    options.c_cflag &= ~HUPCL;
     options.c_lflag = 0;
     options.c_iflag = IGNBRK;
     options.c_oflag = 0;
-	options.c_cc[VTIME] = 0;    
+	options.c_cc[VTIME] = 0;
 	options.c_cc[VMIN] = 0;
-	switch (databits) 
-	{   
-		case 7:           
-			options.c_cflag |= CS7; 
+	switch (databits)
+	{
+		case 7:
+			options.c_cflag |= CS7;
 			break;
-		case 8:     
+		case 8:
 			options.c_cflag |= CS8;
-			break;   
-		default:    
-			return (FALSE);  
+			break;
+		default:
+			return (FALSE);
 	}
-	switch (parity) 
-	{   
+	switch (parity)
+	{
 		case 'n':
-		case 'N':    
+		case 'N':
 			options.c_cflag &= ~PARENB;  	/* Clear parity enable */
-			options.c_iflag &= ~INPCK;	 	/* Enable parity checking */ 
-			break;  
-		case 'o':   
-		case 'O':     
-			options.c_cflag |= (PARODD | PARENB); 
-			options.c_iflag |= INPCK;    	/* Disnable parity checking */ 
-			break;  
-		case 'e':  
-		case 'E':   
-			options.c_cflag |= PARENB;     	/* Enable parity */    
-			options.c_cflag &= ~PARODD;  
+			options.c_iflag &= ~INPCK;	 	/* Enable parity checking */
+			break;
+		case 'o':
+		case 'O':
+			options.c_cflag |= (PARODD | PARENB);
+			options.c_iflag |= INPCK;    	/* Disnable parity checking */
+			break;
+		case 'e':
+		case 'E':
+			options.c_cflag |= PARENB;     	/* Enable parity */
+			options.c_cflag &= ~PARODD;
 			options.c_iflag |= INPCK;       /* Disnable parity checking */
 			break;
-		case 'S': 
-		case 's':  							/*as no parity*/   
+		case 'S':
+		case 's':  							/*as no parity*/
 			options.c_cflag &= ~PARENB;
-			options.c_cflag &= ~CSTOPB;			
-			break;  
-		default:   
-         return (FALSE);  
-	}  
+			options.c_cflag &= ~CSTOPB;
+			break;
+		default:
+         return (FALSE);
+	}
 
 			options.c_cflag &= ~PARENB;  	/* Clear parity enable */
-			options.c_iflag &= ~INPCK;	 	/* Enable parity checking */ 
+			options.c_iflag &= ~INPCK;	 	/* Enable parity checking */
 
 	switch (stopbits)
-	{   
-		case 1:    
-			options.c_cflag &= ~CSTOPB;  
-			break;  
-		case 2:    
-			options.c_cflag |= CSTOPB;  
+	{
+		case 1:
+			options.c_cflag &= ~CSTOPB;
 			break;
-		default:    
-			return (FALSE); 
-	} 
-	/* Set input parity option */ 
-	if (parity != 'n')   
-		options.c_iflag |= INPCK; 
+		case 2:
+			options.c_cflag |= CSTOPB;
+			break;
+		default:
+			return (FALSE);
+	}
+	/* Set input parity option */
+	if (parity != 'n')
+		options.c_iflag |= INPCK;
 	tcflush(fd,TCIFLUSH); 				/* define the minimum bytes data to be readed*/
-	if (tcsetattr(fd,TCSANOW,&options) != 0)   
-	{ 
-		return (FALSE);  
-	} 
-	return (TRUE);  
+	if (tcsetattr(fd,TCSANOW,&options) != 0)
+	{
+		return (FALSE);
+	}
+	return (TRUE);
 }
 #endif
 void setSerialSpeed(int fd, int speed)
 {
-	int i; 
-	int status; 
+	int i;
+	int status;
 	struct termios Opt;
 	int speed_arr[] = { B115200,B38400, B19200, B9600, B4800, B2400, B1200, B300,
                       B38400, B19200, B9600, B4800, B2400, B1200, B300, };
-	int name_arr[] = {115200,38400,  19200,  9600,  4800,  2400,  1200,  300, 38400,  
+	int name_arr[] = {115200,38400,  19200,  9600,  4800,  2400,  1200,  300, 38400,
                                    19200,  9600, 4800, 2400, 1200,  300, };
 
-	tcgetattr(fd, &Opt); 
-	for ( i= 0;  i < sizeof(speed_arr) / sizeof(int);  i++) 
-	{ 
-		if  (speed == name_arr[i]) 
+	tcgetattr(fd, &Opt);
+	for ( i= 0;  i < sizeof(speed_arr) / sizeof(int);  i++)
+	{
+		if  (speed == name_arr[i])
 		{
                 tcflush( fd, TCIOFLUSH) ;
                 cfsetispeed( &Opt, speed_arr[i] ) ;
@@ -994,8 +994,8 @@ void setSerialSpeed(int fd, int speed)
                 	return;
                 }
                 tcflush( fd, TCIOFLUSH) ;
-                //return status; 
-		}  
+                //return status;
+		}
 	}
 }
 #if 0
@@ -1004,11 +1004,11 @@ static int openSerialPort(char *port_num)
 	//return -1;
 	int fd;
 	if ((fd = open(port_num, O_RDWR)) < 0) {
-		printf("ERROR: failed to open %s, errno=%d\n",port_num,errno);	
+		printf("ERROR: failed to open %s, errno=%d\n",port_num,errno);
 		return -1;
-	}else {		
-		printf("Open %s success!\n",port_num);		
-	}		
+	}else {
+		printf("Open %s success!\n",port_num);
+	}
 	return fd;
 }
 #endif
@@ -1023,12 +1023,12 @@ static int initSerialPort(char *port_num,int baudrate,
 		printf("open port failed \n");
 		return -1;
 	}
-	setSerialSpeed(fd,baudrate);		
-	if(setSerialParity(fd,databits,stopbits,parity)==FALSE) {			
-		printf("Set Parity Error!\n");			
+	setSerialSpeed(fd,baudrate);
+	if(setSerialParity(fd,databits,stopbits,parity)==FALSE) {
+		printf("Set Parity Error!\n");
 		if(fd != -1)
 			close(fd);
-		return -1;		
+		return -1;
 	}
 	return fd;
 }
@@ -1042,7 +1042,7 @@ static int32_t Analyze_MsgCode(int8_t *recv_buf, int32_t *msgcode)
 	xmlNodePtr msghead = NULL;
 	xmlNodePtr MsgCode = NULL;
 
-	
+
 	char *pMsgCode = NULL;
 
 	parse_xml_user = (parse_xml_t *)r_malloc(sizeof(parse_xml_t));
@@ -1051,7 +1051,7 @@ static int32_t Analyze_MsgCode(int8_t *recv_buf, int32_t *msgcode)
 		zlog_error(MLOG, "Analyze_MsgCode: malloc parse_xml_t fail");
 		return -1;
 	}
-	
+
 	init_dom_tree(parse_xml_user, (const char *)recv_buf);
 	if(parse_xml_user == NULL)
 	{
@@ -1066,15 +1066,15 @@ static int32_t Analyze_MsgCode(int8_t *recv_buf, int32_t *msgcode)
 		zlog_error(MLOG, "Analyze_MsgCode: msghead fail");
 		goto EXIT;
 	}
-	
+
 	MsgCode   = get_children_node(msghead, BAD_CAST "MsgCode");
 	if(MsgCode == NULL)
 	{
 		zlog_error(MLOG, "Analyze_MsgCode: not found usrname");
 		goto EXIT;
 	}
-	
-	pMsgCode  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, MsgCode->xmlChildrenNode, 1);	
+
+	pMsgCode  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, MsgCode->xmlChildrenNode, 1);
 	if(pMsgCode == NULL)
 	{
 		zlog_error(MLOG, "Analyze_MsgCode: not found usrname");
@@ -1082,14 +1082,14 @@ static int32_t Analyze_MsgCode(int8_t *recv_buf, int32_t *msgcode)
 	}
 	*msgcode = atoi(pMsgCode);
 	return_code = 1;
-	
+
 EXIT:
 	if(NULL != pMsgCode)
 	{
 		xmlFree(pMsgCode);
 	}
-	
-	if(parse_xml_user->pdoc != NULL) 
+
+	if(parse_xml_user->pdoc != NULL)
 	{
 		release_dom_tree(parse_xml_user->pdoc);
 	}
@@ -1102,7 +1102,7 @@ EXIT:
 
 static void SetTcpSocket(int socket)
 {
-	
+
 	TcpSockLock();
 	pserial_handle->socket = socket;
 	TcpSockunLock();
@@ -1115,7 +1115,7 @@ static int GetTcpSocket()
 
 static void SetSerialFd(int serialFd)
 {
-	
+
 	SerialLock();
 	pserial_handle->serialFd = serialFd;
 	SerialunLock();
@@ -1123,7 +1123,7 @@ static void SetSerialFd(int serialFd)
 
 static void SetSerialFd1(int serialFd)
 {
-	
+
 	SerialLock();
 	pserial_handle->serialFd1 = serialFd;
 	SerialunLock();
@@ -1145,7 +1145,7 @@ static int ReplayingMenu(int spi_fd,int flg)
 	vodplay_ctrl ctrl;
 	char Downsendcmd[]={0x3c,0x3c,0xc2,0x94,0x2,0x3e,0x3e};
 	char Playcmd[]	  ={0x3c,0x3c,0xc2,0x95,0x2,0x3e,0x3e};
-	
+
 	r_memset(&ctrl, 0, sizeof(vodplay_ctrl));
 	ClearScreen((int)fd);
 
@@ -1157,7 +1157,7 @@ static int ReplayingMenu(int spi_fd,int flg)
 	{
 		pserial_handle->SeekLeve = SEEK_LEVEL_F32;
 	}
-	
+
 	if(flg == VOD_PLAY)
 	{
 		char cmd[256] = {0};
@@ -1170,7 +1170,7 @@ static int ReplayingMenu(int spi_fd,int flg)
 		{
 			strcpy((char *)ctrl.filename,(const char *)p);
 			strcpy((char *)pserial_handle->CourseName,(const char *)p);
-			ctrl_vodplay_ctrl(&ctrl);	
+			ctrl_vodplay_ctrl(&ctrl);
 		}
 	}
 	else if(flg == VOD_FF)
@@ -1190,7 +1190,7 @@ static int ReplayingMenu(int spi_fd,int flg)
 	else if(flg == VOD_REW)
 	{
 		char cmd[256] = {0};
-		ShowString(spi_fd,"    Playing Back      ",10,10);	
+		ShowString(spi_fd,"    Playing Back      ",10,10);
 		sprintf(cmd,"%s",pserial_handle->CourseName);
 		ShowString(spi_fd,cmd,5,25);
 
@@ -1242,7 +1242,7 @@ static int ReplayingMenu(int spi_fd,int flg)
 /*==============================================================================
     函数: <serial_msg_record>
     功能: <xh_Func:>请求录制消息封装
-    参数: 
+    参数:
     Created By 徐崇 2012.11.05 19:53:40 For Ftp
 ==============================================================================*/
 static Int32 serial_msg_record(Int8 *send_buf, void *pcmd)
@@ -1255,7 +1255,7 @@ static Int32 serial_msg_record(Int8 *send_buf, void *pcmd)
 	{
 		return -1;
 	}
-	
+
 	//g_rtprm.close = 2;
 	//g_rtprm.start = 2;
 	//g_rtprm.stop  = 2;
@@ -1284,7 +1284,7 @@ static Int32 serial_msg_record(Int8 *send_buf, void *pcmd)
 		return -1;
 	}
 
-	
+
 	printf("pserial_handle->LedState == REPLAYINGMENU) && (pserial_handle->PlayState >= 1\n");
 	//停止预览
 	if((pserial_handle->LedState == REPLAYINGMENU) && (pserial_handle->PlayState >= 1))
@@ -1296,7 +1296,7 @@ static Int32 serial_msg_record(Int8 *send_buf, void *pcmd)
 		printf("--------------cmd[5]:[%d]\n", cmd[5]);
 
 		// -----fix me.....------ 4620 	Bug缺陷	新建	B1 中等缺陷	点播回放中按下暂停按钮，按钮无背光显示
-		
+
 		//停止回放
 		if(cmd[5] == 3)
 		{
@@ -1310,7 +1310,7 @@ static Int32 serial_msg_record(Int8 *send_buf, void *pcmd)
 			pserial_handle->LedState = IPMENU;
 			pserial_handle->LedFLUSH = 1;
 			pserial_handle->PlayState = 0;
-			
+
 			Optcmd[6] = 0x2;
 			SerialWrite(Optcmd,9);
 
@@ -1345,13 +1345,13 @@ static Int32 serial_msg_record(Int8 *send_buf, void *pcmd)
 		}
 	}
 
-	if (pserial_handle->PlayState >= VOD_PLAY 
+	if (pserial_handle->PlayState >= VOD_PLAY
 		&& pserial_handle->PlayState <= VOD_REW)
 	{
 		YinCodeShowString(fd," Please stop play ",10,30);
 		printf("\n\nPlaying..., PlayState[%d], give up rec operation, just return.......\n\n\n", pserial_handle->PlayState);
 	}
-		
+
 	xmlDocPtr doc = xmlNewDoc(BAD_CAST"1.0");
 
 	xmlNodePtr root_node = xmlNewNode(NULL, BAD_CAST"RequestMsg");
@@ -1386,7 +1386,7 @@ static Int32 serial_msg_record(Int8 *send_buf, void *pcmd)
 	package_add_xml_leaf(ctrl_node, (const xmlChar *)"TeacherName", (const int8_t *)"");
 	package_add_xml_leaf(ctrl_node, (const xmlChar *)"CourseName", (const int8_t *)"");
 	package_add_xml_leaf(ctrl_node, (const xmlChar *)"Notes", (const int8_t *)"");
-	
+
 	xmlChar *temp_xml_buf;
 	int size;
 	xmlDocDumpFormatMemoryEnc(doc, &temp_xml_buf, &size,  "UTF-8", 1);
@@ -1422,7 +1422,7 @@ static Int32 serial_msg_fecc(Int8 *send_buf, void *pcmd)
 	sprintf((char *)addr,  "%d", cmd[7]);
 	sprintf((char *)speed, "%d", cmd[8]);
 	sprintf((char *)Num,   "%d", cmd[9]);
-		
+
 	xmlDocPtr doc = xmlNewDoc(BAD_CAST"1.0");
 
 	xmlNodePtr root_node = xmlNewNode(NULL, BAD_CAST"RequestMsg");
@@ -1449,12 +1449,12 @@ static Int32 serial_msg_fecc(Int8 *send_buf, void *pcmd)
 
 	Roomifo = xmlNewNode(NULL, BAD_CAST "RoomInfo");
 	xmlAddChild(RemoteCtrlReq, Roomifo);
-	
+
 	package_add_xml_leaf(Roomifo, (const xmlChar *)"RoomID", (const int8_t *)roomid);
-	
+
 	EncInfo = xmlNewNode(NULL, BAD_CAST "EncInfo");
 	xmlAddChild(Roomifo, EncInfo);
-	
+
 	package_add_xml_leaf(EncInfo, (const xmlChar *)"ID",   (const int8_t *)encid);
 	package_add_xml_leaf(EncInfo, (const xmlChar *)"Type", (const int8_t *)type);
 	package_add_xml_leaf(EncInfo, (const xmlChar *)"Addr", (const int8_t *)addr);
@@ -1483,7 +1483,7 @@ static Int32 serial_msg_replay(Int8 *send_buf, Int8 *replayfile)
 	{
 		return -1;
 	}
-		
+
 	xmlDocPtr doc = xmlNewDoc(BAD_CAST"1.0");
 
 	xmlNodePtr root_node = xmlNewNode(NULL, BAD_CAST"RequestMsg");
@@ -1505,7 +1505,7 @@ static Int32 serial_msg_replay(Int8 *send_buf, Int8 *replayfile)
 
 	Replay = xmlNewNode(NULL, BAD_CAST "Replay");
 	xmlAddChild(body_node, Replay);
-	
+
 	package_add_xml_leaf(Replay, (const xmlChar *)"RoomID", (const int8_t *)roomid);
 	package_add_xml_leaf(Replay, (const xmlChar *)"PlayFile", (const int8_t *)replayfile);
 
@@ -1525,7 +1525,7 @@ static Int32 serial_msg_replay(Int8 *send_buf, Int8 *replayfile)
 int32_t Insertsort(int8_t *array, int8_t *file ,int32_t num)
 {
 //	printf("num : %d file : %s \n",num,file);
-	
+
 	int32_t index = 0;
 	int32_t flag = 0;
 
@@ -1537,7 +1537,7 @@ int32_t Insertsort(int8_t *array, int8_t *file ,int32_t num)
 	int8_t  *temp_str = array;
 
 	int8_t  temp_conversion_in[50] = {0};
-	int8_t  temp_conversion_out[50] = {0}; 
+	int8_t  temp_conversion_out[50] = {0};
 
 	if(num == 0)
 	{
@@ -1545,15 +1545,15 @@ int32_t Insertsort(int8_t *array, int8_t *file ,int32_t num)
 		strncpy((char *)array,(char *)file,strlen((char *)file));
 		return 0;
 	}
-	
+
 	for(index =0; index < num; index++)
 	{
 		r_memset(temp_str_src , 0, 11);
 		r_memset(temp_str_des , 0, 11);
-		
+
 		r_memcpy(temp_str_src ,(temp_str + 4),10);
 		r_memcpy(temp_str_des ,(file + 4),10);
-			
+
 		temp_int_src = atoi((char *)temp_str_src);
 		temp_int_des = atoi((char *)temp_str_des);
 		if(temp_int_des > temp_int_src)
@@ -1568,7 +1568,7 @@ int32_t Insertsort(int8_t *array, int8_t *file ,int32_t num)
 			}
 			r_memcpy(temp_str,temp_conversion_in,50);
 
-			
+
 			flag = 1;
 			break;
 		}
@@ -1600,7 +1600,7 @@ int32_t SerGetFileList(int8_t *RepairPath, int32_t totalnum,int8_t *list)
 	{
 		return -1;
 	}
-	
+
 	DIR              *pDir;
 	struct dirent    *ent;
 
@@ -1612,13 +1612,13 @@ int32_t SerGetFileList(int8_t *RepairPath, int32_t totalnum,int8_t *list)
 	int8_t       childpath[RECORD_FILE_MAX_FILENAME*2];
 	int8_t       filepath[RECORD_FILE_MAX_FILENAME*2];
 	int8_t		 temp[29] = {0};
-	
+
 	pDir = opendir((char *)RepairPath);
 	if(NULL == pDir){
 		printf("Cannot open directory: %s\n",RepairPath);
 		return -1;
 	}
-	
+
 	while((ent = readdir(pDir))!=NULL){
 		memset(childpath, 0, RECORD_FILE_MAX_FILENAME*2);
 		if(ent->d_type & DT_DIR){
@@ -1626,11 +1626,11 @@ int32_t SerGetFileList(int8_t *RepairPath, int32_t totalnum,int8_t *list)
 			if((r_strcmp((int8_t *)ent->d_name,(int8_t*)".")==0) || (r_strcmp((int8_t *)ent->d_name,(int8_t*)"..")==0)\
 			        || (0 == r_strcmp((int8_t *)ent->d_name,(int8_t*)MP4_REPAIR_PATH)))
 				continue;
-				
+
 			sprintf((char *)childpath,"%s/%s",(char *)RepairPath,(char *)ent->d_name);
 			sprintf((char *)md5info,"%s/md5.info",childpath);
 			if(0 == access((char *)md5info,0)){
-				if(list != NULL){	
+				if(list != NULL){
 					if(strlen((char *)ent->d_name) < 50){
 						totalsize = 0;
 						pDir2 = opendir((char *)childpath);
@@ -1643,20 +1643,20 @@ int32_t SerGetFileList(int8_t *RepairPath, int32_t totalnum,int8_t *list)
 								memset(filepath, 0, RECORD_FILE_MAX_FILENAME*2);
 								sprintf((char *)filepath,"%s/",childpath);
 								r_strncat(filepath, (const int8_t *)ent2->d_name, r_strlen((const int8_t *)ent2->d_name));
-								
+
 								stat(filepath, &stat_buf);
 								totalsize = totalsize + stat_buf.st_size/1024/1024;
 							}
 						}
 						closedir(pDir2);
-			
+
 						memset(list, 0x20, 50);
 						strncpy((char *)list,(const char *)ent->d_name,strlen((char *)ent->d_name));
-						
+
 						list += 16;
 						memset(list, 0x20, 34);
 						strncpy((char *)list,(const char *)"...  ",5);
-						
+
 						list += 5;
 						memset(list, 0x20, 29);
 						memset(temp, 0, 29);
@@ -1668,23 +1668,23 @@ int32_t SerGetFileList(int8_t *RepairPath, int32_t totalnum,int8_t *list)
 						list += 29;
 					}
 				}
-				
+
 				num++;
 				if(num >= totalnum){
 					break;
 				}
 			}
-				
+
 		}
 		else{
 			continue;
 		}
 	}
-	
+
 	if(0 != closedir(pDir))
 	{
 	}
-	
+
 	return num;
 }
 
@@ -1696,21 +1696,21 @@ int32_t SerGetFileList(int8_t *RepairPath, int32_t totalnum,int8_t *list)
 	{
 		return -1;
 	}
-	
+
 	int32_t index = 0;
 	int8_t *list_temp = list;
 	DIR              *pDir ;
 	struct dirent	 *ent;
 	int32_t 	 num = 0;
 	int8_t		 childpath[RECORD_FILE_MAX_FILENAME*2];
-	
+
 	pDir = opendir((char *)RepairPath);
 	if(NULL == pDir)
 	{
 		printf("Cannot open directory: %s\n",RepairPath);
 		return -1;
 	}
-	
+
 	while((ent = readdir(pDir))!=NULL)
 	{
 		if(ent->d_type & DT_DIR)
@@ -1719,13 +1719,13 @@ int32_t SerGetFileList(int8_t *RepairPath, int32_t totalnum,int8_t *list)
 			if((r_strcmp((int8_t *)ent->d_name,(int8_t*)".")==0) || (r_strcmp((int8_t *)ent->d_name,(int8_t*)"..")==0)\
 					|| (0 == r_strcmp((int8_t *)ent->d_name,(int8_t*)MP4_REPAIR_PATH)))
 				continue;
-				
+
 			sprintf((char *)childpath,"%s/%s",(char *)RepairPath,(char *)ent->d_name);
 			sprintf((char *)md5info,"%s/md5.info",childpath);
 			if(0 == access((char *)md5info,0))
 			{
 				if(list != NULL)
-				{	
+				{
 					if(strlen((char *)ent->d_name) < 50)
 					{
 					//	memset(list, 0x0, 50);
@@ -1741,14 +1741,14 @@ int32_t SerGetFileList(int8_t *RepairPath, int32_t totalnum,int8_t *list)
 					break;
 				}
 			}
-				
+
 		}
 		else
 		{
 			continue;
 		}
 	}
-	
+
 	if(0 != closedir(pDir))
 	{
 	}
@@ -1758,7 +1758,7 @@ int32_t SerGetFileList(int8_t *RepairPath, int32_t totalnum,int8_t *list)
 		printf("IMPORT INFO <NO : %d > <FILE : %s> \n",index ,list);
 		list = list + 50 ;
 	}
-	
+
 	return num;
 }
 
@@ -1779,14 +1779,14 @@ static int DownIngMenu(int spi_fd, char*path)
 	uint32_t UsbFreeSize = 0;
 
 
-	
+
 	sprintf((char *)buffer,"File: %s",p);
 	sprintf((char *)cmd,"/opt/Rec/%s",p);
-	
+
 	UsbFreeSize = list_dir(cmd) + 1024;
 
 
-	if(strlen(path) <= 0){	
+	if(strlen(path) <= 0){
 		ShowString(fd,"Not found valid device",10,30);
 		return 0;
 	}
@@ -1797,7 +1797,7 @@ static int DownIngMenu(int spi_fd, char*path)
 		sleep(2);
 		return 0;
 	}
-	
+
 	ShowString(spi_fd,(char *)"State:  Copying",0,15);
 	ShowString(spi_fd,(char *)buffer,0,30);
 
@@ -1816,12 +1816,12 @@ static int DownIngMenu(int spi_fd, char*path)
 		ShowString(fd,"   Download fail   ",10,30);
 	}
 	system("sync");
-	
+
 	return 0;
 }
 
 static int DownFileMenu(int spi_fd)
-{	
+{
 	int8_t FileName[50] = {0};
 	int8_t *plistpostion = (int8_t *)pserial_handle->FileList;
 
@@ -1830,7 +1830,7 @@ static int DownFileMenu(int spi_fd)
 		pserial_handle->ListPosition = 1;
 	}
 
-	
+
 	if((pserial_handle->totalfilenum == 0)|| (pserial_handle->totalfilenum < pserial_handle->ListPosition))
 	{
 		ClearScreen(fd);
@@ -1838,7 +1838,7 @@ static int DownFileMenu(int spi_fd)
 		pserial_handle->ListPosition = pserial_handle->totalfilenum;
 	}
 	else
-	{	
+	{
 		int32_t i       = 0;
 		int32_t page    = 0;
 		int32_t select  = 0;
@@ -1847,11 +1847,11 @@ static int DownFileMenu(int spi_fd)
 		//计算页数
 		page    = (pserial_handle->ListPosition -1)/4;
 		maxpage = (pserial_handle->totalfilenum -1)/4;
-		
+
 		//计算选项
 		select = (pserial_handle->ListPosition - 1)%4;
 		plistpostion = plistpostion + page*4*50;
-		
+
 		if(page < maxpage)
 		{
 			postion = 3;
@@ -1860,14 +1860,14 @@ static int DownFileMenu(int spi_fd)
 		{
 			postion = (pserial_handle->totalfilenum -1)%4;
 		}
-		
+
 		for(i = 0; i <= postion; i++)
 		{
 			memset(FileName,0x20,40);
 			FileName[39] = '\0';
 			//strlen((const char *)plistpostion + i*50);
 			memcpy((char *)FileName,(char *)(plistpostion + i*50),strlen((const char *)(plistpostion + i*50)));
-				
+
 			//strncpy(FileName,plistpostion + i*50, 49);
 			//printf("%s\n",FileName);
 			if(select == i)
@@ -1881,7 +1881,7 @@ static int DownFileMenu(int spi_fd)
 			{
 				ShowString(spi_fd,(char *)FileName,0,(5+i*15));
 			}
-			
+
 		}
 
 		for(i = postion+1; i < 4; i++)
@@ -1889,7 +1889,7 @@ static int DownFileMenu(int spi_fd)
 			ShowString(spi_fd,(char *)"                                   ",0,(5+i*15));
 		}
 	}
-	
+
 	return 1;
 }
 
@@ -1911,19 +1911,19 @@ void *CopyFileTask(void *args)
 			ShowString(fd,"Please turn on usb function! ",0,20);
 			sleep(2);
 		}
-			
+
 	}
 	else{
 		ShowString(fd,"Please input usb dev first!  ",4,30);
 		sleep(2);
 	}
-	
+
 	char Downsendcmd[]={0x3c,0x3c,0xc2,0x94,0x2,0x3e,0x3e};
 	SerialWrite(Downsendcmd,7);
-	
+
 	usleep(10000);
 	ClearScreen(fd);
-	
+
 	pserial_handle->LedState = IPMENU;
 	pserial_handle->LedFLUSH = 1;
 
@@ -1943,11 +1943,11 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 	char Optcmd[]	={0x3c,0x3c,0xc2,0x92,0x2,0x2,0x2,0x3e,0x3e};
 
 	printf("-------serial_msg_down_paly--------cmd[3] = %x\n", cmd[3]);
-	
+
 	//down
 	if(cmd[3] == 0x82)
 	{
-		
+
 		//printf("----------------------------> %d\n",pserial_handle->LedState);
 		//ClearScreen(fd);
 		int fielnum = 0;
@@ -1983,14 +1983,14 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 		SerialWrite(Playcmd,7);
 
 		printf("----------------down-----------------\n");
-	} 
+	}
 	//play
 	else if(cmd[3] == 0x83)
 	{
 		//ClearScreen(fd);
 		int fielnum = 0;
 
-		if ((pserial_handle->LedState == REPLAYINGMENU) && (pserial_handle->PlayState >= 1)) 
+		if ((pserial_handle->LedState == REPLAYINGMENU) && (pserial_handle->PlayState >= 1))
 		{
 			pserial_handle->ListPosition = 0;
 			pserial_handle->totalfilenum = 0;
@@ -1998,14 +1998,14 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 			pserial_handle->LedFLUSH = 1;
 			Playcmd[4] = 0x2;
 		}
-		else if (pserial_handle->LedState == REPLAYINGMENU || pserial_handle->PlayState >= 1) 
+		else if (pserial_handle->LedState == REPLAYINGMENU || pserial_handle->PlayState >= 1)
 		{
 			Playcmd[4] = 0x1;
 			pserial_handle->LedState = REPLAYINGMENU ;
 			pserial_handle->CourseNameChange = 1;
 			ReplayingMenu(fd, pserial_handle->PlayState);
 			pserial_handle->CourseNameChange = 0;
-		} 
+		}
 		else if(pserial_handle->LedState != REPLAYMENU)
 		{
 			pserial_handle->LedState = REPLAYMENU;
@@ -2015,7 +2015,7 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 			Playcmd[4] = 0x1;
 			DownFileMenu(fd);
 		}
-		else 
+		else
 		{
 			pserial_handle->ListPosition = 0;
 			pserial_handle->totalfilenum = 0;
@@ -2031,7 +2031,7 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 		Downsendcmd[4] = 0x2;
 		SerialWrite(Downsendcmd,7);
 		printf("----------------play-----------------\n");
-	} 
+	}
 	//spin
 	else if(cmd[3] == 0x84)
 	{
@@ -2045,7 +2045,7 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 		//	printf("----------------spin-----------------\n");
 			//正旋转
 			if(cmd[4] == 1)
-			{		
+			{
 				printf("-------serial_msg_down_paly---spin-----1111111\n");
 				pserial_handle->ListPosition++;
 				printf("111 ->%d\n",pserial_handle->ListPosition);
@@ -2061,7 +2061,7 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 				{
 					pserial_handle->ListPosition = 0;
 				}
-			
+
 			//	printf("111 ->%d\n",pserial_handle->ListPosition);
 				DownFileMenu(fd);
 			}
@@ -2069,12 +2069,12 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 			//确定
 			else if(cmd[4] == 3)
 			{
-				if (pserial_handle->LedState == DOWNMENU) 
+				if (pserial_handle->LedState == DOWNMENU)
 				{
 					pthread_t proc;
-					
+
 					pserial_handle->LedState = DOWNINGMENU;
-		
+
 					r_pthread_create(&proc,NULL, CopyFileTask, (void *)pserial_handle);
 					r_pthread_detach(proc);
 				}
@@ -2082,25 +2082,25 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 				{
 					Int32 record  = 1;
 					record = check_all_record_status(gpser);
-					
+
 					if(record == 1){
 						YinCodeShowString(fd," Please stop record ",10,30);
 						sleep(2);
 						return -1;
 					}
-				
+
 					//开始播放
 					pserial_handle->LedState =	REPLAYINGMENU;
 					pserial_handle->PlayState = VOD_PLAY;
 					pserial_handle->SeekLeve  = 0;
 					ReplayingMenu(fd,VOD_PLAY);
 					//serial_msg_replay(send_buf, pserial_handle->cur_file);
-					
+
 				}
 			}
 			else
 			{
-	
+
 			}
 
 		//	SerialWrite(sendcmd,7);
@@ -2108,12 +2108,12 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 		else if(pserial_handle->PlayState >= 1)
 		{
 			printf("-------serial_msg_down_paly---spin--1---pserial_handle->SeekLeve [%d]\n", pserial_handle->SeekLeve);
-		
+
 			//快进
 			if(cmd[4] == 1)
-			{					
+			{
 				pserial_handle->SeekLeve++;
-				
+
 				if (pserial_handle->SeekLeve > 0)
 					ReplayingMenu(fd,VOD_FF);
 				else if (pserial_handle->SeekLeve < 0)
@@ -2125,7 +2125,7 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 			else if(cmd[4] == 2)
 			{
 				pserial_handle->SeekLeve--;
-				
+
 				if (pserial_handle->SeekLeve > 0)
 					ReplayingMenu(fd,VOD_FF);
 				else if (pserial_handle->SeekLeve < 0)
@@ -2137,17 +2137,17 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 			else if(cmd[4] == 3)
 			{
 				ReplayingMenu(fd,VOD_RESUME);
-				
+
 				if (pserial_handle->PlayState == VOD_PAUSE)
 					pserial_handle->PlayState = VOD_PLAY;
-								
+
 				Optcmd[4] = 0x2;
 				Optcmd[5] = 0x2;
 				Optcmd[5] = 0x2;
 				SerialWrite(Optcmd,9);
 			}
 			printf("-------serial_msg_down_paly---spin--2---pserial_handle->SeekLeve [%d]\n", pserial_handle->SeekLeve);
-			
+
 		}
 		else if(pserial_handle->LedState == SELECTUSBMENU)
 		{
@@ -2155,22 +2155,22 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 			MNUsbDeb dev[5] = {{{0}, 0, 0, 0}};
 			int i = 0;
 			//等待设备挂载
-			
+
 			GetUsbDevState(&num, dev, 4);
-	
+
 			if(num <= 0)
 			{
 				pserial_handle->LedState = IPMENU;
 				pserial_handle->LedFLUSH = 1;
 			}
-			else 
-			{	
+			else
+			{
 				if(num >4 )
 					num = 4;
 
 					//快进
 				if(cmd[4] == 1)
-				{	
+				{
 					pserial_handle->usbpostin++;
 
 					char cmd[1024] = {0};
@@ -2179,7 +2179,7 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 						float size = dev[i].free_size;
 						size	= size/1024/1024;
 						sprintf(cmd,"Vol:%s Free:%0.2fG",dev[i].devname,size);
-						
+
 						if(i == (pserial_handle->usbpostin%num))
 						{
 							YinCodeShowString(fd,cmd,1,(5+i*15));
@@ -2200,7 +2200,7 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 						float size = dev[i].free_size;
 						size	= size/1024/1024;
 						sprintf(cmd,"Vol:%s Free:%0.2fG",dev[i].devname,size);
-						
+
 						if(i == (pserial_handle->usbpostin%4))
 						{
 							YinCodeShowString(fd,cmd,1,(5+i*15));
@@ -2226,10 +2226,10 @@ static Int32 serial_msg_down_paly(Int8 *send_buf, void *pcmd)
 					pserial_handle->LedFLUSH = 1;
 				}
 
-					
+
 			}
 		}
-		
+
 		return 1;
 	}
 	else
@@ -2247,7 +2247,7 @@ static Int32 serial_msg_reboot(Int8 *send_buf, void *pcmd)
 	{
 		return -1;
 	}
-		
+
 	xmlDocPtr doc = xmlNewDoc(BAD_CAST"1.0");
 
 	xmlNodePtr root_node = xmlNewNode(NULL, BAD_CAST"RequestMsg");
@@ -2264,7 +2264,7 @@ static Int32 serial_msg_reboot(Int8 *send_buf, void *pcmd)
 
 	package_add_xml_leaf(head_node, (const xmlChar *)"MsgCode", (const int8_t *)"30012");
 	package_add_xml_leaf(head_node, (const xmlChar *)"PassKey", (const int8_t *)"ComControl");
-	
+
 	xmlChar *temp_xml_buf;
 	int size;
 	xmlDocDumpFormatMemoryEnc(doc, &temp_xml_buf, &size,  "UTF-8", 1);
@@ -2284,7 +2284,7 @@ static Int32 serial_msg_pic_synthesis(Int8 *send_buf, void *pcmd)
 	{
 		return -1;
 	}
-		
+
 	xmlDocPtr doc = xmlNewDoc(BAD_CAST"1.0");
 
 	xmlNodePtr root_node = xmlNewNode(NULL, BAD_CAST"RequestMsg");
@@ -2310,7 +2310,7 @@ static Int32 serial_msg_pic_synthesis(Int8 *send_buf, void *pcmd)
 
 	package_add_xml_leaf(PictureSynthesis_node, (const xmlChar *)"RoomID", (const int8_t *)"30047");
 	package_add_xml_leaf(PictureSynthesis_node, (const xmlChar *)"RoomID", (const int8_t *)"30047");
-	
+
 	xmlChar *temp_xml_buf;
 	int size;
 	xmlDocDumpFormatMemoryEnc(doc, &temp_xml_buf, &size,  "UTF-8", 1);
@@ -2352,7 +2352,7 @@ static int32_t test_volume_rep_msg(char *send_buf, char * state, char *volume)
 	xmlAddChild(body_node, volume_node);
 
 	package_add_xml_leaf(volume_node, (const xmlChar *)"Volume", (const int8_t *)volume);
-	
+
 	xmlChar *temp_xml_buf;
 	int size;
 	xmlDocDumpFormatMemoryEnc(doc, &temp_xml_buf, &size,  "UTF-8", 1);
@@ -2394,7 +2394,7 @@ static int32_t test_warning_msg(char *send_buf, char *cmd)
 	package_add_xml_leaf(warnning, (const xmlChar *)"source", (const int8_t *)"");
 	package_add_xml_leaf(warnning, (const xmlChar *)"roomid", (const int8_t *)"");
 	package_add_xml_leaf(warnning, (const xmlChar *)"codecid", (const int8_t *)"");
-	
+
 	xmlChar *temp_xml_buf;
 	int size;
 	xmlDocDumpFormatMemoryEnc(doc, &temp_xml_buf, &size,  "UTF-8", 1);
@@ -2449,7 +2449,7 @@ static int32_t test_state_msg(char *send_buf)
 	package_add_xml_leaf(room , (const xmlChar *)"Status1", (const int8_t *)"1");
 	package_add_xml_leaf(room , (const xmlChar *)"Status2", (const int8_t *)"1");
 	package_add_xml_leaf(room , (const xmlChar *)"Status3", (const int8_t *)"1");
-	
+
 	xmlChar *temp_xml_buf;
 	int size;
 	xmlDocDumpFormatMemoryEnc(doc, &temp_xml_buf, &size,  "UTF-8", 1);
@@ -2476,7 +2476,7 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 	xmlNodePtr RecStatus = NULL;
 	xmlNodePtr		Warn = NULL;
 	xmlNodePtr Status[3] = {0};
-	
+
 	UInt8 *pRecStatus = NULL;
 	UInt8 *pStatus[3] = {0};
 
@@ -2486,14 +2486,14 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_State: parm is NULL");
 		return -1;
 	}
-	
+
 	parse_xml_user = (parse_xml_t *)r_malloc(sizeof(parse_xml_t));
 	if(parse_xml_user == NULL)
 	{
 		zlog_error(MLOG, "Analyze_State: malloc parse_xml_t fail");
 		return -1;
 	}
-	
+
 	init_dom_tree(parse_xml_user, (const char *)recv_buf);
 	if(parse_xml_user == NULL)
 	{
@@ -2501,11 +2501,11 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 		goto EXIT;
 	}
 
-	if(is_req_msg(parse_xml_user->proot) != 1) 
-	{		
+	if(is_req_msg(parse_xml_user->proot) != 1)
+	{
 		zlog_error(MLOG, "Analyze_State: is_req_msg fail");
 		goto EXIT;
-	}	
+	}
 
 	msgbody   = get_children_node(parse_xml_user->proot, BAD_CAST "MsgBody");
 	if(msgbody == NULL)
@@ -2513,7 +2513,7 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_State: msghead fail");
 		goto EXIT;
 	}
-	
+
 	RecServerStatusUpdateReq   = get_children_node(msgbody, BAD_CAST "RecServerStatusUpdateReq");
 	if(RecServerStatusUpdateReq == NULL)
 	{
@@ -2534,8 +2534,8 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_State: not found usrname");
 		goto EXIT;
 	}
-	
-	pRecStatus  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, RecStatus->xmlChildrenNode, 1);	
+
+	pRecStatus  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, RecStatus->xmlChildrenNode, 1);
 	if(pRecStatus == NULL)
 	{
 		zlog_error(MLOG, "Analyze_State: not found usrname");
@@ -2549,7 +2549,7 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 	recordstate = (UInt8)atoi((const char *)pRecStatus);
 	if(recordstate == 0) //停止
 	{
-	//	parm->close = 0x1;	
+	//	parm->close = 0x1;
 	}
 	//开始
 	else if(recordstate == 1)
@@ -2572,7 +2572,7 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 	parm->videostate[2] = 0x1;
 	parm->warning 		= 0x2;
 	Status[0]   = get_children_node(RoomStatus, BAD_CAST "Status1");
-	pStatus[0]  = (UInt8*)xmlNodeListGetString(parse_xml_user->pdoc, Status[0]->xmlChildrenNode, 1);	
+	pStatus[0]  = (UInt8*)xmlNodeListGetString(parse_xml_user->pdoc, Status[0]->xmlChildrenNode, 1);
 	if(pStatus[0] == NULL)
 	{
 		zlog_error(MLOG, "Analyze_State: not found Status1");
@@ -2580,7 +2580,7 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 	}
 
 	Status[1]   = get_children_node(RoomStatus, BAD_CAST "Status2");
-	pStatus[1]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[1]->xmlChildrenNode, 1);	
+	pStatus[1]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[1]->xmlChildrenNode, 1);
 	if(pStatus[1] == NULL)
 	{
 		zlog_error(MLOG, "Analyze_State: not found Status2");
@@ -2588,7 +2588,7 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 	}
 
 	Status[2]   = get_children_node(RoomStatus, BAD_CAST "Status3");
-	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);	
+	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);
 	if(pStatus[2] == NULL)
 	{
 		zlog_error(MLOG, "Analyze_State: not found Status3");
@@ -2597,49 +2597,49 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 	#if 0   // zl question???
 	// add zl
 		Status[2]   = get_children_node(RoomStatus, BAD_CAST "Status3");
-	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);	
+	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);
 	if(pStatus[2] == NULL)
 	{
 		zlog_error(MLOG, "Analyze_State: not found Status3");
 		goto EXIT;
 	}
 		Status[2]   = get_children_node(RoomStatus, BAD_CAST "Status3");
-	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);	
+	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);
 	if(pStatus[2] == NULL)
 	{
 		zlog_error(MLOG, "Analyze_State: not found Status3");
 		goto EXIT;
 	}
 		Status[2]   = get_children_node(RoomStatus, BAD_CAST "Status3");
-	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);	
+	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);
 	if(pStatus[2] == NULL)
 	{
 		zlog_error(MLOG, "Analyze_State: not found Status3");
 		goto EXIT;
 	}
 		Status[2]   = get_children_node(RoomStatus, BAD_CAST "Status3");
-	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);	
+	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);
 	if(pStatus[2] == NULL)
 	{
 		zlog_error(MLOG, "Analyze_State: not found Status3");
 		goto EXIT;
 	}
 		Status[2]   = get_children_node(RoomStatus, BAD_CAST "Status3");
-	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);	
+	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);
 	if(pStatus[2] == NULL)
 	{
 		zlog_error(MLOG, "Analyze_State: not found Status3");
 		goto EXIT;
 	}
 		Status[2]   = get_children_node(RoomStatus, BAD_CAST "Status3");
-	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);	
+	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);
 	if(pStatus[2] == NULL)
 	{
 		zlog_error(MLOG, "Analyze_State: not found Status3");
 		goto EXIT;
 	}
 		Status[2]   = get_children_node(RoomStatus, BAD_CAST "Status3");
-	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);	
+	pStatus[2]  = (UInt8 *)xmlNodeListGetString(parse_xml_user->pdoc, Status[2]->xmlChildrenNode, 1);
 	if(pStatus[2] == NULL)
 	{
 		zlog_error(MLOG, "Analyze_State: not found Status3");
@@ -2667,7 +2667,7 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 			zlog_error(MLOG, "Analyze_State: not found videostate%d[%d]",i,videostate);
 			goto EXIT;
 		}
-	
+
 	}
 #endif
 
@@ -2682,8 +2682,8 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 
 		int8_t value[32] = {0};
 		int8_t value1[32] = {0};
-		Warn = get_children_node(Warns, BAD_CAST "Warn");	
-		for (; Warn != NULL; Warn = find_next_node(Warn, BAD_CAST "Warn")) 
+		Warn = get_children_node(Warns, BAD_CAST "Warn");
+		for (; Warn != NULL; Warn = find_next_node(Warn, BAD_CAST "Warn"))
 		{
 
 			bzero(value, sizeof(value));
@@ -2696,22 +2696,22 @@ static Int32 Analyze_State(Int8 *recv_buf, void *pparm)
 			{
 				if(value[0] == '1' || value[0] == '2' || value[0] == '3')
 				{
-					
+
 					parm->videostate[ value[0] - '1'] = 0x2;
 				}
 				else
 				{
 					continue;
 				}
-				
+
 			}
 
 			parm->warning = 0x1;
 		}
 	}
-	
+
 	return_code = 1;
-	
+
 EXIT:
 	if(NULL != pRecStatus)
 	{
@@ -2725,8 +2725,8 @@ EXIT:
 			xmlFree(pStatus[i]);
 		}
 	}
-	
-	if(parse_xml_user->pdoc != NULL) 
+
+	if(parse_xml_user->pdoc != NULL)
 	{
 		release_dom_tree(parse_xml_user->pdoc);
 	}
@@ -2739,7 +2739,7 @@ EXIT:
 /*==============================================================================
     函数: <serial_msg_record>
     功能: <xh_Func:>音量消息下发
-    参数: 
+    参数:
     Created By 徐崇 2012.11.05 19:54:19 For Ftp
 ==============================================================================*/
 static int32_t test_volume_req_msg(char *send_buf)
@@ -2753,7 +2753,7 @@ static int32_t test_volume_req_msg(char *send_buf)
 	xmlNodePtr head_node 			= NULL;
 	xmlNodePtr body_node 			= NULL;
 	xmlNodePtr volume_node 			= NULL;
-	
+
 	head_node = xmlNewNode(NULL, BAD_CAST "MsgHead");
 	xmlAddChild(root_node, head_node);
 
@@ -2768,7 +2768,7 @@ static int32_t test_volume_req_msg(char *send_buf)
 	xmlAddChild(body_node, volume_node);
 
 	package_add_xml_leaf(volume_node, (const xmlChar *)"RoomID", (const int8_t *)"0");
-	
+
 	xmlChar *temp_xml_buf;
 	int size;
 	xmlDocDumpFormatMemoryEnc(doc, &temp_xml_buf, &size,  "UTF-8", 1);
@@ -2780,7 +2780,7 @@ static int32_t test_volume_req_msg(char *send_buf)
 		release_dom_tree(doc);
 	}
 
-	
+
 	return size;
 }
 
@@ -2790,7 +2790,7 @@ static int32_t test_volume_req_msg(char *send_buf)
 /*==============================================================================
     函数: <Analyze_Volume>
     功能: <xh_Func:>解析音量大小
-    参数: 
+    参数:
     Created By 徐崇 2012.11.06 09:06:54 For Ftp
 ==============================================================================*/
 static Int32 Analyze_Volume(Int8 *recv_buf, void *pparm)
@@ -2819,7 +2819,7 @@ static Int32 Analyze_Volume(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_Volume: malloc parse_xml_t fail");
 		return -1;
 	}
-	
+
 	init_dom_tree(parse_xml_user, (const char *)recv_buf);
 	if(parse_xml_user == NULL)
 	{
@@ -2827,11 +2827,11 @@ static Int32 Analyze_Volume(Int8 *recv_buf, void *pparm)
 		goto EXIT;
 	}
 
-	if(is_resp_msg(parse_xml_user->proot) != 1) 
-	{		
+	if(is_resp_msg(parse_xml_user->proot) != 1)
+	{
 		zlog_error(MLOG, "Analyze_Volume: is_resp_msg fail[%s]",parse_xml_user->proot->name);
 		goto EXIT;
-	}	
+	}
 
 	msghead   = get_children_node(parse_xml_user->proot, BAD_CAST "MsgHead");
 	if(msghead == NULL)
@@ -2847,7 +2847,7 @@ static Int32 Analyze_Volume(Int8 *recv_buf, void *pparm)
 		goto EXIT;
 	}
 
-	pretcode  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, retcode->xmlChildrenNode, 1);	
+	pretcode  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, retcode->xmlChildrenNode, 1);
 	if(pretcode == NULL)
 	{
 		zlog_error(MLOG, "Analyze_Volume: not found pretcode");
@@ -2861,14 +2861,14 @@ static Int32 Analyze_Volume(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_Volume: ReturnCode [%d]",irecode);
 		goto EXIT;
 	}
-	
+
 	msgbody   = get_children_node(parse_xml_user->proot, BAD_CAST "MsgBody");
 	if(retcode == NULL)
 	{
 		zlog_error(MLOG, "Analyze_Volume: retcode fail");
 		goto EXIT;
 	}
-	
+
 	volumeinfo   = get_children_node(msgbody, BAD_CAST "VoiceInfo");
 	if(volumeinfo == NULL)
 	{
@@ -2882,8 +2882,8 @@ static Int32 Analyze_Volume(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_Volume: not found Volume");
 		goto EXIT;
 	}
-	
-	pvolume  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, volume->xmlChildrenNode, 1);	
+
+	pvolume  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, volume->xmlChildrenNode, 1);
 	if(pvolume == NULL)
 	{
 		zlog_error(MLOG, "Analyze_Volume: not found usrname");
@@ -2898,16 +2898,16 @@ static Int32 Analyze_Volume(Int8 *recv_buf, void *pparm)
 		goto EXIT;
 	}
 	parm->volume = (UInt8)uvolume *8/100;
-	
+
 	return_code = 1;
-	
+
 EXIT:
 	if(NULL != pvolume)
 	{
 		xmlFree(pvolume);
 	}
-	
-	if(parse_xml_user->pdoc != NULL) 
+
+	if(parse_xml_user->pdoc != NULL)
 	{
 		release_dom_tree(parse_xml_user->pdoc);
 	}
@@ -2938,7 +2938,7 @@ static Int32 Analyze_RecordRep(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_RecordRep: malloc parse_xml_t fail");
 		return -1;
 	}
-	
+
 	init_dom_tree(parse_xml_user, (const char *)recv_buf);
 	if(parse_xml_user == NULL)
 	{
@@ -2946,11 +2946,11 @@ static Int32 Analyze_RecordRep(Int8 *recv_buf, void *pparm)
 		goto EXIT;
 	}
 
-	if(is_resp_msg(parse_xml_user->proot) != 1) 
-	{		
+	if(is_resp_msg(parse_xml_user->proot) != 1)
+	{
 		zlog_error(MLOG, "Analyze_RecordRep: is_resp_msg fail");
 		goto EXIT;
-	}	
+	}
 
 	msghead   = get_children_node(parse_xml_user->proot, BAD_CAST "MsgHead");
 	if(msghead == NULL)
@@ -2965,21 +2965,21 @@ static Int32 Analyze_RecordRep(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_RecordRep: msgbody fail");
 		goto EXIT;
 	}
-	
+
 	retstate   = get_children_node(msghead, BAD_CAST "ReturnCode");
 	if(retstate == NULL)
 	{
 		zlog_error(MLOG, "Analyze_RecordRep: not found ReturnCode");
 		goto EXIT;
 	}
-	
-	pret  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, retstate->xmlChildrenNode, 1);	
+
+	pret  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, retstate->xmlChildrenNode, 1);
 	if(pret == NULL)
 	{
 		zlog_error(MLOG, "Analyze_RecordRep: not found usrname");
 		goto EXIT;
 	}
-	
+
 
 	Int32 iret = -1;
 	iret = atoi(pret);
@@ -2995,7 +2995,7 @@ static Int32 Analyze_RecordRep(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_RecordRep: error RtRecordState ret[%d]",RtRecordState);
 		goto EXIT;
 	}
-	
+
 	parm->close = 2;
 	parm->start = 2;
 	parm->stop  = 2;
@@ -3011,17 +3011,17 @@ static Int32 Analyze_RecordRep(Int8 *recv_buf, void *pparm)
 	{
 		parm->close= 1;
 	}
-	
+
 	printf("close[%d] start[%d] stop[%d]\n",parm->close, parm->start, parm->stop);
 	return_code = 1;
-	
+
 EXIT:
 	if(NULL != pret)
 	{
 		xmlFree(pret);
 	}
-	
-	if(parse_xml_user->pdoc != NULL) 
+
+	if(parse_xml_user->pdoc != NULL)
 	{
 		release_dom_tree(parse_xml_user->pdoc);
 	}
@@ -3052,7 +3052,7 @@ static Int32 Analyze_Warnning(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_Warnning: malloc parse_xml_t fail");
 		return -1;
 	}
-	
+
 	init_dom_tree(parse_xml_user, (const char *)recv_buf);
 	if(parse_xml_user == NULL)
 	{
@@ -3060,11 +3060,11 @@ static Int32 Analyze_Warnning(Int8 *recv_buf, void *pparm)
 		goto EXIT;
 	}
 
-	if(is_req_msg(parse_xml_user->proot) != 1) 
-	{		
+	if(is_req_msg(parse_xml_user->proot) != 1)
+	{
 		zlog_error(MLOG, "Analyze_Warnning: is_req_msg fail");
 		goto EXIT;
-	}	
+	}
 
 	msgbody   = get_children_node(parse_xml_user->proot, BAD_CAST "MsgBody");
 	if(msgbody == NULL)
@@ -3072,7 +3072,7 @@ static Int32 Analyze_Warnning(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_Warnning: msghead fail");
 		goto EXIT;
 	}
-	
+
 	warnning   = get_children_node(msgbody, BAD_CAST "warn");
 	if(warnning == NULL)
 	{
@@ -3086,8 +3086,8 @@ static Int32 Analyze_Warnning(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_Volume: not found usrname");
 		goto EXIT;
 	}
-	
-	pwarn  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, id->xmlChildrenNode, 1);	
+
+	pwarn  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, id->xmlChildrenNode, 1);
 	if(pwarn == NULL)
 	{
 		zlog_error(MLOG, "Analyze_Warnning: not found usrname");
@@ -3112,14 +3112,14 @@ static Int32 Analyze_Warnning(Int8 *recv_buf, void *pparm)
 	}
 	parm->warning = (UInt8)iwarn;
 	return_code = 1;
-	
+
 EXIT:
 	if(NULL != pwarn)
 	{
 		xmlFree(pwarn);
 	}
-	
-	if(parse_xml_user->pdoc != NULL) 
+
+	if(parse_xml_user->pdoc != NULL)
 	{
 		release_dom_tree(parse_xml_user->pdoc);
 	}
@@ -3151,7 +3151,7 @@ static Int32 Analyze_reboot(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_reboot: malloc parse_xml_t fail");
 		return -1;
 	}
-	
+
 	init_dom_tree(parse_xml_user, (const char *)recv_buf);
 	if(parse_xml_user == NULL)
 	{
@@ -3159,11 +3159,11 @@ static Int32 Analyze_reboot(Int8 *recv_buf, void *pparm)
 		goto EXIT;
 	}
 
-	if(is_resp_msg(parse_xml_user->proot) != 1) 
-	{		
+	if(is_resp_msg(parse_xml_user->proot) != 1)
+	{
 		zlog_error(MLOG, "Analyze_reboot: is_resp_msg fail[%s]",parse_xml_user->proot->name);
 		goto EXIT;
-	}	
+	}
 
 	msghead   = get_children_node(parse_xml_user->proot, BAD_CAST "MsgHead");
 	if(msghead == NULL)
@@ -3179,7 +3179,7 @@ static Int32 Analyze_reboot(Int8 *recv_buf, void *pparm)
 		goto EXIT;
 	}
 
-	pretcode  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, retcode->xmlChildrenNode, 1);	
+	pretcode  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, retcode->xmlChildrenNode, 1);
 	if(pretcode == NULL)
 	{
 		zlog_error(MLOG, "Analyze_reboot: not found pretcode");
@@ -3195,16 +3195,16 @@ static Int32 Analyze_reboot(Int8 *recv_buf, void *pparm)
 	}
 
 	parm->reboot = irecode;
-	
+
 	return_code = 1;
-	
+
 EXIT:
 	if(NULL != pvolume)
 	{
 		xmlFree(pvolume);
 	}
-	
-	if(parse_xml_user->pdoc != NULL) 
+
+	if(parse_xml_user->pdoc != NULL)
 	{
 		release_dom_tree(parse_xml_user->pdoc);
 	}
@@ -3237,7 +3237,7 @@ static Int32 Analyze_replay(Int8 *recv_buf, void *pparm)
 		zlog_error(MLOG, "Analyze_replay: malloc parse_xml_t fail");
 		return -1;
 	}
-	
+
 	init_dom_tree(parse_xml_user, (const char *)recv_buf);
 	if(parse_xml_user == NULL)
 	{
@@ -3245,11 +3245,11 @@ static Int32 Analyze_replay(Int8 *recv_buf, void *pparm)
 		goto EXIT;
 	}
 
-	if(is_resp_msg(parse_xml_user->proot) != 1) 
-	{		
+	if(is_resp_msg(parse_xml_user->proot) != 1)
+	{
 		zlog_error(MLOG, "Analyze_replay: is_resp_msg fail[%s]",parse_xml_user->proot->name);
 		goto EXIT;
-	}	
+	}
 
 	msghead   = get_children_node(parse_xml_user->proot, BAD_CAST "MsgHead");
 	if(msghead == NULL)
@@ -3265,7 +3265,7 @@ static Int32 Analyze_replay(Int8 *recv_buf, void *pparm)
 		goto EXIT;
 	}
 
-	pretcode  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, retcode->xmlChildrenNode, 1);	
+	pretcode  = (char *)xmlNodeListGetString(parse_xml_user->pdoc, retcode->xmlChildrenNode, 1);
 	if(pretcode == NULL)
 	{
 		zlog_error(MLOG, "Analyze_replay: not found pretcode");
@@ -3312,16 +3312,16 @@ static Int32 Analyze_replay(Int8 *recv_buf, void *pparm)
 		return_code = -1;
 		goto EXIT;
 	}
-		
+
 	return_code = 1;
-	
+
 EXIT:
 	if(NULL != pvolume)
 	{
 		xmlFree(pvolume);
 	}
-	
-	if(parse_xml_user->pdoc != NULL) 
+
+	if(parse_xml_user->pdoc != NULL)
 	{
 		release_dom_tree(parse_xml_user->pdoc);
 	}
@@ -3339,16 +3339,16 @@ static int serialParseCenterCtrlCmd(int  sockfd, char *cmdline, int size)
 	char 	*token = NULL;
 	char 	*p = NULL;
 //	char *cmd[] = {"ready","unicast","multicast","vod","resolution","output","filelist","status","screen","shift"};
-	
+
 	if(cmdline[0] == 0)
 	{
 		printf("serialParseCenterCtrlCmd break.....\n");
-	
+
 	}
-		
+
 	if((cmdline[0] == '\n'))
 	{
-		
+
 	}
 
 	p = cmdline;
@@ -3358,7 +3358,7 @@ static int serialParseCenterCtrlCmd(int  sockfd, char *cmdline, int size)
 
 	}
 
-	
+
 
 	return 0;
 }
@@ -3366,40 +3366,40 @@ static int serialParseCenterCtrlCmd(int  sockfd, char *cmdline, int size)
 
 void SetSpeed(int fd, int speed)
 {
-        int i; 
-        int status; 
+        int i;
+        int status;
         struct termios Opt;
         int speed_arr[] = { B115200,B38400, B19200, B9600, B4800, B2400, B1200, B300,
                       B38400, B19200, B9600, B4800, B2400, B1200, B300, };
-        int name_arr[] = {115200,38400,  19200,  9600,  4800,  2400,  1200,  300, 38400,  
+        int name_arr[] = {115200,38400,  19200,  9600,  4800,  2400,  1200,  300, 38400,
                                    19200,  9600, 4800, 2400, 1200,  300, };
 
-        tcgetattr(fd, &Opt); 
-        for ( i= 0;  i < sizeof(speed_arr) / sizeof(int);  i++) 
-        { 
-                if  (speed == name_arr[i]) 
+        tcgetattr(fd, &Opt);
+        for ( i= 0;  i < sizeof(speed_arr) / sizeof(int);  i++)
+        {
+                if  (speed == name_arr[i])
                 {
-                        tcflush(fd, TCIOFLUSH);     
-                        cfsetispeed(&Opt, speed_arr[i]);  
-                        cfsetospeed(&Opt, speed_arr[i]);   
-                        status = tcsetattr(fd, TCSANOW, &Opt);  
-                        if  (status != 0) 
+                        tcflush(fd, TCIOFLUSH);
+                        cfsetispeed(&Opt, speed_arr[i]);
+                        cfsetospeed(&Opt, speed_arr[i]);
+                        status = tcsetattr(fd, TCSANOW, &Opt);
+                        if  (status != 0)
                         {
-                                printf("tcsetattr fd, errmsg = %s\n", strerror(errno));  
-                                return;     
+                                printf("tcsetattr fd, errmsg = %s\n", strerror(errno));
+                                return;
                         }
-                        tcflush(fd,TCIOFLUSH);   
-                }  
+                        tcflush(fd,TCIOFLUSH);
+                }
         }
 }
 
 static int SetParity(int fd,int databits,int stopbits,int parity)
-{ 
-        struct termios options; if(tcgetattr(fd,&options)  !=  0) { 
-                printf("SetupSerial 1");     
-                return(-1);  
+{
+        struct termios options; if(tcgetattr(fd,&options)  !=  0) {
+                printf("SetupSerial 1");
+                return(-1);
        }
-        options.c_cflag &= ~CSIZE; 
+        options.c_cflag &= ~CSIZE;
         options.c_lflag  &= ~(ICANON | ECHO | ECHOE | ISIG);  /*Input*/
         options.c_oflag  &= ~OPOST;                     /*Output*/
         options.c_iflag   &= ~IXON;                     //0x11
@@ -3408,69 +3408,69 @@ static int SetParity(int fd,int databits,int stopbits,int parity)
 //      options.c_cflag|=CREAD;
 //      options.c_cflag&=~CRTSCTS;
 
-        switch (databits) 
-        {   
-                case 7:           
-                        options.c_cflag |= CS7; 
+        switch (databits)
+        {
+                case 7:
+                        options.c_cflag |= CS7;
                         break;
-                case 8:     
+                case 8:
                         options.c_cflag |= CS8;
-                        break;   
-                default:    
-                        printf("Unsupported data size\n");                      return (-1);  
+                        break;
+                default:
+                        printf("Unsupported data size\n");                      return (-1);
         }
-        switch (parity) 
-        {   
+        switch (parity)
+        {
                 case 'n':
-                case 'N':    
+                case 'N':
                         options.c_cflag &= ~PARENB;     /* Clear parity enable */
-                        options.c_iflag &= ~INPCK;              /* Enable parity checking */ 
-                        break;  
-                case 'o':   
-                case 'O':     
-                        options.c_cflag |= (PARODD | PARENB); 
-                        options.c_iflag |= INPCK;       /* Disnable parity checking */ 
-                        break;  
-                case 'e':  
-                case 'E':   
-                        options.c_cflag |= PARENB;      /* Enable parity */    
-                        options.c_cflag &= ~PARODD;  
+                        options.c_iflag &= ~INPCK;              /* Enable parity checking */
+                        break;
+                case 'o':
+                case 'O':
+                        options.c_cflag |= (PARODD | PARENB);
                         options.c_iflag |= INPCK;       /* Disnable parity checking */
                         break;
-                case 'S': 
-                case 's':                                                       /*as no parity*/   
+                case 'e':
+                case 'E':
+                        options.c_cflag |= PARENB;      /* Enable parity */
+                        options.c_cflag &= ~PARODD;
+                        options.c_iflag |= INPCK;       /* Disnable parity checking */
+                        break;
+                case 'S':
+                case 's':                                                       /*as no parity*/
                         options.c_cflag &= ~PARENB;
                         options.c_cflag &= ~CSTOPB;
-                        break;  
-                default:   
-                        printf("Unsupported parity\n");    
-         return (-1);  
-        }  
+                        break;
+                default:
+                        printf("Unsupported parity\n");
+         return (-1);
+        }
 
         switch (stopbits)
-        {   
-                case 1:    
-                        options.c_cflag &= ~CSTOPB;  
-                        break;  
-                case 2:    
-                        options.c_cflag |= CSTOPB;  
+        {
+                case 1:
+                        options.c_cflag &= ~CSTOPB;
                         break;
-                default:    
-                        printf("Unsupported stop bits\n");  
-                        return (-1); 
-        } 
-        /* Set input parity option */ 
-        if (parity != 'n')   
-                options.c_iflag |= INPCK; 
+                case 2:
+                        options.c_cflag |= CSTOPB;
+                        break;
+                default:
+                        printf("Unsupported stop bits\n");
+                        return (-1);
+        }
+        /* Set input parity option */
+        if (parity != 'n')
+                options.c_iflag |= INPCK;
         tcflush(fd,TCIFLUSH);
-        options.c_cc[VTIME] = 0;    
+        options.c_cc[VTIME] = 0;
         options.c_cc[VMIN] = 1;                                 /* define the minimum bytes data to be readed*/
-        if (tcsetattr(fd,TCSANOW,&options) != 0)   
-        { 
-                printf("SetupSerial 3");   
-                return (-1);  
-        } 
-        return (0);  
+        if (tcsetattr(fd,TCSANOW,&options) != 0)
+        {
+                printf("SetupSerial 3");
+                return (-1);
+        }
+        return (0);
 }
 
 static int OpenPort(int port_num)
@@ -3483,7 +3483,7 @@ static int OpenPort(int port_num)
                 return -1;
         }
 
-  
+
         if((fd = r_open((const int8_t *)port[port_num], O_RDWR| O_NOCTTY )) < 0) //O_NDELAY
 		{
                 printf("ERROR: failed to open %s, errno=%d\n",port[port_num],errno);
@@ -3591,7 +3591,7 @@ static Int32 SerialWrite(Int8 *cmd, UInt32 len)
 	}
 	SerialunLock1();
 
-	
+
 
 	return sendlen;
 }
@@ -3599,7 +3599,7 @@ static Int32 SerialWrite(Int8 *cmd, UInt32 len)
 /*==============================================================================
     函数: <SerialOperate>
     功能: <xh_Func:>串口操作
-    参数: 
+    参数:
     Created By 徐崇 2012.11.05 17:39:51 For Ftp
 ==============================================================================*/
 static Int32 SerialOperate(UInt32 num, void *pprm)
@@ -3619,7 +3619,7 @@ static Int32 SerialOperate(UInt32 num, void *pprm)
 		zlog_error(MLOG, "SerialOperate: parm is NULL");
 		return -1;
 	}
-	
+
 	commnd = globalSerialCmd[num].commnd;
 	cmdlen = globalSerialCmd[num].serialcmdlen;
 
@@ -3632,7 +3632,7 @@ static Int32 SerialOperate(UInt32 num, void *pprm)
 		cmd[5] = prm->videostate[1];
 		cmd[6] = prm->videostate[2];
 
-		
+
 		if(0 >= SerialWrite(pcmd, cmdlen))
 		{
 			return -1;
@@ -3640,7 +3640,7 @@ static Int32 SerialOperate(UInt32 num, void *pprm)
 		zlog_debug(MLOG, "SerialWrite: src state [%x] [%x] [%x]\n",cmd[4],cmd[5],cmd[6]);
 
 		/* 反馈录制状态 */
-		if (pserial_handle->PlayState <= 0)		
+		if (pserial_handle->PlayState <= 0)
 		{
 			cmd[3] = 0x92;
 			cmd[4] = prm->start;
@@ -3652,7 +3652,7 @@ static Int32 SerialOperate(UInt32 num, void *pprm)
 			}
 			zlog_debug(MLOG, "SerialWrite: record state [%x] [%x] [%x]\n",cmd[4],cmd[5],cmd[6]);
 		}
-		
+
 		Int8 cmd2[]={0x3c,0x3c,0xc2,0x90,0x1,0x3e,0x3e};
 		pcmd   = cmd2;
 		pcmd[4] = prm->warning;
@@ -3661,7 +3661,7 @@ static Int32 SerialOperate(UInt32 num, void *pprm)
 			return -1;
 		}
 		zlog_debug(MLOG, "SerialWrite: warning state [%x]\n",cmd[4]);
-		
+
 	}
 	else if(commnd == WARNING)
 	{
@@ -3690,7 +3690,7 @@ static Int32 SerialOperate(UInt32 num, void *pprm)
 		/* 反录制状态 */
 		Int8 cmd[]={0x3c,0x3c,0xc2,0x92,0x2,0x2,0x2,0x3e,0x3e};
 		pcmd = cmd;
-		
+
 		/* 反馈录制状态 */
 		cmd[4] = prm->start;
 		cmd[5] = prm->stop;
@@ -3730,12 +3730,12 @@ static Int32 SerialOperate(UInt32 num, void *pprm)
 		}
 	}
 	else if (commnd == PLAY)
-	{	
+	{
 
 		#if 0
 		/*回放*/
 		int spi_fd = fd;
-		
+
 		ClearScreen(spi_fd);
 
 		if (prm->replay == 1) {
@@ -3762,12 +3762,12 @@ static Int32 SerialOperate(UInt32 num, void *pprm)
 static Int32 NetOperate(UInt32 len,void *xml)
 {
 	UInt8 *pxml = (UInt8 *)xml;
-	
+
 	if(pxml == NULL|| len <= 0)
 	{
 		return -1;
 	}
-	
+
 	TcpSockLock();
 	Int32 socket = GetTcpSocket();
 	if(socket > 0)
@@ -3779,11 +3779,11 @@ static Int32 NetOperate(UInt32 len,void *xml)
 		pmsg->sMsgType = 0;
 		pmsg->sVer = r_htons(2012);
 		Int32 nameLength = tcp_send_longdata(socket, (int8_t *)pxml, slen);
- 
+
 	    if (nameLength < 0)
 	    {
 	       	zlog_error(MLOG, "tcp_send_longdata: nameLength is error!!");
-	 
+
 	    }
 	}
 	TcpSockunLock();
@@ -3804,7 +3804,7 @@ static SerialComnd *GetSerialOperate(UInt32 num)
 /*==============================================================================
     函数: <NGetGlobalCmdIndex>
     功能: <xh_Func:> 获取网络信令操作ID
-    参数: 
+    参数:
     Created By 徐崇 2012.11.05 17:02:39 For Ftp
 ==============================================================================*/
 static UInt32 NGetGlobalCmdIndex(UInt32 cmd, Int32 direction)
@@ -3817,7 +3817,7 @@ static UInt32 NGetGlobalCmdIndex(UInt32 cmd, Int32 direction)
 			return i;
 		}
 	}
-	
+
 	return -1;
 }
 
@@ -3825,7 +3825,7 @@ static UInt32 NGetGlobalCmdIndex(UInt32 cmd, Int32 direction)
 /*==============================================================================
     函数: <GetGlobalCmdIndex>
     功能: <xh_Func:>  获取串口信令操作ID
-    参数: 
+    参数:
     Created By 徐崇 2012.11.05 17:01:55 For Ftp
 ==============================================================================*/
 static UInt32 SGetGlobalCmdIndex(UInt8 *cmd, Int32 direction)
@@ -3838,7 +3838,7 @@ static UInt32 SGetGlobalCmdIndex(UInt8 *cmd, Int32 direction)
 			return i;
 		}
 	}
-	
+
 	return -1;
 }
 
@@ -3854,13 +3854,13 @@ static Int32 CheckCmdVail(UInt8 *pcmd)
 	{
 		UInt32 len = 0;
 
-		
+
 		i = SGetGlobalCmdIndex(&pcmd[3], 1);
 		if(i == -1)
 		{
 			return -1;
 		}
-		
+
 	    len = globalSerialCmd[i].serialcmdlen;
 	//		printf("---->%x %d %d\n",pcmd[3],i,len);
 		if((pcmd[len-1]) != 0x3e || (pcmd[len-2] != 0x3e))
@@ -3883,19 +3883,19 @@ static Int32 GetCmdLen(UInt8 *pcmd, Int32 direction)
 	{
 		UInt32 len = 0;
 
-		
+
 		i = SGetGlobalCmdIndex(&pcmd[3], direction);
 		if(i == -1)
 		{
 			return -1;
 		}
-		
+
 	    len = globalSerialCmd[i].serialcmdlen;
 		if(len > 0)
 		{
 			return len;
 		}
-		
+
 	}
 	return i;
 }
@@ -3908,13 +3908,13 @@ static void *SerialCenterctrlThread(void *args)
 	UInt8 *pxml = NULL;
 	fd_set rfds;
 	struct timeval tv_timeout;
-	
+
 	Int32 offlen = 0;
 	Int32 cmdlen = 0;
-	
+
 	Int32 	seret = 0;
 	Int32 	serialFd;
-	
+
 	if(NULL == args)
 	{
 		zlog_error(MLOG, "SerialClientTask: args is invalid!!");
@@ -3937,7 +3937,7 @@ static void *SerialCenterctrlThread(void *args)
 		return NULL;
 	}
 
-	
+
 AGAIN:
 	while(1)
 	{
@@ -3961,7 +3961,7 @@ AGAIN:
 	SerialWrite(sendcmd,9);
 	usleep(100*1000);
 	printf("\n\n----------------SerialCenterctrlThread {0x3c,0x3c,0xc2,0x92,0x2,0x2,0x2,0x3e,0x3e}------------------\n\n\n");
-	
+
 	while(1)
 	{
 		UInt32 num = 0;
@@ -3969,7 +3969,7 @@ AGAIN:
 		{
 			r_memset(pcmd, 0x0, sizeof(Int8)*SERIAL_CMD_LEN);
 		}
-		
+
 		tv_timeout.tv_sec = 5;
 		tv_timeout.tv_usec = 0;
 		FD_ZERO(&rfds);
@@ -3979,9 +3979,9 @@ AGAIN:
 			// FD已准备好
 		{
 			if(FD_ISSET(serialFd, &rfds))
-			{		
+			{
 				zlog_debug(MLOG,"select recv serical recv date.\n");
-				int len  = -1;			
+				int len  = -1;
 				SerialLock();
 
 				//printf("offlen = %d\n",offlen);
@@ -3999,8 +3999,8 @@ AGAIN:
 						SerialunLock();
 						continue;
 					}
-					
-					cmdlen = GetCmdLen(pcmd,1);	
+
+					cmdlen = GetCmdLen(pcmd,1);
 				//	printf("%d %x %d\n",cmdlen,pcmd[3],offlen);
 					if(cmdlen <= 0)
 					{
@@ -4011,7 +4011,7 @@ AGAIN:
 					}
 				}
 
-					
+
 				len = r_read(serialFd, pcmd + offlen, cmdlen - offlen);
 					//printf("--->2 %d %d %d\n",len,offlen, cmdlen);
 				offlen = len + offlen;
@@ -4020,11 +4020,11 @@ AGAIN:
 					SerialunLock();
 					continue;
 				}
-			
+
 				offlen = 0;
 				cmdlen = 0;
 				SerialunLock();
-				
+
 				//for(i = 0; i<16; i++)
 				{
 					//zlog_debug(MLOG,"[%x] %d",pcmd[4],len);
@@ -4041,7 +4041,7 @@ AGAIN:
 
 				if((pserial_handle->LedState == DOWNINGMENU))
 						continue;
-				
+
 				//检测是否等待超时
 				if(pcmd[3] == 0x80)
 				{
@@ -4054,7 +4054,7 @@ AGAIN:
 				{
 					zlog_debug(MLOG,"[%x] %d",pcmd[4],len);
 				}
-				
+
 				/* 获取操作句柄 */
 				SerialComnd *operate;
 				operate = GetSerialOperate(num);
@@ -4063,14 +4063,14 @@ AGAIN:
 					zlog_error(MLOG, "GetSerialOperate: cmd[%d] operate is invalid!!",num);
 					continue;
 				}
-			
+
 				r_memset(pxml, 0x0, MAX_XMNL_LEN);
 
 				if(operate->PackageAnalysis == NULL)
 				{
 					continue;
 				}
-				
+
 				/* 封装信令 */
 				len = operate->PackageAnalysis((Int8 *)(pxml + MSGLEN), pcmd);
 				if(len == -1)
@@ -4083,7 +4083,7 @@ AGAIN:
 				{
 					continue;
 				}
-				
+
 				/* 发送信令 */
 				if(1 != operate->Operate(len, pxml))
 				{
@@ -4093,17 +4093,17 @@ AGAIN:
 				{
 					zlog_debug(MLOG, "%s", pxml + MSGLEN);
 					 //超时机制暂时只针对录制
-					if(pcmd[3] == 0x80)	
+					if(pcmd[3] == 0x80)
 					{
-						RtRecordState = pcmd[5];	
+						RtRecordState = pcmd[5];
 					}
-					
+
 					AddTimeOut(phandle,RECORD,pcmd[5]);
 				}
-				
+
 			}
 
-			
+
 		}
 		else if(seret == 0)
 		// 超时
@@ -4116,14 +4116,14 @@ AGAIN:
 		}
 		else if(seret < 0)
 					// 异常
-		{	
+		{
 			SetSerialFd(-1);
 			r_close(serialFd);
-			r_usleep(1000);		
+			r_usleep(1000);
 			goto AGAIN;
 		}
 	}
-	
+
 	SetSerialFd(-1);
 	if(serialFd >= 0)
 		ClosePort(serialFd);
@@ -4131,12 +4131,12 @@ AGAIN:
 	{
 		r_free(pcmd);
 	}
-	
+
 	if(pxml != NULL)
 	{
 		r_free(pxml);
 	}
-	
+
 }
 
 
@@ -4149,13 +4149,13 @@ static void *SerialCenterctrlThreadEx(void *args)
 	UInt8 *pxml = NULL;
 	fd_set rfds;
 	struct timeval tv_timeout;
-	
+
 	Int32 offlen = 0;
 	Int32 cmdlen = 0;
-	
+
 	Int32 	seret = 0;
 	Int32 	serialFd;
-	
+
 	if(NULL == args)
 	{
 		zlog_error(MLOG, "SerialClientTask: args is invalid!!");
@@ -4178,7 +4178,7 @@ static void *SerialCenterctrlThreadEx(void *args)
 		return NULL;
 	}
 
-	
+
 AGAIN:
 	while(1)
 	{
@@ -4205,7 +4205,7 @@ AGAIN:
 	usleep(100*1000);
 	SerialWrite(sendcmd,7);
 	usleep(200*1000);
-	
+
 	char statcmd[]={0x3c,0x3c,0xc2,0x92,0x2,0x2,0x2,0x3e,0x3e};
 	SerialWrite(statcmd,9);
 printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x2,0x2,0x3e,0x3e}------------------\n\n\n");
@@ -4216,7 +4216,7 @@ printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x
 		{
 			r_memset(pcmd, 0x0, sizeof(Int8)*SERIAL_CMD_LEN);
 		}
-		
+
 		tv_timeout.tv_sec = 5;
 		tv_timeout.tv_usec = 0;
 		FD_ZERO(&rfds);
@@ -4226,9 +4226,9 @@ printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x
 			// FD已准备好
 		{
 			if(FD_ISSET(serialFd, &rfds))
-			{		
+			{
 				zlog_debug(MLOG,"select recv serical recv date.\n");
-				int len  = -1;			
+				int len  = -1;
 				SerialLock1();
 
 				//printf("offlen = %d\n",offlen);
@@ -4246,8 +4246,8 @@ printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x
 						SerialunLock1();
 						continue;
 					}
-					
-					cmdlen = GetCmdLen(pcmd,1);	
+
+					cmdlen = GetCmdLen(pcmd,1);
 				//	printf("%d %x %d\n",cmdlen,pcmd[3],offlen);
 					if(cmdlen <= 0)
 					{
@@ -4258,7 +4258,7 @@ printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x
 					}
 				}
 
-					
+
 				len = r_read(serialFd, pcmd + offlen, cmdlen - offlen);
 					//printf("--->2 %d %d %d\n",len,offlen, cmdlen);
 				offlen = len + offlen;
@@ -4267,11 +4267,11 @@ printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x
 					SerialunLock1();
 					continue;
 				}
-			
+
 				offlen = 0;
 				cmdlen = 0;
 				SerialunLock1();
-				
+
 				//for(i = 0; i<16; i++)
 				{
 					//zlog_debug(MLOG,"[%x] %d",pcmd[4],len);
@@ -4291,7 +4291,7 @@ printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x
 
 				if((pserial_handle->LedState ==SELECTUSBMENU) &&(pcmd[3] != 0x84))
 					continue;
-		
+
 				//检测是否等待超时
 				if(pcmd[3] == 0x80)
 				{
@@ -4304,7 +4304,7 @@ printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x
 				{
 					zlog_debug(MLOG,"[%x] %d",pcmd[4],len);
 				}
-				
+
 				/* 获取操作句柄 */
 				SerialComnd *operate;
 				operate = GetSerialOperate(num);
@@ -4313,14 +4313,14 @@ printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x
 					zlog_error(MLOG, "GetSerialOperate: cmd[%d] operate is invalid!!",num);
 					continue;
 				}
-			
+
 				r_memset(pxml, 0x0, MAX_XMNL_LEN);
 
 				if(operate->PackageAnalysis == NULL)
 				{
 					continue;
 				}
-				
+
 				/* 封装信令 */
 				len = operate->PackageAnalysis((Int8 *)(pxml + MSGLEN), pcmd);
 				if(len == -1)
@@ -4333,7 +4333,7 @@ printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x
 				{
 					continue;
 				}
-				
+
 				/* 发送信令 */
 				if(1 != operate->Operate(len, pxml))
 				{
@@ -4343,17 +4343,17 @@ printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x
 				{
 					zlog_debug(MLOG, "%s", pxml + MSGLEN);
 					 //超时机制暂时只针对录制
-					if(pcmd[3] == 0x80)	
+					if(pcmd[3] == 0x80)
 					{
-						RtRecordState = pcmd[5];	
+						RtRecordState = pcmd[5];
 					}
-					
+
 					AddTimeOut(phandle,RECORD,pcmd[5]);
 				}
-				
+
 			}
 
-			
+
 		}
 		else if(seret == 0)
 		// 超时
@@ -4366,14 +4366,14 @@ printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x
 		}
 		else if(seret < 0)
 					// 异常
-		{	
+		{
 			SetSerialFd1(-1);
 			r_close(serialFd);
-			r_usleep(1000);		
+			r_usleep(1000);
 			goto AGAIN;
 		}
 	}
-	
+
 	SetSerialFd1(-1);
 	if(serialFd >= 0)
 		ClosePort(serialFd);
@@ -4381,12 +4381,12 @@ printf("\n\n----------------SerialCenterctrlThreadEx {0x3c,0x3c,0xc2,0x92,0x2,0x
 	{
 		r_free(pcmd);
 	}
-	
+
 	if(pxml != NULL)
 	{
 		r_free(pxml);
 	}
-	
+
 }
 
 
@@ -4395,28 +4395,28 @@ int32_t ConnectSerialServer(const int8_t* paddr,const int32_t port)
 {
 	Int32 ret = 0;
 	struct sockaddr_in client_addr;
-    r_bzero(&client_addr, sizeof(client_addr)); 
+    r_bzero(&client_addr, sizeof(client_addr));
     client_addr.sin_family = AF_INET;
-    client_addr.sin_addr.s_addr = r_htons(INADDR_ANY); 
+    client_addr.sin_addr.s_addr = r_htons(INADDR_ANY);
     client_addr.sin_port = r_htons(0);
-	
+
 	int client_socket = r_socket(AF_INET, SOCK_STREAM, 0);
 	if(client_socket < 0)
 	{
 		zlog_error(MLOG,"ConnectSerialServer failed, err msg: %s \n", strerror(errno));
-		return -1;	
+		return -1;
 	}
- 
+
     if (r_bind(client_socket, (struct sockaddr*) &client_addr,
             sizeof(client_addr)))
     {
 		zlog_error(MLOG, "Client Bind Port Failed!\n");
         return -1;
     }
-	
+
 	struct sockaddr_in		serv_addr;
 	r_bzero(&serv_addr, sizeof(serv_addr));
-	
+
 	serv_addr.sin_family	= AF_INET;
 	serv_addr.sin_port		= htons(port);
 	r_inet_aton(paddr, (struct in_addr *)&serv_addr.sin_addr);
@@ -4424,9 +4424,9 @@ int32_t ConnectSerialServer(const int8_t* paddr,const int32_t port)
 	set_send_timeout(client_socket, 3);
 	set_recv_timeout(client_socket, 3);
 
-	
+
 	ret = r_connect(client_socket, (struct sockaddr *)&serv_addr, sizeof(struct sockaddr));
-	
+
 	if(ret < 0)
 	{
 		zlog_error(MLOG, "connect failed, err msg: %s \n", strerror(errno));
@@ -4435,13 +4435,13 @@ int32_t ConnectSerialServer(const int8_t* paddr,const int32_t port)
 	}
 
 	#if 0
-	fileflags = fcntl(client_socket, F_GETFL, 0); 
-	if(fileflags < 0) 
+	fileflags = fcntl(client_socket, F_GETFL, 0);
+	if(fileflags < 0)
 	{
 		zlog_error(MLOG, "fcntl F_GETFL failed, err msg: %s\n", strerror(errno));
 		return -1;
 	}
-	
+
 	ret = fcntl(client_socket, F_SETFL, fileflags | O_NONBLOCK);
 	if(ret < 0)
 	{
@@ -4459,13 +4459,13 @@ void *SerialComTask(void *args)
 	struct timeval timeout;
 	int8_t *pbuf = NULL;
 	MsgHeader *pmsg;
-	
+
 	if(NULL == args)
 	{
 		zlog_error(MLOG, "SerialComTask failed, args is NULL!");
 		return NULL;
 	}
-	
+
 	SerialHandle *phandle = (SerialHandle *)args;
 	int8_t pcmd[2048]  = {0};
 
@@ -4479,21 +4479,21 @@ void *SerialComTask(void *args)
 			r_sleep(5);
 			continue;
 		}
-		
+
 		zlog_debug(MLOG, "ConnectSerialServer [%d]!\n",socket);
-		
+
 		SetTcpSocket(socket);
 		pbuf = (int8_t *)phandle->buf;
 		phandle->socket = socket;
 		phandle->RunStatus = SERIAL_RUN;
-		
+
 		while(phandle->RunStatus == SERIAL_RUN)
 		{
-			int seret = 0;		
+			int seret = 0;
 			timeout.tv_sec = 60;
-		
+
 			FD_ZERO(&readfd);
-			FD_SET(socket, &readfd);		
+			FD_SET(socket, &readfd);
 			seret = r_select(socket+1, &readfd, NULL, NULL, &timeout);
 			if(seret > 0)
 				// FD已准备好
@@ -4503,17 +4503,17 @@ void *SerialComTask(void *args)
 					int len 	= 0;
 					int recvlen = 0;
 					MsgHeader msg;
-					
+
 					TcpSockLock();
 					recvlen = tcp_recv_longdata(socket, (int8_t *)&msg, MSGLEN);
-					if(recvlen < MSGLEN || recvlen == -1){	
+					if(recvlen < MSGLEN || recvlen == -1){
 						zlog_debug(MLOG, "nLen < HEAD_LEN  errno = %d  nLen = %d\n", errno, recvlen);
 						if(errno !=  EAGAIN)
 						{
 							//fprintf(stderr, "errno !=  EAGAIN, errmsg = %s\n", strerror(errno));
 							r_usleep(100000);
 						}
-						
+
 						SetTcpSocket(-1);
 						r_close(socket);
 						r_usleep(1000);
@@ -4521,11 +4521,11 @@ void *SerialComTask(void *args)
 						break;
 					}
 
-					
+
 					msg.sMsgType = ntohs(msg.sMsgType);
 					msg.sLen = ntohs(msg.sLen);
 					msg.sVer = ntohs(msg.sVer);
-					
+
 
 					r_memset(pcmd,0x0, sizeof(pcmd));
 					//r_memcpy(pcmd, (int8_t *)&msg, MSGLEN);
@@ -4537,13 +4537,13 @@ void *SerialComTask(void *args)
 					//zlog_debug(MLOG, "========= len = %d\n", len);
 					TcpSockunLock();
 					if(len < 1)
-					{							
+					{
 						if(errno !=  EAGAIN)
 						{
 							//fprintf(stderr, "errno !=  EAGAIN, errmsg = %s\n", strerror(errno));
 							r_usleep(100000);
 						}
-						
+
 						SetTcpSocket(-1);
 						r_close(socket);
 						r_usleep(1000);
@@ -4551,8 +4551,8 @@ void *SerialComTask(void *args)
 					}
 
 					/* 解析NET信令codeID */
-				
-					
+
+
 					pmsg = (MsgHeader* )pcmd;
 					Int32 MsgCode;
 					if(1 != Analyze_MsgCode(pcmd,&MsgCode))
@@ -4564,28 +4564,28 @@ void *SerialComTask(void *args)
 						zlog_debug(MLOG, "%s",pcmd);
 
 					DelTimeOut(phandle, MsgCode);
-				
+
 					/* 获取实例ID */
 					UInt32 num = NGetGlobalCmdIndex(MsgCode, 0);
 					if(num == -1)
 					{
-						zlog_error(MLOG, "NGetGlobalCmdIndex: MsgCode[%d]  is invalid!!",MsgCode);					
+						zlog_error(MLOG, "NGetGlobalCmdIndex: MsgCode[%d]  is invalid!!",MsgCode);
 						continue;
 					}
-					
+
 					SerialComnd *operate;
 					operate = GetSerialOperate(num);
 					if(operate == NULL)
 					{
 						zlog_error(MLOG, "GetSerialOperate: cmd[%d] operate is invalid!!",MsgCode);
-						
+
 						continue;
 					}
 
 					if(operate->Operate == NULL)
 					{
 						zlog_error(MLOG, "Operate: Operate[%d]  is NUll!!",MsgCode);
-						
+
 						continue;
 					}
 
@@ -4594,17 +4594,17 @@ void *SerialComTask(void *args)
 					if(1 !=operate->PackageAnalysis((Int8 *)pcmd,&prm))
 					{
 						zlog_error(MLOG, "PackageAnalysis: Analysis MsgCode[%d] is fail!!",MsgCode);
-						
+
 						continue;
 					}
-			
+
 					if(1!= operate->Operate(num, &prm))
 					{
 						zlog_error(MLOG, "Operate: Operate[%d]  is invalid!!",num);
-						
+
 						continue;
 					}
-					
+
 				}
 			}
 			else if(seret == 0)
@@ -4620,18 +4620,18 @@ void *SerialComTask(void *args)
 				zlog_error(pserial_handle->c,"!!!!!!!!!!!select < 0!!!!!!!!!!!!!!!");
 				SetTcpSocket(-1);
 				r_close(socket);
-				r_usleep(1000);		
+				r_usleep(1000);
 				break;
 			}
-			
+
 		}
-		
+
 	}
 
 	TcpSockLock();
 	phandle->RunStatus = SERIAL_STOP;
 	TcpSockunLock();
-	
+
 	SetTcpSocket(-1);
 	if(socket >= 0)
 		r_close(socket);
@@ -4639,7 +4639,7 @@ void *SerialComTask(void *args)
 	{
 		r_free(pcmd);
 	}
-	
+
 	return NULL;
 }
 
@@ -4657,9 +4657,9 @@ void *SerialClientTask(void *args)
 	}
 
 	SerialHandle *phandle = (SerialHandle *)args;
-	
+
 	while(1)
-	{	
+	{
 		ret = r_pthread_create(&thid, NULL, SerialComTask, (void *)phandle);
 		if(ret)
 		{
@@ -4678,35 +4678,35 @@ void get_realtime_param(params_table *param_table)
 {
 	if (NULL == gpser || NULL == gpser->pserinfo) {
 		zlog_error(DBGLOG, "serinfo is null");
-		
+
 		return;
 	}
 
 	pthread_mutex_lock(&gpser->pserinfo->info_m);
 
-	r_strcpy(param_table->version, (const int8_t *)gpser->pserinfo->ServerInfo.ServerVersion); 
-	r_strcpy(param_table->serial_num, (const int8_t *)gpser->pserinfo->ServerInfo.ServerSeries); 
+	r_strcpy(param_table->version, (const int8_t *)gpser->pserinfo->ServerInfo.ServerVersion);
+	r_strcpy(param_table->serial_num, (const int8_t *)gpser->pserinfo->ServerInfo.ServerSeries);
 
-	param_table->ip_addr	= gpser->pserinfo->ServerInfo.LanAddr; 
-	param_table->gateway 	= gpser->pserinfo->ServerInfo.LanGateWay; 
+	param_table->ip_addr	= gpser->pserinfo->ServerInfo.LanAddr;
+	param_table->gateway 	= gpser->pserinfo->ServerInfo.LanGateWay;
 
-	param_table->net_mask	= gpser->pserinfo->ServerInfo.LanNetmask; 
-	r_memcpy(param_table->mac_addr, gpser->pserinfo->ServerInfo.LanMac, sizeof(param_table->mac_addr)); 
+	param_table->net_mask	= gpser->pserinfo->ServerInfo.LanNetmask;
+	r_memcpy(param_table->mac_addr, gpser->pserinfo->ServerInfo.LanMac, sizeof(param_table->mac_addr));
 
-	param_table->DiskMaxSpace		= gpser->pserinfo->SysInfo.DiskMaxSpace; 
-	param_table->DiskAvailableSpace	= gpser->pserinfo->SysInfo.DiskAvailableSpace; 
-	
+	param_table->DiskMaxSpace		= gpser->pserinfo->SysInfo.DiskMaxSpace;
+	param_table->DiskAvailableSpace	= gpser->pserinfo->SysInfo.DiskAvailableSpace;
+
 	pthread_mutex_unlock(&gpser->pserinfo->info_m);
 
 }
 
-static int InfoIpMenu(int spi_fd)
+int InfoIpMenu(int spi_fd)
 {
 	params_table 	param_table;
 	r_memset(&param_table, 0, sizeof(params_table));
 
 	get_realtime_param(&param_table);
-	
+
 	int8_t Addr[100];
 	int8_t NetMask[100];
 	int8_t GateWay[100];
@@ -4714,21 +4714,21 @@ static int InfoIpMenu(int spi_fd)
 	r_memset(Addr, 0, 100);
 	r_memset(NetMask, 0, 100);
 	r_memset(GateWay, 0, 100);
-	
-	struct in_addr addr;
-	ShowString(spi_fd,"State:      Ready	     ",0,5);
 
-	
+	struct in_addr addr;
+	ShowString(spi_fd,"Name:      KR9000	     ",0,5);
+
+
 
 	r_memcpy(&addr, &param_table.ip_addr, 4);
 	sprintf((char *)Addr,"Addr:      %s",(int8_t *)inet_ntoa(addr));
-	
+
 	r_memcpy(&addr, &param_table.net_mask, 4);
 	sprintf((char *)NetMask,"NetMask:  %s",(int8_t *)inet_ntoa(addr));
-	
+
 	r_memcpy(&addr, &param_table.gateway, 4);
 	sprintf((char *)GateWay,"GateWay:  %s",(int8_t *)inet_ntoa(addr));
-	
+
 	ShowString(spi_fd,(char *)Addr,0,20);
 	ShowString(spi_fd,(char *)NetMask,0,35);
 	ShowString(spi_fd,(char *)GateWay,0,50);
@@ -4777,7 +4777,7 @@ int GetResolution(char *cmd)
 			sprintf(cmd,"1080P");
 			break;
 	}
-	
+
 	return 0;
 }
 
@@ -4811,7 +4811,7 @@ static int InfoMemMenuE(int spi_fd)
 	int32_t time = 0;
 
 	//r_memset(&param_table, 0, sizeof(params_table));
-	
+
 	float disksize0 = param_table.DiskAvailableSpace;
 	float disksize1	= disksize0/1024/1024;
 
@@ -4860,13 +4860,13 @@ static int RecordIngMenu(int spi_fd)
 	char time_min_str[3] = {0};
 	char time_sec_str[3] = {0};
 
-	int time_hour = 0; 
-	int time_min = 0; 
-	int time_sec = 0; 
+	int time_hour = 0;
+	int time_min = 0;
+	int time_sec = 0;
 
-	int size_GB = 0; 
-	int size_MB = 0; 
-	int size_KB = 0; 
+	int size_GB = 0;
+	int size_MB = 0;
+	int size_KB = 0;
 
 	int file_size = 0;
 	PanelRecInfo recinfo;
@@ -4886,7 +4886,7 @@ static int RecordIngMenu(int spi_fd)
 		TypeConversion(time_hour_str,time_hour);
 		TypeConversion(time_min_str,time_min);
 		TypeConversion(time_sec_str,time_sec);
-		
+
 		printf("IMPORT INT ----------- <H : %d> <M : %d> <S : %d>\n",time_hour,time_min,time_sec);
 		printf("IMPORT STR ----------- <H : %s> <M : %s> <S : %s>\n",time_hour_str,time_min_str,time_sec_str);
 
@@ -4896,14 +4896,14 @@ static int RecordIngMenu(int spi_fd)
 		printf("IMPORT PATH ------------ <%s>\n",recinfo.rec_file_path);
 		file_size = list_dir((int8_t *)(recinfo.rec_file_path));
 
-		size_GB = file_size/(1024*1024); 
-		size_MB = file_size%(1024*1024)/1024; 
-	 	size_KB = file_size%(1024*1024)%1024; 
+		size_GB = file_size/(1024*1024);
+		size_MB = file_size%(1024*1024)/1024;
+	 	size_KB = file_size%(1024*1024)%1024;
 
 		printf("IMPORT INT ----------- <GB : %d> <MB : %d> <KB : %d>\n",size_GB,size_MB,size_KB);
 
 		sprintf(cmd_size,"Size:    %dG  %dM  ",size_GB,size_MB);
-	
+
 	}
 	//ClearScreen(spi_fd);
 	ShowString(spi_fd,"State:      Recording	  ",0,5);
@@ -4930,7 +4930,7 @@ void *TimeVolumeReq(void *args)
 		return NULL;
 	}
 
-	
+
 	while(1)
 	{
 		if((pSerialHandle->LedState == IPMENU) && (times >= 5 || pserial_handle->LedFLUSH == 1 ))
@@ -4954,7 +4954,7 @@ void *TimeVolumeReq(void *args)
 			{
 				pSerialHandle->LedState = IPMENU;
 			}
-			
+
 			pserial_handle->LedFLUSH = 0;
 			times = 0;
 		}
@@ -4968,7 +4968,7 @@ void *TimeVolumeReq(void *args)
 		}
 		else if((pSerialHandle->LedState == MENUINFO) && (pserial_handle->LedFLUSH == 1))
 		{
-	
+
 			pserial_handle->LedFLUSH = 0;
 			int num;
 			MNUsbDeb dev[5] = {{{0}, 0, 0, 0}};
@@ -4989,19 +4989,19 @@ void *TimeVolumeReq(void *args)
 				sleep(1);
 				pserial_handle->LedState = IPMENU;
 				pserial_handle->LedFLUSH = 1;
-			}		
+			}
 			else
-			{	
+			{
 				ClearScreen(fd);
 				pSerialHandle->LedState = SELECTUSBMENU;
-			
+
 				char cmd[1024] = {0};
 				for(i =0; i < num; i++)
 				{
 					float size = dev[i].free_size;
 					size	= size/1024/1024;
 					sprintf(cmd,"Dev:%s Free:%0.2fG",dev[i].devname,size);
-					
+
 					if(i == 0)
 					{
 						YinCodeShowString(fd,cmd,1,(5+i*15));
@@ -5012,11 +5012,11 @@ void *TimeVolumeReq(void *args)
 					}
 				}
 			}
-			
+
 			times = 0;
 		}
 
-		
+
 		if(1 != NetOperate(len, VolumeBuff))
 		{
 			zlog_error(MLOG, "TimeVolumeReq NetOperate: is error!!");
@@ -5029,20 +5029,20 @@ void *TimeVolumeReq(void *args)
 			if((pSerialHandle->LedState != SELECTUSBMENU) && (pSerialHandle->LedState !=DOWNMENU)
 				&& (pSerialHandle->LedState !=REPLAYMENU))
 				ShowString(fd, "usb", 56, 50);
-			
-			
+
+
 		}
-		
+
 	#if 0
 		r_memset(VolumeBuff, 0x0 ,MAX_XMNL_LEN);
 		len = test_volume_req_msg(VolumeBuff + MSGLEN);
-	
+
 		if(1 != NetOperate(len, VolumeBuff))
 		{
 			zlog_error(MLOG, "TimeVolumeReq NetOperate: is error!!");
 		}
 
-		
+
 
 		{
 
@@ -5054,10 +5054,10 @@ void *TimeVolumeReq(void *args)
 			cmd[5] = times%2 + 1;
 			cmd[6] = times%2 + 1;
 
-			
+
 			if(0 >= SerialWrite(pcmd, 9))
 			{
-		
+
 			}
 
 			cmd[3] =0x92;
@@ -5067,7 +5067,7 @@ void *TimeVolumeReq(void *args)
 			cmd[6] = times%2 + 1;
 			if(0 >= SerialWrite(pcmd, 9))
 			{
-			
+
 			}
 
 			{
@@ -5076,7 +5076,7 @@ void *TimeVolumeReq(void *args)
 				pcmd[4] = times%2 + 1;
 				if(0 >= SerialWrite(pcmd, 7))
 				{
-					
+
 				}
 			}
 
@@ -5100,23 +5100,23 @@ void *TimeOutdeal(void *args)
 		r_sleep(3);
 		TimeoutLock();
 		/* 查找是否存在该设备 */
-		list_for_each_item(pcurnode, pSerialHandle->pheadnode)  
-	    {  
-	        if(NULL != pcurnode)  
-	        {  
+		list_for_each_item(pcurnode, pSerialHandle->pheadnode)
+	    {
+	        if(NULL != pcurnode)
+	        {
 				int32_t ret_val = 0;
-	            pattr = list_entry(pcurnode, TimeOut, stlist);  
+	            pattr = list_entry(pcurnode, TimeOut, stlist);
 
 			 	ret_val = upper_msg_monitor_time_out_status(&pattr->starttime, 1);
 				if(1 == ret_val)
-				{	
+				{
 					//printf("111111111111111111111 %d\n",pattr->state);
 					//超时则删除
 					list_remove(pcurnode);
 					free(pattr);
 				}
-	        }  
-	    }  
+	        }
+	    }
 		TimeoutunLock();
 	}
 }
@@ -5128,11 +5128,11 @@ int32_t CheckTimeOut(SerialHandle *pSerialHandle,SERIAL_MSGCODE msgcode)
 
 	TimeoutLock();
 	/* 查找是否存在该设备 */
-	list_for_each_item(pcurnode, pSerialHandle->pheadnode)  
-    {  
-        if(NULL != pcurnode)  
-        {  
-            pattr = list_entry(pcurnode, TimeOut, stlist);  
+	list_for_each_item(pcurnode, pSerialHandle->pheadnode)
+    {
+        if(NULL != pcurnode)
+        {
+            pattr = list_entry(pcurnode, TimeOut, stlist);
 
 		 	if(pattr->msgcode == msgcode)
 		 	{
@@ -5140,8 +5140,8 @@ int32_t CheckTimeOut(SerialHandle *pSerialHandle,SERIAL_MSGCODE msgcode)
 				//此消息等待超时
 				return 1;
 			}
-        }  
-    }  
+        }
+    }
 	TimeoutunLock();
 	return 0;
 }
@@ -5165,9 +5165,9 @@ int32_t SetUsbFunction(int32_t IsUse)
 		{
 			return 0;
 		}
-		
+
 	}
-	else 
+	else
 	{
 		unlink(".UsbFunction");
 		pserial_handle->IsUse = 2;
@@ -5181,7 +5181,7 @@ int32_t GetUsbFunction(int32_t *IsUse)
 	{
 		return 0;
 	}
-	
+
 	if(0 == access(".UsbFunction",0))
 	{
 		*IsUse = 1;
@@ -5190,7 +5190,7 @@ int32_t GetUsbFunction(int32_t *IsUse)
 	{
 		*IsUse = 2;
 	}
-	
+
 	return 1;
 }
 
@@ -5213,7 +5213,7 @@ int32_t SerialInit()
 		printf("zlog init success!!\n");
 	}
 	#endif
-	
+
 	pserial_handle = (SerialHandle *)r_malloc(sizeof(SerialHandle));
 	if(NULL == pserial_handle)
 	{
@@ -5235,14 +5235,14 @@ int32_t SerialInit()
 	{
 		printf("RegisterrSerialControlTask failed, malloc FileList error, err msg = %s\n",strerror(errno));
 		goto EXIT;
-	}
-	
+	}	
+
 	pserial_handle->c  = zlog_get_category("SerialLog");
 	if (!pserial_handle->c)
 	{
 		goto EXIT;
 	}
-	
+
 	MLOG = pserial_handle->c;
 	pserial_handle->RunStatus = SERIAL_STOP;
 	pserial_handle->pheadnode = headnode;
@@ -5253,7 +5253,7 @@ int32_t SerialInit()
 	TcpSockLockInit();
 	SerialLockInit();
 	SerialLockInit1();
-	
+
 	r_strcpy((int8_t *)pserial_handle->ipaddr, (int8_t *)SERIAL_SERVER_IPADDR);
 	pserial_handle->port      = SERIAL_SERVER_IPADDR_PORT;
 
@@ -5285,7 +5285,7 @@ EXIT:
 
 	/* 日志模块销毁 */
 	zlog_fini();
-	
+
 	return -1;
 }
 
@@ -5300,20 +5300,20 @@ int32_t deSerialInit()
 		if(NULL != pserial_handle->pheadnode)
 		{
 			list_head *pcurnode = NULL;
-			list_for_each_item(pcurnode, pserial_handle->pheadnode)  
-		    {  
-		        if(NULL != pcurnode)  
-		        {  
+			list_for_each_item(pcurnode, pserial_handle->pheadnode)
+		    {
+		        if(NULL != pcurnode)
+		        {
 					TimeOut *pattr = NULL;
-		            pattr = list_entry(pcurnode, TimeOut, stlist);  
+		            pattr = list_entry(pcurnode, TimeOut, stlist);
 					list_remove(pcurnode);
 					r_free(pattr);
 				}
-		    }  
+		    }
 
 			r_free(pserial_handle->pheadnode);
 			pserial_handle->pheadnode = NULL;
-		}  
+		}
 
 	    //销毁各种锁
 		TimeoutunLock();
@@ -5328,7 +5328,7 @@ int32_t deSerialInit()
 		//释放内存
 		r_free(pserial_handle);
 		pserial_handle = NULL;
-		
+
 		//日志销毁
 		zlog_fini();
 
@@ -5370,7 +5370,7 @@ Int32 RegisterrSerialControlTask()
 	pthread_t SerialRecvTaskIdEx = 0;
 	pthread_t TimeReqVolume = 0;
 	pthread_t TimeOutid = 0;
-	
+
 	if(1 != SerialInit())
 	{
 		return -1;
@@ -5385,7 +5385,6 @@ Int32 RegisterrSerialControlTask()
 
 	pserial_handle->ledfd = fd;
 	ClearScreen(fd);
-
 	//Word16x16(fd,30,10,10,0);
 	//packet   (fd,10,10,10,0);
 
@@ -5399,14 +5398,14 @@ Int32 RegisterrSerialControlTask()
 		usleep(100*1000);
 	}
 
-		
+
 	#if 1
 	#if 1
 	if(r_pthread_create(&thid, NULL, SerialComTask, (void *)pserial_handle))
 	{
 		zlog_error(pserial_handle->c, "start_ftpupload_com_task failed, err msg: %s\n", strerror(errno));
 		goto EXIT;
-		
+
 	}
 
 	if (r_pthread_create(&SerialRecvTaskId,NULL, SerialCenterctrlThread, (void *)pserial_handle))
@@ -5421,13 +5420,13 @@ Int32 RegisterrSerialControlTask()
 		goto EXIT;
 	}
 	#endif
-	
+
 	if (r_pthread_create(&TimeReqVolume,NULL, TimeVolumeReq, (void *)pserial_handle))
 	{
 		zlog_error(pserial_handle->c,"Failed to create clientThread\n");
 		goto EXIT;
 	}
-
+	
 
 	#if 1
 	if (r_pthread_create(&TimeOutid,NULL, TimeOutdeal, (void *)pserial_handle))
@@ -5435,17 +5434,18 @@ Int32 RegisterrSerialControlTask()
 		zlog_error(pserial_handle->c,"Failed to create TimeOutdeal\n");
 		goto EXIT;
 	}
+	
 
-	
+
 	#endif
-	
+
 	#if 0
 	r_pthread_join(thid, NULL);
 	r_pthread_join(SerialRecvTaskId, NULL);
 	r_pthread_join(TimeReqVolume, NULL);
 	r_pthread_join(TimeOutid, NULL);
 	#endif
-	
+
 EXIT:
 
 	#if 0
@@ -5457,7 +5457,7 @@ EXIT:
 		kill(TimeReqVolume, SIGKILL);
 	if(TimeOutid)
 		kill(TimeOutid, SIGKILL);
-	
+
 	deSerialInit();
 	#endif
 

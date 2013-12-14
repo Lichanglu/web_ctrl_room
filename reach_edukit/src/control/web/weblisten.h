@@ -22,10 +22,10 @@
 #include "md5lib.h"
 #include "command_resolve.h"
 #include "params.h"
-extern int32_t app_weblisten_init(int32_t flag);
+int32_t app_weblisten_init(server_set *pser);
 extern int32_t SysRollback();
 extern int32_t UpgradeApp(int8_t *filename);
 extern int32_t updatekernel(void);
-extern int32_t Dm6467_Upgrade(int8_t *filename);
+extern int32_t app_update_HD_card(int8_t *filename);
 extern int32_t rebootsys(int32_t time);
 #endif

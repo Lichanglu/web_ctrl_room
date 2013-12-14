@@ -642,7 +642,7 @@ int CCtrlRightStart(int fd, int addr, int speed)
 		return -1;
 	}
 
-	printf( "CCtrlRightStart() End [%x]\n",nAddr);
+	printf("CCtrlRightStart() End [%x]\n", nAddr);
 	return 0;
 
 }
@@ -900,8 +900,9 @@ int CCtrlPositionPreset(int fd, int addr, int position)
 		printf("CCtrlPositionPreset() SendDataToCom() Error\n");
 		return -1;
 	}
-	
-	printf( "CCtrlPositionPreset() End [%x][%d]\n",nAddr,position);
+
+
+	printf("CCtrlPositionPreset() End [%x][%d]\n", nAddr, position);
 	return 0;
 
 }
@@ -938,7 +939,7 @@ int CCtrlSetPositionPreset(int fd, int addr, int position)
 		return -1;
 	}
 
-	printf( "CCtrlPositionPreset() End [%x][%d]\n",nAddr,position);
+	printf("CCtrlPositionPreset() End [%x][%d]\n", nAddr, position);
 	return 0;
 
 }
@@ -1785,27 +1786,26 @@ void FarCtrlCamera(int dsp, unsigned char *data, int len)
 		addr = 1;
 	}
 
-	addr = 1;
-	if(dsp == 0)
-	{
+
+
+	if(dsp == 0) {
 		remotefd = gRemoteFD;
-	}
-	else if(dsp == 1)
-	{
+		addr = 1;
+	} else if(dsp == 1) {
 		remotefd = gStuRemoteFD;
-	}
-	else
-	{
+		addr = 2;
+	} else {
 		printf("invalid fd\n");
 		return ;
 	}
-	
+
 	if(remotefd < 0) {
 		printf("Remote Port Open Failed\n");
 	}
 
 	fd = remotefd;
-	printf( "0000type = %d %d\n",type,addr);
+	printf("0000type = %d %d\n", type, addr);
+
 	switch(type) {
 		case 2:		//UP Start
 			CCtrlUpStart(fd, addr, speed);
@@ -1867,19 +1867,15 @@ void FarCtrlCamera(int dsp, unsigned char *data, int len)
 
 		case 12://设置自动跟踪模块的手动和自动模式0自动1手动
 			printf("0000track mode speed = %d\n", speed);
-			if(dsp == 0)
-			{
+
+			if(dsp == 0) {
 				server_set_track_type(speed);
+			} else if(dsp == 1) {
+				server_set_stutrack_type(speed);
+			} else {
+
 			}
-			else if(dsp == 1)
-			{
-				stuserver_set_track_type(speed);
-			}
-			else
-			{
-				
-			}
-			
+
 			data[8] = 2;
 			break;
 

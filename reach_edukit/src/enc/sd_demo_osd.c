@@ -14,24 +14,6 @@
 
 #define OSD_BUF_HEAP_SR_ID          (0)      //    (0)
 
-/**
-    \brief Allocated buffer info
-*/
-typedef struct {
-
-	UInt8  *physAddr;
-	/**< Physical address */
-
-	UInt8  *virtAddr;
-	/**< Virtual address */
-
-	UInt32  srPtr;
-	/**< Shared region Pointer SRPtr */
-
-	UInt32 bufsize;
-
-} SD_Demo_AllocBufInfo;
-
 extern  int  postype_2_pixel1(int input, int type, int *x, int *y);
 
 
@@ -42,10 +24,8 @@ static SD_Demo_AllocBufInfo g_pngosd_bufInfo[SIGNAL_INPUT_MAX];
 
 static int g_alg_osd_id = 0;
 
-static Int32 SD_Demo_allocBuf(UInt32 srRegId, UInt32 bufSize, UInt32 bufAlign, SD_Demo_AllocBufInfo *bufInfo);
-static Int32 SD_Demo_freeBuf(UInt32 srRegId, UInt8 *virtAddr, UInt32 bufSize);
 
-static Int32 SD_Demo_allocBuf(UInt32 srRegId, UInt32 bufSize, UInt32 bufAlign, SD_Demo_AllocBufInfo *bufInfo)
+Int32 SD_Demo_allocBuf(UInt32 srRegId, UInt32 bufSize, UInt32 bufAlign, SD_Demo_AllocBufInfo *bufInfo)
 {
 	IHeap_Handle heapHndl;
 
@@ -76,7 +56,7 @@ static Int32 SD_Demo_allocBuf(UInt32 srRegId, UInt32 bufSize, UInt32 bufAlign, S
 	return 0;
 }
 
-static Int32 SD_Demo_freeBuf(UInt32 srRegId, UInt8 *virtAddr, UInt32 bufSize)
+Int32 SD_Demo_freeBuf(UInt32 srRegId, UInt8 *virtAddr, UInt32 bufSize)
 {
 	IHeap_Handle heapHndl;
 

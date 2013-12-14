@@ -22,6 +22,8 @@
 #define RECORD_INT_TIME_VAL				15		/*录制间隔时间*/
 #define SERVER_INFO_TIME_OUT			30		/*录制间隔时间*/
 
+// add zl 
+#define SERVER_AUTO_HEART_TIME_OUT		5    /*auto 上报录制信息30024*/
 //消息队列KEY
 #define MSG_ROOM_CTRL_BASE_KEY 50000
 
@@ -41,6 +43,8 @@
 #define MSG_RATETYPE_SD			1
 
 /*macro*/
+#define ROOM_PICSYN_MODE_LEN				10		//add zl
+
 #define ROOM_ENC_NUM						9     // add zl
 #define ROOM_STR_NUM						(2 * ROOM_ENC_NUM)
 #define ROOM_MSG_VAL_LEN					(128)
@@ -60,13 +64,19 @@
 #define MSG_THIRDCTRL_PASSKEY				"ThirdControl"
 #define MSG_ALLPLATFORM_PASSKEY				"AllPlatform"
 #define MSG_ROOMCTRL_PASSKEY				"RoomCtrl"
+#define MSG_WEBCTRL_PASSKEY				"WebCtrl"
+
 #define MSG_PLATFORM_DIRECTOR_PASSKEY		("DirectorPlatform")
+#define MSG_NETCTRL_PASSKEY                 "NetControl"
+
+// add zl 
+#define MSG_ROOM_AUTO_PASSKEY					"ROOM_AUTO_REQ"
 
 #define MSG_RECORD_CTRL_STOP					0
 #define MSG_RECORD_CTRL_START					1
 #define MSG_RECORD_CTRL_PAUSE					2
 
-#define MSG_MIN_VALID_SPACE						(5 * 1024 * 1024)
+#define MSG_MIN_VALID_SPACE						(10 * 1024 * 1024)
 
 /*协议头版本号*/
 #define MSG_HEAD_VER			2012
@@ -81,15 +91,20 @@ enum {
 typedef enum _platform_em_{
 	MediaCenter = 0,		/* 媒体中心 */
 	ManagePlatform,			/* 管理平台 */
-	RecServer,				/* 会议室 */
+	IpadUser,				/* ipad预览用户 */
+	RecServer,				/* 教室*/
 	LiveNode,				/* 直播节点 */
 	ComControl,				/* 串口中控 */
+	Mp4Repair,				/* MP4修复程序 */
+	WebCtrl,				/* WEB控制端 */
 	Director,				/*导播平台*/
+	NetControl,             /*网络中控*/
 	ThirdControl,			/* 其它 */
 	AllPlatform,			/* 所有平台 */
-	PlatformNum,			/*平台数*/
+	PlatformNum,
 	InvalidPlatform			/* 无效 */
 }platform_em;
+
 
 
 //==================XML protocol macro=========
@@ -203,6 +218,9 @@ typedef enum _platform_em_{
 #define MSG_ROOMSTATUS_KEY 					(BAD_CAST "RoomStatus")
 #define MSG_RECSTATUS_KEY					(BAD_CAST "RecStatus")
 #define MSG_RECNAME_KEY						(BAD_CAST "RecName")
+#define MSG_RECTIME_KEY						(BAD_CAST "RecTime")
+#define MSG_RECSTARTTIME_KEY					(BAD_CAST "RecStartTime")
+
 #define MSG_IFMARK_KEY						(BAD_CAST "IfMark")
 #define MSG_STATUS1_KEY						(BAD_CAST "Status1")
 #define MSG_STATUS2_KEY						(BAD_CAST "Status2")
@@ -284,6 +302,7 @@ typedef enum _platform_em_{
 #define MSG_RECPATH_REP_KEY		(BAD_CAST "RecPath")
 #define MSG_SEVSERIES_REP_KEY	(BAD_CAST "ServerSeries")
 #define MSG_RECMAXTIME_REP_KEY	(BAD_CAST "RecordMaxTime")
+#define MSG_PICSYNC_MODEL_KEY		(BAD_CAST "Model")
 
 
 
@@ -304,7 +323,7 @@ typedef enum _platform_em_{
 #define MSG_QUEUE_REC_TEN			0x200
 #define MSG_QUEUE_REC_ELE			0x400
 #define MSG_QUEUE_REC_TWE			0x800
-#define MSG_QUEUE_REC_ALL			0xFFF
+#define MSG_QUEUE_REC_ALL			0xFFFFFF
 
 #define MSG_QUEUE_REC_FLG_BIT		30
 #define MSG_QUEUE_REC_FLG   		(1 << MSG_QUEUE_REC_FLG_BIT) //第30 位用于标记返回值, 1-成功，0-失败
@@ -432,6 +451,9 @@ typedef struct _room_info_{
 	audio_info	AudioInfo;
 	enc_info	EncInfo[ROOM_ENC_NUM];
 
+	// add zl
+	uint32_t	PicSynMode;	 /*合成模式*/
+	
 	struct  timeval   s_time;		/*定时上报*/
 
 	int32_t     EncNum;				/*设置的编码器数量*/
@@ -459,6 +481,8 @@ typedef struct RecInfo {
 	struct  timeval RecordStopTime;	//录制停止时间
 
 	int8_t		userid[ROOM_MSG_VAL_LEN];
+
+	int32_t		opt_mutex_lock; //0—无录制操作状态 ,  非零—录制操作中
 }RecInfo, *pRecInfo;
 
 typedef struct RecStatusInfo {
@@ -516,6 +540,8 @@ typedef struct _ServerInfo_{
 	uint32_t  	DiskAvailableSpace;
 
 	struct  timeval   time;
+
+	struct  timeval	   time_auto;	
 }ServerInfo, *pServerInfo;
 
 struct _RoomMsgEnv_ {
@@ -531,6 +557,7 @@ struct _RoomMsgEnv_ {
 	uint32_t 	initMask;		//初始化标记
 	uint32_t 	loginMask;		//登录标记
 
+	uint32_t	record_mask_sum[PlatformNum];  // 录制标记 ZL
 	uint32_t 	record_mask[PlatformNum];	//录制标记
 	uint32_t 	roomInfoMask[PlatformNum];	//编码器上报获取会议室信息回应标记
 	uint32_t 	qualityMask[PlatformNum];	//编码器上报设置高低码流信息回应标记
@@ -542,10 +569,10 @@ struct _RoomMsgEnv_ {
 	uint32_t    adjustMask[PlatformNum];		//等待图像微调 回应标记
 	uint32_t    volumeMask[PlatformNum];		//音量标记
 	uint32_t    muteMask[PlatformNum];		//静音标记
-	uint32_t    setRemoteCtrlMask[PlatformNum];		//静音标记
-	uint32_t    getRemoteCtrlMask[PlatformNum];		//静音标记
-	uint32_t    setRemoteModeMask[PlatformNum];		//静音标记
-	uint32_t    getPictureSynMask[PlatformNum];		//静音标记
+	uint32_t    setRemoteCtrlMask[PlatformNum];		//30042
+	uint32_t    getRemoteCtrlMask[PlatformNum];		//30041
+	uint32_t    setRemoteModeMask[PlatformNum];		//30047 标记
+	uint32_t    getPictureSynMask[PlatformNum];		//30060
 
 
 	uint32_t 	StrmReqMask[PlatformNum];	//编码器上报请求码流回应标记
@@ -554,7 +581,9 @@ struct _RoomMsgEnv_ {
 	recv_room_handle *handle;			//接收模块句柄
 	lives_mode_hand_t *live_handle;		//直播模块句柄
 	course_record_t *record_handle;		//录制模块句柄
+	course_record_t *usb_record_handle;		//录制模块句柄  // zl
 
+	
 	room_info 	RoomInfo;		//会议室信息
 	RecInfo		RecInfo;		//录制控制信息
 	StrmReq		StrmReq;		//码流请求信息

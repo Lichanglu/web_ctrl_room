@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
-
+#include "commontrack.h"
 #include <errno.h>
 #include "nslog.h"
 #include "ppt_index.h"
@@ -25,16 +25,31 @@ int isppttxt = 0;
 static int times = 0;
 
 PPT_data_info_t ppt_info = {0, {0}};
+typedef	struct ppt_network_ {
+	int saddr;
+	int netmask;
+	int gateway;
+} ppt_network_t;
+ppt_network_t g_ppt_net;
+
+PPT_data_info_t g_ppt_info = {0, {0}};
 
 int getPPTDataInfo(PPT_data_info_t *pPptInfo)
 {
-	pPptInfo = &ppt_info;
-	return pPptInfo->status;
+	memcpy(pPptInfo, &g_ppt_info, sizeof(PPT_data_info_t));
+	//pPptInfo = &g_ppt_info;
+	return 0;
 }
 
+int getPPTDataInfoStatus()
+{
+	return g_ppt_info.status;
+}
 void setPPTDataInfoStatus(int iStatus)
 {
-	ppt_info.status = iStatus;
+	printf("setPPTDataInfoStatus==%d\n", iStatus);
+	g_ppt_info.status = iStatus;
+
 }
 
 //处理来串口来的数据
@@ -50,13 +65,9 @@ int ProcessPPTdata(unsigned char data[], int len, int fd)
 		char gw[16] = {0};
 		memset(ipaddr, 0, 256);
 		struct in_addr addr, addr2, addr3;
-		int saddr, netmask, gateway;
-		saddr = GetIPaddr("eth0");
-		netmask = GetNetmask("eth0");
-		gateway = getGateWay("eth0");
-		memcpy(&addr, &saddr, 4);
-		memcpy(&addr2, &netmask, 4);
-		memcpy(&addr3, &gateway, 4);
+		memcpy(&addr, &(g_ppt_net.saddr), 4);
+		memcpy(&addr2, &(g_ppt_net.netmask), 4);
+		memcpy(&addr3, &(g_ppt_net.gateway), 4);
 		strcpy(ip, inet_ntoa(addr));
 		strcpy(mask, inet_ntoa(addr2));
 		strcpy(gw, inet_ntoa(addr3));
@@ -86,10 +97,12 @@ int ProcessPPTdata(unsigned char data[], int len, int fd)
 			printf("type[%d]:[0x%x]\n", i, type[i]);
 		}
 	} else if((data[2] == 0x8e) && (data[3] == 0x3) && (data[4] == 0x13)) {
-		memset(&ppt_info, 0, sizeof(PPT_data_info_t));
-		memcpy(ppt_info.PPTTextBuf, data + 7, data[6]);	//data[6]是字符串长度不包括后面的0x8e
+		memset(&g_ppt_info, 0, sizeof(PPT_data_info_t));
+		memcpy(g_ppt_info.PPTTextBuf, data + 7, data[6]);	//data[6]是字符串长度不包括后面的0x8e
 		setPPTDataInfoStatus(1);
-		printf("[ProcessPPTdata] [%s]\n", ppt_info.PPTTextBuf);
+
+		SetVgaState();
+		printf("[ProcessPPTdata1] [%s]\n", g_ppt_info.PPTTextBuf);
 	}
 
 	return 0;
@@ -107,13 +120,9 @@ int remotePPTindexTask(void *pParam)
 	int  cnt, sendsocket, nRet;
 	memset(ipaddr, 0, 256);
 	struct in_addr addr, addr2, addr3;
-	int saddr, netmask, gateway;
-	saddr = GetIPaddr("eth0");
-	netmask = GetNetmask("eth0");
-	gateway = getGateWay("eth0");
-	memcpy(&addr, &saddr, 4);
-	memcpy(&addr2, &netmask, 4);
-	memcpy(&addr3, &gateway, 4);
+	memcpy(&addr, &(g_ppt_net.saddr), 4);
+	memcpy(&addr2, &(g_ppt_net.netmask), 4);
+	memcpy(&addr3, &(g_ppt_net.gateway), 4);
 	strcpy(ip, inet_ntoa(addr));
 	strcpy(mask, inet_ntoa(addr2));
 	strcpy(gw, inet_ntoa(addr3));
@@ -289,6 +298,9 @@ void PPTindexTask(void *pParam)
 	nslog(NS_DEBUG, "PPTindexTask start GetPid():%d\n", getpid());
 	int ClientSocket = 0;
 	int ServerSocket = 0;
+	g_ppt_net.saddr = GetIPaddr("eth0");
+	g_ppt_net.netmask = GetNetmask("eth0");
+	g_ppt_net.gateway = getGateWay("eth0");
 RESTART:
 	bzero(&SrvAddr, sizeof(struct sockaddr_in));
 	SrvAddr.sin_family = AF_INET;

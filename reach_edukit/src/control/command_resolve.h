@@ -24,6 +24,8 @@
 #include "xml/xml_base.h"
 #include "xml_msg_management.h"
 
+#define		KEEP_COURSE_FILE
+
 #define XML_USER_NAME_MAX_LENGTH			(128)
 #define XML_USER_PASSWORD_MAX_LENGTH		(128)
 #define CONTROL_VERSION_LEN					(64)
@@ -61,7 +63,7 @@
 #define XML_RETURNCODE_SUCCESS				("1")
 #define XML_RETURNCODE_FAILED				("0")
 #define XML_RETURNCODE_FAILED2				("2")
-
+#define XML_RETURNCODE_GUEST				("2")
 /***********************************************************************************/
 
 /***********************************************************************************/
@@ -94,11 +96,12 @@
 
 
 
-#define MSG_LANGUAGE_KEY				   	    (BAD_CAST "Language")
-#define MSG_LANIPTYPE_KEY						(BAD_CAST "LanIpType")
-#define MSG_WANIPTYPE_KEY						(BAD_CAST "WanIpType")
-#define MSG_MEDIA_ADDR_KEY						(BAD_CAST "MediaAddr")
+#define MSG_LANGUAGE_KEY				   	(BAD_CAST "Language")
+#define MSG_LANIPTYPE_KEY					(BAD_CAST "LanIpType")
+#define MSG_WANIPTYPE_KEY					(BAD_CAST "WanIpType")
+#define MSG_MEDIA_ADDR_KEY					(BAD_CAST "MediaAddr")
 #define MSG_MANAGER_ADDR_KEY     			 	(BAD_CAST "ManagerAddr")
+#define MSG_DIRECTOR_ADDR_KEY				(BAD_CAST "DirectorAddr")
 
 //#define PASS_KEY_LEN						(128)
 #define	MSG_CODE_MAX_LEN					(7)
@@ -136,6 +139,7 @@
 #define MSG_CONNECT_STATUS_KEY				(BAD_CAST "ConnStatus")
 #define MSG_RECORD_STATUS_KEY				(BAD_CAST "RecStatus")
 #define MSG_RECNAME_KEY						(BAD_CAST "RecName")
+#define MSG_RECTIME_KEY						(BAD_CAST "RecTime")
 
 #define MSG_AUDIONFO_KEY					(BAD_CAST "AudioInfo")
 #define MSG_INPUTMODE_KEY					(BAD_CAST "InputMode")
@@ -155,6 +159,9 @@
 #define MSG_ENC_WIDTH_KEY					(BAD_CAST "EncWidth")
 #define MSG_ENC_HEIGHT_KEY					(BAD_CAST "EncHeight")
 #define MSG_ENC_FRAMERATE_KEY				(BAD_CAST "EncFrameRate")
+#define MSG_ENC_RESOLUTIONS_KEY				(BAD_CAST "EncResolutions")
+#define MSG_ENC_BITRATES_KEY					(BAD_CAST "EncBitrates")
+
 #define MSG_ENC_MUTE_KEY					(BAD_CAST "Mute")
 
 #define MSG_PICTURE_SYNT_MODEL_KEY			(BAD_CAST "Model")
@@ -269,15 +276,24 @@
 #define MSG_ROOMQUALITY_KEY					(BAD_CAST "Quality")
 #define MSG_ROOM_RECSTATUS_KEY				(BAD_CAST "RecStatus")
 #define MSG_ROOM_RECNAME_KEY				(BAD_CAST "RecName")
+#define MSG_ROOM_RECTIME_KEY				(BAD_CAST "RecTime")
+#define MSG_ROOM_RECSTARTTIME_KEY			(BAD_CAST "RecStartTime")
+#define MSG_ROOM_RECORDID_KEY				(BAD_CAST "RecordID")
 #define MSG_ROOM_IFMARK_KEY					(BAD_CAST "IfMark")
 #define MSG_ROOM_ENC1_STATUS_KEY			(BAD_CAST "Status1")
 #define MSG_ROOM_ENC2_STATUS_KEY			(BAD_CAST "Status2")
 #define MSG_ROOM_ENC3_STATUS_KEY			(BAD_CAST "Status3")
 #define MSG_ROOM_ENC4_STATUS_KEY			(BAD_CAST "Status4")
-
-
-
-
+#define MSG_ROOM_ENC5_STATUS_KEY			(BAD_CAST "Status5")
+#define MSG_ROOM_ENC6_STATUS_KEY			(BAD_CAST "Status6")
+#define MSG_ROOM_ENC7_STATUS_KEY			(BAD_CAST "Status7")
+#define MSG_ROOM_ENC8_STATUS_KEY			(BAD_CAST "Status8")
+#define MSG_ROOM_ENC9_STATUS_KEY			(BAD_CAST "Status9")
+#define MSG_PIC_SYNT_MODE_KEY				(BAD_CAST "Model")
+#define MSG_PIC_SYNT_WIDTH_KEY				(BAD_CAST "Width")
+#define MSG_PIC_SYNT_HEIGHT_KEY				(BAD_CAST "Height")
+#define MSG_PIC_SYNT_RATE_KEY				(BAD_CAST "Rate")
+#define MSG_PIC_SYNT_FRAMERATE_KEY			(BAD_CAST "FrameRate")
 
 
 #define MSG_ROOM_PREREC_INFO_REQ_KEY		(BAD_CAST "PreRecInfoReq")
@@ -323,6 +339,7 @@
 #define PLATFORM_THIRDCONTROL				("ThirdControl")
 #define PLATFORM_ALLPLATFORM				("AllPlatform")
 #define PLATFORM_DIRECTOR					("DirectorPlatform")
+#define PLATFORM_NETCONTROL                 ("NetControl")
 /***********************************************************************************/
 
 
@@ -340,7 +357,7 @@
 #define RECORD_FILE_MAX_COURSENAME			(512)
 
 #define RECORD_ROOM_ENC_MAX_QUALITY_NUM		(2)
-#define RECORD_ROOM_MAX_ENC_NUM				(3)
+#define RECORD_ROOM_MAX_ENC_NUM				(9)
 #define RECORD_OPERATE_STOP_RECORD			(0)
 #define RECORD_OPERATE_START_RECORD			(1)
 #define RECORD_OPERATE_PAUSE_RECORD			(2)
@@ -414,6 +431,7 @@ typedef enum {
 #define WARN_SOURCE_MANAGE_PLF			"MP"
 #define WARN_SOURCE_DIRECTOR			"DI"
 #define WARN_SOURCE_OTHER_CTRL			"OC"
+#define WARN_SOURCE_NET_CTRL            "NC"
 
 #define FTP_FAIL_FILE_LIST_FILE 		"ftp_fail_files_list.xml"
 
@@ -529,15 +547,15 @@ typedef struct _server_info_
 	uint8_t		ServerVersion[CONTROL_VERSION_LEN];
 	uint8_t		ServerType[CONTROL_VERSION_LEN];
 	uint8_t		ServerSeries[CONTROL_VERSION_LEN];
-	
+
 	uint32_t	MaxRoom;
 	uint32_t	MaxCodecNumInRoom;
-	
+
 	uint32_t	LanAddr;
 	uint32_t	LanGateWay;
 	uint32_t	LanNetmask;
 	uint8_t		LanMac[24];
-	
+
 	uint32_t	WanAddr;
 	uint32_t	WanGateWay;
 	uint32_t	WanNetmask;
@@ -583,7 +601,7 @@ typedef struct _enc_info_
 	uint32_t		vstatus;		/* 是否有源 0-无源 1-有源 */
 
 	int8_t			EncIP[IPINFO_MAX_LENGTH];			/* 编码器IP */
-	
+
 	quality_info	HD_QuaInfo;
 	quality_info	SD_QuaInfo;
 } enc_info;
@@ -595,12 +613,16 @@ typedef struct _room_info_
 	uint32_t	RecordMaxTime;	/* 录制最大时长 */
 	uint32_t	RecStatus;		/* 录制状态 0—停止 1—录制 2—暂停 */
 	uint32_t	IfMark;			/* 评教开启状态 */
+	uint32_t	Mode;			/*合成模式*/
 
 	uint8_t		RoomName[ROOM_NAME_MAX_LENGTH];
 	uint8_t		RecName[RECORD_FILE_MAX_FILENAME];	/* 录制名称 */
-
+	uint8_t		RecTime[16];
+	uint8_t		RecStartTime[32];
+	uint8_t		RecordID[132];
 	pic_synt_info	PicSyntInfo;
 	audio_info	AudioInfo;
+
 	enc_info	EncInfo[RECORD_ROOM_MAX_ENC_NUM];
 } room_info;
 
@@ -634,6 +656,7 @@ typedef struct _config_info_
 	int32_t Waniptype;
 	uint32_t media_addr;
 	uint32_t manager_addr;
+	uint32_t director_addr;
 } config_info;
 
 typedef struct _all_server_info_
@@ -647,8 +670,8 @@ typedef struct _all_server_info_
 	config_info     ConfigInfo;
 	room_info		RoomInfo[CONTROL_ROOM_SERVER_MAX_USER];
 	pthread_mutex_t	info_m;
-	pthread_mutex_t	ftp_file_m; /*add for read/write ftp fail file*/	
-	parse_xml_t *parse_xml_ftp; /*save ftp upload fail file list*/	
+	pthread_mutex_t	ftp_file_m; /*add for read/write ftp fail file*/
+	parse_xml_t *parse_xml_ftp; /*save ftp upload fail file list*/
 } all_server_info;
 
 typedef struct _record_status_
@@ -686,7 +709,7 @@ int32_t resolve_msgcode_and_passkey_or_returncode(const int8_t *xml_buf, con_use
         int32_t *ret_code, int32_t *msgtype);
 int32_t package_http_heart_report_xml_data(int8_t *send_buf, all_server_info *pser, int32_t msgcode);
 int32_t init_all_server_info(all_server_info *pinfo);
-int32_t package_upload_status_report_xml_data(int8_t *out_buf, platform_em platform, 
+int32_t package_upload_status_report_xml_data(int8_t *out_buf, platform_em platform,
 											int32_t msgcode, file_user *pfile_user);
 int32_t stream_request_cleanup_lives_user_info(control_env *penv, con_user *puser);
 int32_t report_same_platform_login(con_user *old_puser, con_user *pnew_user);

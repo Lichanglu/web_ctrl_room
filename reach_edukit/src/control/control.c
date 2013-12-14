@@ -294,6 +294,9 @@ int32_t get_user_log_head(int16_t port, int32_t user_index, platform_em platform
 			case ComControl:
 				sprintf((char *)plog_head, "FORE_SERVER->[%s %s %d ]>:\t", ipaddr, PLATFORM_COMCONTROL, user_index);
 				break;
+		    case NetControl:
+				sprintf((char *)plog_head, "FORE_SERVER->[%s %s %d ]>:\t", ipaddr, PLATFORM_NETCONTROL, user_index);
+				break;
 			case Mp4Repair:
 				sprintf((char *)plog_head, "FORE_SERVER->[%s %s %d ]>:\t", ipaddr, PLATFORM_MP4RREPAIR, user_index);
 				break;
@@ -646,10 +649,13 @@ int32_t set_user_ipaddr(control_env *pcon, int8_t *ipaddr, platform_em platform)
 		if(pcon->pserset->pserinfo != NULL){
 			pthread_mutex_lock(&pcon->pserset->pserinfo->info_m);
 			inet_aton((const char *)ipaddr, &addr);
-			if(ManagePlatform == platform)
+			if(ManagePlatform == platform) {
 				r_memcpy(&pcon->pserset->pserinfo->ConfigInfo.manager_addr, &addr, 4);
-			else if(MediaCenter == platform)
+			} else if(MediaCenter == platform) {
 				r_memcpy(&pcon->pserset->pserinfo->ConfigInfo.media_addr, &addr, 4);
+			}else if(Director == platform) {
+				r_memcpy(&pcon->pserset->pserinfo->ConfigInfo.director_addr, &addr, 4);
+			}
 			pthread_mutex_unlock(&pcon->pserset->pserinfo->info_m);
 		}
 	}
@@ -767,10 +773,18 @@ int32_t check_platform_unique_and_report(control_env *pcon, con_user *puser, pla
 			if(puser->index == index)
 				continue;
 			if(pcon->user[index].platform == platform){
-				if(ManagePlatform == platform){
+				if(ManagePlatform == platform ){
 					report_same_platform_login(&pcon->user[index], puser);
 					usleep(15000);
 					close(pcon->user[index].tcp_sock);
+				}
+
+				if(Director == platform) {
+					if(!r_strcmp(pcon->user[index].username, puser->username)) {
+						report_same_platform_login(&pcon->user[index], puser);
+						usleep(15000);
+						close(pcon->user[index].tcp_sock);
+					}
 				}
 				usleep(20000);
 				pcon->user[index].run_status = CONTROL_STOPED;
@@ -842,6 +856,9 @@ platform_em get_platform_from_passkey(int8_t *passkey)
 	else if(r_strcmp(passkey, (const int8_t *)PLATFORM_COMCONTROL) == 0){
 		platform = ComControl;
 	}
+	else if(r_strcmp(passkey, (const int8_t *)PLATFORM_NETCONTROL) == 0){
+		platform = NetControl;
+	}
 	else if(r_strcmp(passkey, (const int8_t *)PLATFORM_MP4RREPAIR) == 0){
 		platform = Mp4Repair;
 	}
@@ -887,6 +904,9 @@ int32_t get_passkey_from_platform(platform_em platform, int8_t *passkey)
 			break;
 		case ComControl:
 			r_strcpy(passkey, (const int8_t *)PLATFORM_COMCONTROL);
+			break;
+		case NetControl:
+			r_strcpy(passkey, (const int8_t *)PLATFORM_NETCONTROL);
 			break;
 		case Mp4Repair:
 			r_strcpy(passkey, (const int8_t *)PLATFORM_MP4RREPAIR);
@@ -1078,7 +1098,7 @@ static int32_t recv_user_xml_data(int32_t socket, int8_t *xml_buf, int16_t *forc
 	msg.sLen = ntohs(msg.sLen);
 	msg.sVer = ntohs(msg.sVer);
 
-//	zlog_debug(OPELOG, "11- sLen = %d, sVer = %d, sMsgType = %d\n", msg.sLen, msg.sVer, msg.sMsgType);
+	//zlog_debug(OPELOG, "xx11- sLen = %d, sVer = %d, sMsgType = %d\n", msg.sLen, msg.sVer, msg.sMsgType);
 
 	if(((msg.sVer == CONTROL_OLD_MSGHEADER_VERSION) && (msg.sMsgType == CONTROL_OLD_MSGHEADER_MSGCODE))
 		|| ((msg.sVer == ntohs(CONTROL_OLD_MSGHEADER_VERSION)) && (msg.sMsgType == ntohs(CONTROL_OLD_MSGHEADER_MSGCODE))))
@@ -1168,7 +1188,7 @@ int32_t send_user_xml_data(con_user *user_src, con_user *user_dst, int8_t *send_
 	}
 
 	ret = tcp_send_longdata(user_dst->tcp_sock, send_buf, datelen + headlen);
-	zlog_debug2(OPELOG, "+++++++++++++++ send length %d ++++++++++++++\n", ret);
+	//zlog_debug2(OPELOG, "+++++++++++++++ send length %d ++++++++++++++\n", ret);
 	if(ret > 0)
 		return_code = STATUS_SUCCESS;
 
@@ -1400,6 +1420,7 @@ static int32_t set_user_function_set(con_user *puser, platform_em platform)
 		case RecServer:
 		case LiveNode:
 		case ComControl:
+		case NetControl:
 		case Mp4Repair:
 		case WebCtrl:
 		case ThirdControl:
@@ -1635,15 +1656,6 @@ static void *control_user_process(con_user *puser)
 			/* 除了第一次，后续不进行平台检查，短连接的除外 */
 			if(lastplatform == InvalidPlatform){
 				/* 检查在线平台唯一性 */
-#if 0
-				if(ManagePlatform == platform){
-					check_platform_unique_and_report(pconenv, puser, platform);
-					set_user_ipaddr(pconenv, puser->ipaddr, platform);
-				}
-#endif
-				if(MediaCenter == platform){
-					set_user_ipaddr(pconenv, puser->ipaddr, platform);
-				}
 
 				lastplatform = platform;
 
@@ -1684,7 +1696,7 @@ static void *control_user_process(con_user *puser)
 			&& (puser->platform == ManagePlatform || puser->platform == IpadUser || Director == puser->platform)))
 		{
 			zlog_debug2(OPELOG, "======================== recv buf ========================\n");
-			zlog_debug2(OPELOG, "\n\n%s\n", xml_buf+headlen);
+			zlog_debug2(OPELOG, "\n xmllen:[%d][%s]\n", r_strlen(xml_buf+headlen), xml_buf+headlen);
 			zlog_debug2(OPELOG, "==========================================================\n\n");
 		}
 
@@ -1993,9 +2005,346 @@ static int send_xml_heart(server_set *pserset, platform_em platform)
 	return ret;
 }
 
-static void *control_tcp_heart_thr(void *args)
+static void *control_ManagePlatform_heart_thr(void *args)
 {
+	int32_t ret_len = 0;
+	http_env *phttp = NULL;
+	all_server_info *pser = NULL;
+	int8_t *send_buf = NULL;
+	int8_t *ret_buf = NULL;
+	int8_t url[HTTP_SERVER_URL_MAX_LEN] = {0};
+	int8_t ipaddr[16] = {0};
+	int32_t headlen = CONTROL_MSGHEAD_LEN;
+	int32_t manager_send_fail_count = 0;
+	int32_t control_send_fail_count = 0;
+	int32_t ret = 0;
 
+	con_user *pforobj = NULL;
+	control_env *penv = NULL;
+
+	if(NULL == args){
+		zlog_error(DBGLOG, "control_http_post_thr failed, args is NULL!\n");
+		goto EXIT;
+	}
+
+	phttp = (http_env *)args;
+	pser = phttp->pserset->pserinfo;
+	if(NULL == pser){
+		zlog_error(DBGLOG, "control_http_post_thr failed, all server info not found!\n");
+		goto EXIT;
+	}
+
+	penv = &phttp->pserset->forser;
+	if(NULL == penv){
+		zlog_error(DBGLOG, "control_http_post_thr failed, forserver not found!\n");
+		goto EXIT;
+	}
+
+	send_buf = (int8_t *)r_malloc(CONTROL_XML_DATA_LEN);
+	ret_buf = (int8_t *)r_malloc(CONTROL_XML_DATA_LEN);
+	if(NULL == send_buf || NULL == ret_buf){
+		zlog_error(DBGLOG, "control_http_post_thr failed, malloc failed!\n");
+		goto EXIT;
+	}
+
+	while(phttp->run_status != CONTROL_STOPED){
+		if(CONTROL_PREPARING == phttp->run_status){
+			zlog_debug(DBGLOG, "http post task is in preparing status!\n");
+			usleep(500000);
+			continue;
+		}
+
+		/* 与管理平台的心跳 */
+		pforobj = find_forward_obj(phttp->pserset, ManagePlatform, 0, 0);
+		if(pforobj != NULL){
+			r_memset(send_buf, 0, CONTROL_DATA_LEN);
+			package_http_heart_report_xml_data(send_buf+headlen, pser, MSGCODE_HEART_REPORT_REQ);
+			zlog_debug(DBGLOG, "\n[%s]\n\n", send_buf+headlen);
+			ret = send_user_xml_data(NULL, pforobj, send_buf, ret_buf, &ret_len);
+			if(ret != STATUS_SUCCESS){
+				manager_send_fail_count++;
+				if((manager_send_fail_count*pser->HBeatInfo.post_time) > 20){
+					/* 管理平台已不存在了，但线程没有退出 */
+					zlog_debug(OPELOG, "send heart beat to manager timeout, close the manager!\n");
+					pforobj->run_status = CONTROL_STOPED;
+				}
+			}else{
+				manager_send_fail_count = 0;
+			}
+		}
+
+
+		/* TODO: 广播，还是仅发送给媒体中心? */
+		micro_sleep(penv, pser->HBeatInfo.post_time);
+//		r_sleep(pser->HBeatInfo.post_time);
+	}
+
+EXIT:
+	if(send_buf)
+		r_free(send_buf);
+
+	if(ret_buf)
+		r_free(ret_buf);
+
+	pthread_detach(pthread_self());
+	return NULL;
+}
+
+
+static void *control_Director_heart_thr(void *args)
+{
+	int32_t ret_len = 0;
+	http_env *phttp = NULL;
+	all_server_info *pser = NULL;
+	int8_t *send_buf = NULL;
+	int8_t *ret_buf = NULL;
+	int8_t url[HTTP_SERVER_URL_MAX_LEN] = {0};
+	int8_t ipaddr[16] = {0};
+	int32_t headlen = CONTROL_MSGHEAD_LEN;
+	int32_t manager_send_fail_count = 0;
+	int32_t control_send_fail_count = 0;
+	int32_t ret = 0;
+
+	con_user *pforobj = NULL;
+	control_env *penv = NULL;
+
+	if(NULL == args){
+		zlog_error(DBGLOG, "control_http_post_thr failed, args is NULL!\n");
+		goto EXIT;
+	}
+
+	phttp = (http_env *)args;
+	pser = phttp->pserset->pserinfo;
+	if(NULL == pser){
+		zlog_error(DBGLOG, "control_http_post_thr failed, all server info not found!\n");
+		goto EXIT;
+	}
+
+	penv = &phttp->pserset->forser;
+	if(NULL == penv){
+		zlog_error(DBGLOG, "control_http_post_thr failed, forserver not found!\n");
+		goto EXIT;
+	}
+
+	send_buf = (int8_t *)r_malloc(CONTROL_XML_DATA_LEN);
+	ret_buf = (int8_t *)r_malloc(CONTROL_XML_DATA_LEN);
+	if(NULL == send_buf || NULL == ret_buf){
+		zlog_error(DBGLOG, "control_http_post_thr failed, malloc failed!\n");
+		goto EXIT;
+	}
+
+	while(phttp->run_status != CONTROL_STOPED){
+		if(CONTROL_PREPARING == phttp->run_status){
+			zlog_debug(DBGLOG, "http post task is in preparing status!\n");
+			usleep(500000);
+			continue;
+		}
+
+		/* 与导播台的心跳 */
+		pforobj = find_forward_obj(phttp->pserset, Director, 0, 0);
+		if(pforobj != NULL){
+			r_memset(send_buf, 0, CONTROL_DATA_LEN);
+			package_http_heart_report_xml_data(send_buf+headlen, pser, MSGCODE_HEART_REPORT_REQ);
+			zlog_debug(DBGLOG, "\n[%s]\n\n", send_buf+headlen);
+			ret = send_user_xml_data(NULL, pforobj, send_buf, ret_buf, &ret_len);
+			if(ret != STATUS_SUCCESS){
+				manager_send_fail_count++;
+				if((manager_send_fail_count*pser->HBeatInfo.post_time) > 20){
+					/* 管理平台已不存在了，但线程没有退出 */
+					zlog_debug(OPELOG, "send heart beat to manager timeout, close the manager!\n");
+					pforobj->run_status = CONTROL_STOPED;
+				}
+			}else{
+				manager_send_fail_count = 0;
+			}
+		}
+
+		/* TODO: 广播，还是仅发送给媒体中心? */
+		micro_sleep(penv, pser->HBeatInfo.post_time);
+//		r_sleep(pser->HBeatInfo.post_time);
+	}
+
+EXIT:
+	if(send_buf)
+		r_free(send_buf);
+
+	if(ret_buf)
+		r_free(ret_buf);
+
+	pthread_detach(pthread_self());
+	return NULL;
+}
+
+
+static void *control_ComControl_heart_thr(void *args)
+{
+	int32_t ret_len = 0;
+	http_env *phttp = NULL;
+	all_server_info *pser = NULL;
+	int8_t *send_buf = NULL;
+	int8_t *ret_buf = NULL;
+	int8_t url[HTTP_SERVER_URL_MAX_LEN] = {0};
+	int8_t ipaddr[16] = {0};
+	int32_t headlen = CONTROL_MSGHEAD_LEN;
+	int32_t manager_send_fail_count = 0;
+	int32_t control_send_fail_count = 0;
+	int32_t ret = 0;
+
+	con_user *pforobj = NULL;
+	control_env *penv = NULL;
+
+	if(NULL == args){
+		zlog_error(DBGLOG, "control_http_post_thr failed, args is NULL!\n");
+		goto EXIT;
+	}
+
+	phttp = (http_env *)args;
+	pser = phttp->pserset->pserinfo;
+	if(NULL == pser){
+		zlog_error(DBGLOG, "control_http_post_thr failed, all server info not found!\n");
+		goto EXIT;
+	}
+
+	penv = &phttp->pserset->forser;
+	if(NULL == penv){
+		zlog_error(DBGLOG, "control_http_post_thr failed, forserver not found!\n");
+		goto EXIT;
+	}
+
+	send_buf = (int8_t *)r_malloc(CONTROL_XML_DATA_LEN);
+	ret_buf = (int8_t *)r_malloc(CONTROL_XML_DATA_LEN);
+	if(NULL == send_buf || NULL == ret_buf){
+		zlog_error(DBGLOG, "control_http_post_thr failed, malloc failed!\n");
+		goto EXIT;
+	}
+
+	while(phttp->run_status != CONTROL_STOPED){
+		if(CONTROL_PREPARING == phttp->run_status){
+			zlog_debug(DBGLOG, "http post task is in preparing status!\n");
+			usleep(500000);
+			continue;
+		}
+
+		/* 与中控 的心跳 */
+		pforobj = find_forward_obj(phttp->pserset, ComControl, 0, 0);
+		if(pforobj != NULL){
+			r_memset(send_buf, 0, CONTROL_DATA_LEN);
+			package_http_heart_report_xml_data(send_buf+headlen, pser, MSGCODE_HEART_REPORT_REQ);
+//			zlog_debug(OPELOG, "\n%s\n\n", send_buf+headlen);
+			ret = send_user_xml_data(NULL, pforobj, send_buf, ret_buf, &ret_len);
+			if(ret != STATUS_SUCCESS){
+				control_send_fail_count++;
+				if((control_send_fail_count*pser->HBeatInfo.post_time) > 20){
+					/* 中控已不存在了，但线程没有退出 */
+					zlog_debug(OPELOG, "send heart beat to ComControl timeout, close the ComControl!\n");
+					pforobj->run_status = CONTROL_STOPED;
+				}
+			}else{
+				control_send_fail_count = 0;
+			}
+		}
+
+
+		/* TODO: 广播，还是仅发送给媒体中心? */
+		micro_sleep(penv, pser->HBeatInfo.post_time);
+//		r_sleep(pser->HBeatInfo.post_time);
+	}
+
+EXIT:
+	if(send_buf)
+		r_free(send_buf);
+
+	if(ret_buf)
+		r_free(ret_buf);
+
+	pthread_detach(pthread_self());
+	return NULL;
+}
+
+
+static void *control_NetControl_heart_thr(void *args)
+{
+	int32_t ret_len = 0;
+	http_env *phttp = NULL;
+	all_server_info *pser = NULL;
+	int8_t *send_buf = NULL;
+	int8_t *ret_buf = NULL;
+	int8_t url[HTTP_SERVER_URL_MAX_LEN] = {0};
+	int8_t ipaddr[16] = {0};
+	int32_t headlen = CONTROL_MSGHEAD_LEN;
+	int32_t manager_send_fail_count = 0;
+	int32_t control_send_fail_count = 0;
+	int32_t ret = 0;
+
+	con_user *pforobj = NULL;
+	control_env *penv = NULL;
+
+	if(NULL == args){
+		zlog_error(DBGLOG, "control_http_post_thr failed, args is NULL!\n");
+		goto EXIT;
+	}
+
+	phttp = (http_env *)args;
+	pser = phttp->pserset->pserinfo;
+	if(NULL == pser){
+		zlog_error(DBGLOG, "control_http_post_thr failed, all server info not found!\n");
+		goto EXIT;
+	}
+
+	penv = &phttp->pserset->forser;
+	if(NULL == penv){
+		zlog_error(DBGLOG, "control_http_post_thr failed, forserver not found!\n");
+		goto EXIT;
+	}
+
+	send_buf = (int8_t *)r_malloc(CONTROL_XML_DATA_LEN);
+	ret_buf = (int8_t *)r_malloc(CONTROL_XML_DATA_LEN);
+	if(NULL == send_buf || NULL == ret_buf){
+		zlog_error(DBGLOG, "control_http_post_thr failed, malloc failed!\n");
+		goto EXIT;
+	}
+
+	while(phttp->run_status != CONTROL_STOPED){
+		if(CONTROL_PREPARING == phttp->run_status){
+			zlog_debug(DBGLOG, "http post task is in preparing status!\n");
+			usleep(500000);
+			continue;
+		}
+
+		/* 与NETCTRL 的心跳 */
+		pforobj = find_forward_obj(phttp->pserset, NetControl, 0, 0);
+		if(pforobj != NULL){
+			r_memset(send_buf, 0, CONTROL_DATA_LEN);
+			package_http_heart_report_xml_data(send_buf+headlen, pser, MSGCODE_HEART_REPORT_REQ);
+//			zlog_debug(OPELOG, "\n%s\n\n", send_buf+headlen);
+			ret = send_user_xml_data(NULL, pforobj, send_buf, ret_buf, &ret_len);
+			if(ret != STATUS_SUCCESS){
+				control_send_fail_count++;
+				if((control_send_fail_count*pser->HBeatInfo.post_time) > 20){
+					/* NETCTRL已不存在了，但线程没有退出 */
+					zlog_debug(OPELOG, "send heart beat to NetControl timeout, close the NetControl!\n");
+					pforobj->run_status = CONTROL_STOPED;
+				}
+			}else{
+				control_send_fail_count = 0;
+			}
+		}
+
+
+		/* TODO: 广播，还是仅发送给媒体中心? */
+		micro_sleep(penv, pser->HBeatInfo.post_time);
+//		r_sleep(pser->HBeatInfo.post_time);
+	}
+
+EXIT:
+	if(send_buf)
+		r_free(send_buf);
+
+	if(ret_buf)
+		r_free(ret_buf);
+
+	pthread_detach(pthread_self());
+	return NULL;
 }
 
 static void *control_http_post_thr(void *args)
@@ -2006,7 +2355,7 @@ static void *control_http_post_thr(void *args)
 	int8_t *send_buf = NULL;
 	int8_t *ret_buf = NULL;
 	int8_t url[HTTP_SERVER_URL_MAX_LEN] = {0};
-
+	int8_t ipaddr[16] = {0};
 	int32_t headlen = CONTROL_MSGHEAD_LEN;
 	int32_t manager_send_fail_count = 0;
 	int32_t control_send_fail_count = 0;
@@ -2066,68 +2415,24 @@ static void *control_http_post_thr(void *args)
 			ret = mid_http_post((char *)url, (char *)send_buf, r_strlen(send_buf), (char *)ret_buf, &ret_len);
 			if(ret == -1){
 				zlog_debug(DBGLOG, "send heart beat to media center failed, ret = %d\n", ret);
+#if 1
+				pthread_mutex_lock(&pser->info_m);
+				r_bzero(ipaddr, sizeof(ipaddr));
+				r_strcpy(ipaddr, (int8_t *)"0.0.0.0");
+				penv->pserset->pserinfo->ConfigInfo.media_addr = inet_addr((char *)ipaddr);
+				pthread_mutex_unlock(&pser->info_m);
+#endif
+			} else {
+#if 1
+				//从媒体中心URL 中提取IP 地址
+				pthread_mutex_lock(&pser->info_m);
+				r_bzero(ipaddr, sizeof(ipaddr));
+				sscanf((char *)(url), "%*[^/]//%[^/]/", ipaddr);
+				penv->pserset->pserinfo->ConfigInfo.media_addr = inet_addr((char *)ipaddr);
+				pthread_mutex_unlock(&pser->info_m);
+#endif
 			}
 		}
-
-//		zlog_debug(DBGLOG, "<<<<<<<<<<<<- length = %d\n%s\n\n", ret_len, ret_buf);
-
-		/* 与管理平台的心跳 */
-		pforobj = find_forward_obj(phttp->pserset, ManagePlatform, 0, 0);
-		if(pforobj != NULL){
-			r_memset(send_buf, 0, CONTROL_DATA_LEN);
-			package_http_heart_report_xml_data(send_buf+headlen, pser, MSGCODE_HEART_REPORT_REQ);
-			zlog_debug(DBGLOG, "\n%s\n\n", send_buf+headlen);
-			ret = send_user_xml_data(NULL, pforobj, send_buf, ret_buf, &ret_len);
-			if(ret != STATUS_SUCCESS){
-				manager_send_fail_count++;
-				if((manager_send_fail_count*pser->HBeatInfo.post_time) > 20){
-					/* 管理平台已不存在了，但线程没有退出 */
-					zlog_debug(OPELOG, "send heart beat to manager timeout, close the manager!\n");
-					pforobj->run_status = CONTROL_STOPED;
-				}
-			}else{
-				manager_send_fail_count = 0;
-			}
-		}
-
-		/* 与导播台的心跳 */
-		pforobj = find_forward_obj(phttp->pserset, Director, 0, 0);
-		if(pforobj != NULL){
-			r_memset(send_buf, 0, CONTROL_DATA_LEN);
-			package_http_heart_report_xml_data(send_buf+headlen, pser, MSGCODE_HEART_REPORT_REQ);
-			zlog_debug(DBGLOG, "\n%s\n\n", send_buf+headlen);
-			ret = send_user_xml_data(NULL, pforobj, send_buf, ret_buf, &ret_len);
-			if(ret != STATUS_SUCCESS){
-				manager_send_fail_count++;
-				if((manager_send_fail_count*pser->HBeatInfo.post_time) > 20){
-					/* 管理平台已不存在了，但线程没有退出 */
-					zlog_debug(OPELOG, "send heart beat to manager timeout, close the manager!\n");
-					pforobj->run_status = CONTROL_STOPED;
-				}
-			}else{
-				manager_send_fail_count = 0;
-			}
-		}
-
-		/* 与中控 的心跳 */
-		pforobj = find_forward_obj(phttp->pserset, ComControl, 0, 0);
-		if(pforobj != NULL){
-			r_memset(send_buf, 0, CONTROL_DATA_LEN);
-			package_http_heart_report_xml_data(send_buf+headlen, pser, MSGCODE_HEART_REPORT_REQ);
-//			zlog_debug(OPELOG, "\n%s\n\n", send_buf+headlen);
-			ret = send_user_xml_data(NULL, pforobj, send_buf, ret_buf, &ret_len);
-			if(ret != STATUS_SUCCESS){
-				control_send_fail_count++;
-				if((control_send_fail_count*pser->HBeatInfo.post_time) > 20){
-					/* 中控已不存在了，但线程没有退出 */
-					zlog_debug(OPELOG, "send heart beat to ComControl timeout, close the ComControl!\n");
-					pforobj->run_status = CONTROL_STOPED;
-				}
-			}else{
-				control_send_fail_count = 0;
-			}
-		}
-
 
 		/* TODO: 广播，还是仅发送给媒体中心? */
 		micro_sleep(penv, pser->HBeatInfo.post_time);
@@ -2222,21 +2527,10 @@ int32_t set_ipinfo(all_server_info *pinfo)
 	r_memcpy(&pinfo->ServerInfo, &newInfo, sizeof(server_info));
 
 	r_memcpy(&newInfo, &pinfo->ServerInfo, sizeof(server_info));
-	zlog_debug(DBGLOG, "    eth1 GetIp ....\n");
 	//采用默认值
-	ip = GetIPaddr((int8_t*)"eth1");
-	if(-1 == ip){
-		newInfo.WanAddr    = inet_addr("169.254.1.12");
-		newInfo.WanNetmask = inet_addr("255.255.255.0");
-		newInfo.WanGateWay = inet_addr("169.254.1.1");
-		r_system((const int8_t *)"ifconfig eth1 169.254.1.12 netmask 255.255.255.0");
-		//r_system("route add default gw 169.254.1.1 dev eth1");
-	}
-	else{
-		newInfo.WanAddr    = ip;
-		newInfo.WanNetmask = GetNetmask((int8_t*)"eth1");
-		//newInfo.WanGateWay = ip_get_proc((int8_t*)"eth1");
-	}
+	newInfo.WanAddr    = inet_addr("0.0.0.0");
+	newInfo.WanNetmask = inet_addr("0.0.0.0");
+	newInfo.WanGateWay = inet_addr("0.0.0.0");
 	modify_server_info_only((const int8_t *)CONFIG_TABLE_FILE, &pinfo->ServerInfo, &newInfo);
 	r_memcpy(&pinfo->ServerInfo, &newInfo, sizeof(server_info));
 
@@ -2252,7 +2546,7 @@ int32_t start_control_server_task(server_set **ppser)
 	control_env *pcon = NULL;
 	http_env *phttp = NULL;
 	all_server_info *pinfo = NULL;
-
+	int ret = 0;
 	int8_t ipbuf[64]= {0};
 //	struct in_addr addr;
 
@@ -2288,7 +2582,16 @@ int32_t start_control_server_task(server_set **ppser)
 	}
 	else {
 		zlog_debug(OPELOG, "--[start_control_server_task], read_params_table_file !\n");
-		read_params_table_file((const int8_t *)CONFIG_TABLE_FILE, pinfo);
+		ret = read_params_table_file((const int8_t *)CONFIG_TABLE_FILE, pinfo);
+		if(ret < 0) {
+			remove(CONFIG_TABLE_FILE);
+			return_code = create_params_table_file((const int8_t *)CONFIG_TABLE_FILE, pinfo);
+			if(return_code == STATUS_FAILED){
+				zlog_debug(OPELOG, "--[read_params_table_file] failed, create_params_table_file error!\n");
+			} else {
+				zlog_debug(OPELOG, "--[read_params_table_file] failed, create_params_table_file successful!\n");
+			}
+		}
 	}
 
 	/* 同步时间 */
@@ -2342,11 +2645,49 @@ int32_t start_control_server_task(server_set **ppser)
 	return_code = pthread_create(&phttp->http_thid, NULL,
 							(void *)control_http_post_thr, (void *)phttp);
 	if(return_code < 0){
-		zlog_error(DBGLOG, "start_control_server_task failed, pthread_create error , err msg = %s\n",
+		zlog_error(DBGLOG, "start_control_server_task failed, control_http_post_thr error , err msg = %s\n",
 								strerror(errno));
 		return_code = STATUS_FAILED;
 		goto EXIT;
 	}
+
+	return_code = pthread_create(&phttp->director_thid, NULL,
+							(void *)control_Director_heart_thr, (void *)phttp);
+	if(return_code < 0){
+		zlog_error(DBGLOG, "start_control_server_task failed, control_Director_heart_thr error , err msg = %s\n",
+								strerror(errno));
+		return_code = STATUS_FAILED;
+		goto EXIT;
+	}
+
+	return_code = pthread_create(&phttp->m_thid, NULL,
+							(void *)control_ManagePlatform_heart_thr, (void *)phttp);
+	if(return_code < 0){
+		zlog_error(DBGLOG, "start_control_server_task failed, control_ManagePlatform_heart_thr error , err msg = %s\n",
+								strerror(errno));
+		return_code = STATUS_FAILED;
+		goto EXIT;
+	}
+
+	return_code = pthread_create(&phttp->com_thid, NULL,
+							(void *)control_ComControl_heart_thr, (void *)phttp);
+	if(return_code < 0){
+		zlog_error(DBGLOG, "start_control_server_task failed, control_ComControl_heart_thr error , err msg = %s\n",
+								strerror(errno));
+		return_code = STATUS_FAILED;
+		goto EXIT;
+	}
+
+	return_code = pthread_create(&phttp->net_thid, NULL,
+							(void *)control_NetControl_heart_thr, (void *)phttp);
+	if(return_code < 0){
+		zlog_error(DBGLOG, "start_control_server_task failed, control_NetControl_heart_thr error , err msg = %s\n",
+								strerror(errno));
+		return_code = STATUS_FAILED;
+		goto EXIT;
+	}
+
+
 
 	*ppser = pser;
 

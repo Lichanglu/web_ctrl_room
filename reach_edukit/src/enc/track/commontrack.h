@@ -30,6 +30,7 @@
 #include <link_api/system.h>
 #include <mcfw/interfaces/link_api/trackLink.h>
 #include <mcfw/interfaces/link_api/stutrackLink.h>
+#include <mcfw/interfaces/link_api/stusidetrackLink.h>
 #include "reach.h"
 #include "rwini.h"
 
@@ -42,6 +43,22 @@
 * @ 教师跟踪参数保存文件
 */
 #define TEACH_TRACK_FILE		"teach_track.ini"
+
+/**
+* @ 学生跟踪参数保存文件
+*/
+#define STUDENTS_TRACK_FILE		"students_track.ini"
+
+/**
+* @ 教师跟踪参数保存文件
+*/
+#define TRACK_STUDENTS_RIGHT_SIDE_FILE		"track_students_right_side.ini"
+
+/**
+* @	保存课前取景的图片路径
+*/
+#define	CLASS_VIEW_JPG	"class_view.gpg"
+
 
 #define DEBUG_INFO "debug_info"
 #define DEBUG_IPADDR "debug_ipaddr"
@@ -444,7 +461,7 @@
 //======================================================
 
 
-
+#define	MSG_SET_STUSIDETRACK_PARAM	0xA2	//教师跟踪参数设置
 
 //-------------------设置手动命令的子类型---------------------
 
@@ -514,6 +531,9 @@ typedef enum manualMANUAL_COMMAND_ENUM
 #define STUTRACK_TRIGGER_NUM			(50)
 
 
+#define STUDENTS_UP		(1)		//学生站起来
+#define	STUDENTS_DOWN	(2)		//学生坐下
+
 typedef enum _switch_cmd_type
 {
 	//1画面布局
@@ -526,17 +546,23 @@ typedef enum _switch_cmd_type
 	SWITCH_BLACKBOARD2			= 6,        //板书2 和 老师全景不共存
 
 	//2画面布局
-    SWITCH_2_VGA_TEATHER        = 0x211,        //VGA大 老师小 右上
-    SWITCH_2_TEATHER_STU        = 0x213,        //老师大 学生小
-    SWITCH_2_STU_TEATHER        = 0x214,        //学生大 老师小
-    SWITCH_2_STUPANORAMA_TEATHER    = 0x215,        //学生全景 老师下
+    SWITCH_2_VGA_TEATHER        = 0x211,        //VGA大 老师小 左上
+    SWITCH_2_TEATHER_STU        = 0x213,        //老师大 学生小 左上
+    SWITCH_2_STU_TEATHER        = 0x214,        //学生大 老师小 左上
+    SWITCH_2_STUPANORAMA_TEATHER    = 0x215,        //学生全景 老师 左上
 	
-    SWITCH_2_TEATHER_AND_VGA    = 0x221,        //老师 VGA均等
-    SWITCH_2_TEATHER_AND_STU    = 0x222,        //老师 学生均等
-    SWITCH_2_STUPANORAMA_AND_TEATHER    = 0x223,        //学生全景 老师等分 
+    SWITCH_2_TEATHER_AND_VGA    = 0x221,        //老师左 VGA右       等分
+    SWITCH_2_STU_AND_TEATHER    = 0x222,        //学生左 老师右      等分
+    SWITCH_2_STUPANORAMA_AND_TEATHER    = 0x223, //学生全景左 老师右 等分 
+    SWITCH_2_TEATHER_AND_STU    = 0x224,         //老师左 学生右     等分
 
 	SWITCH_2_VGA_TEATHER_1      = 0x231,        //VGA大 老师小 右下
 	SWITCH_2_STUPANORAMA_TEATHER_1    = 0x232,        //学生全景 老师小 右下
+	SWITCH_2_STU_TEATHER_1      = 0x233,        //学生大 老师小 右下                  ///
+
+	SWITCH_2_VGA_TEATHER_2      = 0x241,           //VGA大 老师大 右上
+	SWITCH_2_STU_TEATHER_2      = 0x242,          //学生大 老师右上
+	SWITCH_2_STUPANORAMA_TEATHER_2      = 0x243,          //学生全景 老师右上
 
 	//3画面布局
 	SWITCH_3_VGA_TEATHER_STU    = 0x311,         //VGA大 老师近景 学生近景
@@ -558,10 +584,16 @@ typedef enum _switch_cmd_type
 	SWITCH_4_VGA_TEATHER_STUPANORAMA_TEACHPANORAMA  = 0x413,              //VGA大 老师近景 学生远景
 	SWITCH_4_VGA_TEACHPANORAMA_STUPANORAMA_TEACHPANORAMA  = 0x414,        //VGA大 老师远景 学生远景
 
-	SWITCH_4_BLACKBOARD_TEATHER_STU_TEACHPANORAMA  = 0x415,      		  //板书大 老师近景 学生近景
-	SWITCH_4_BLACKBOARD_TEATHER_STUPANORAMA_TEACHPANORAMA  = 0x416,      //板书大 老师近景 学生远景
-	SWITCH_4_BLACKBOARD_TEACHPANORAMA_STU_TEACHPANORAMA  = 0x417,      		  //板书大 老师远景 学生近景
-	SWITCH_4_BLACKBOARD_TEACHPANORAMA_STUPANORAMA_TEACHPANORAMA  = 0x418,      //板书大 老师远景 学生远景
+	SWITCH_4_BLACKBOARD1_TEATHER_STU_TEACHPANORAMA  = 0x415,      		  //板书大 老师近景 学生近景
+	SWITCH_4_BLACKBOARD1_TEATHER_STUPANORAMA_TEACHPANORAMA  = 0x416,      //板书大 老师近景 学生远景
+	SWITCH_4_BLACKBOARD1_TEACHPANORAMA_STU_TEACHPANORAMA  = 0x417,      		  //板书大 老师远景 学生近景
+	SWITCH_4_BLACKBOARD1_TEACHPANORAMA_STUPANORAMA_TEACHPANORAMA  = 0x418,      //板书大 老师远景 学生远景
+
+	SWITCH_4_VGA_TEACHPER_STU_STUPANORAMA = 0x419,                      //VGA大 老师近景 学生近景 学生远景
+	SWITCH_4_BLACKBOARD1_TEACHPER_STU_STUPANORAMA = 0x41a,                      //板书大 老师近景 学生近景 学生远景
+
+	SWITCH_4_BLACKBOARD2_TEACHPER_STU_BLACKBOARD1 = 0x41b,                      //板书2大 老师近景 学生近景 板书1
+	SWITCH_4_BLACKBOARD2_TEACHPER_STUPANORAMA_BLACKBOARD1 = 0x41c,               //板书2大 老师近景 学生远景 板书1
 	
 	//5画面布局
 	SWITCH_5    = 0x511,
@@ -910,6 +942,16 @@ typedef struct _cam_control_info
 }cam_control_info_t;
 
 
+
+/**
+* @	跟踪模式设置，是和原始图像比较还是和上帧图像比较
+*/
+typedef struct _stusdietrack_mode_info
+{
+	unsigned char 	state;			//启用或撤销操作
+	int16_t 	track_mode;	//控制类型0是自动控制,1为手动控制
+}stusidetrack_mode_info_t;
+
 /**
 * @	跟踪有关的全局参数
 */
@@ -936,6 +978,7 @@ typedef struct _track_encode_info
 	int		zoom_pan_delay;	//跳转到绝对位置时，zoom和调上下左右位置时中间的间隔单位是ms
 }track_encode_info_t;
 
+
 /**
 * @ 和编码有关的一些全局变量(保存全局变量中用到的结构体)
 */
@@ -948,7 +991,25 @@ typedef struct _stutrack_encode_info
 	short	last_position_no;	//上次预置位号
 	int		is_track;			//是否跟踪1表示跟踪,0表示不跟踪
 	unsigned short is_control_cam;//是否控制摄像机推近景，1为推近景，0为不推近景
+	int		zoom_pan_delay;	//跳转到绝对位置时，zoom和调上下左右位置时中间的间隔单位是ms
+	int		last_send_cmd;			//老师机上一次发送的命令
+	int 	nTriggerValDelay;
+	int 	nOnlyRightSideUpDelay;
+	int 	nLastTriggerVal;
+	int		nStandUpPos;
 }stutrack_encode_info_t;
+
+/**
+* @ 和编码有关的一些全局变量(保存全局变量中用到的结构体)
+*/
+typedef struct _stusidetrack_encode_info
+{
+	short	is_encode;		//为0表示不编码,为1表示编码
+	int		is_save_class_view;	//保存课前取景图片，1是要保存，0不需要保存
+	int		students_status;	//学生站立状态，1为站立，2为坐下，0为不做任何操作
+	int		last_students_status;	//上次学生站立状态，1为站立，2为坐下，0为不做任何操作
+}stusidetrack_encode_info_t;
+
 
 /**
 * @	设置手动命令参数
@@ -1002,6 +1063,18 @@ typedef struct _track_cam_model_info
 	cam_type_info_e		cam_type;
 	
 }track_cam_model_info_t;
+
+
+/**
+* @ 学生辅助机上报的消息结构体
+*/
+typedef struct _rightside_trigger_info
+{
+	unsigned int	nTriggerType;//课前取景0/课中取景1			
+	unsigned int	nTriggerVal;//1表示有触发，2表示坐下(只有课前取景有用)，0不处理
+}rightside_trigger_info_t;
+
+
 
 /**
 * @	切换命令发起者类型
@@ -1108,31 +1181,37 @@ typedef struct _shield_range_info
 
 extern int track_init(ITRACK_Params *track_param);
 extern int stutrack_init(StuITRACK_Params *track_param);
+extern int stusidetrack_init(StuSideITRACK_Params *track_param);
 
 extern int cam_ctrl_cmd(ITRACK_OutArgs *output_param);
 extern int stucam_ctrl_cmd(StuITRACK_OutArgs *output_param);
 
 extern int set_teacher_track_param(unsigned char *data, int socket);
 extern int set_students_track_param(unsigned char *data, int socket);
+extern int track_students_right_side_param(unsigned char *data, int socket);
 
 extern int write_track_static_file(track_static_param_t *static_param);
 extern int stuwrite_track_static_file(stutrack_static_param_t *static_param);
 
 extern int server_set_track_type(short type);
-extern int stuserver_set_track_type(short type);
+extern int server_set_stutrack_type(short type);
+extern int server_set_stusidetrack_type(short type);
 
 extern int save_position_zoom(unsigned char *data);
 extern int stusave_position_zoom(unsigned char *data);
 
 extern int init_save_track_mutex(void);
-extern int stuinit_save_track_mutex(void);
+extern int init_save_stutrack_mutex(void);
+extern int init_save_stusidetrack_mutex(void);
 
 extern int destroy_save_track_mutex(void);
-extern int studestroy_save_track_mutex(void);
+extern int destroy_save_stutrack_mutex(void);
+extern int destroy_save_stusidetrack_mutex(void);
 
 extern  int __stucall_preset_position(short position);
 extern	int __call_preset_position(int preset_position);
-	extern	int		__get_cam_position(void);
+extern	int		__get_cam_position(void);
+extern  Int32 SetVgaState();
 
 #endif
 

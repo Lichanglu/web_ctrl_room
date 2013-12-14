@@ -7,6 +7,57 @@
 
 static int32_t pkg_num = 0;
 static int32_t debug_data_flag = 0;
+
+static int32_t reset_enc_time_info(lives_mode_hand_t *handle,int32_t sindex)
+{
+	int32_t index = 0;
+	if(handle == NULL || sindex < 0 || sindex > VIDEO_ENCODE_MAX_NUM -1 )
+	{
+		return -1;
+	}
+	index = sindex;
+	handle->lives_mode_info.video_sindex.video_enc[index].HD_video_timestamp	= 0;
+	handle->lives_mode_info.video_sindex.video_enc[index].BD_video_timestamp	= 0;
+	handle->lives_mode_info.video_sindex.video_enc[index].HD_video_timestamp_ex	= 0;
+	handle->lives_mode_info.video_sindex.video_enc[index].BD_video_timestamp_ex	= 0;
+
+	handle->lives_mode_info.video_sindex.video_enc[index].HD_video_timestamp_cache	= 0;
+	handle->lives_mode_info.video_sindex.video_enc[index].BD_video_timestamp_cache	= 0;
+	handle->lives_mode_info.video_sindex.video_enc[index].HD_audio_timestamp_cache	= 0;
+	handle->lives_mode_info.video_sindex.video_enc[index].BD_audio_timestamp_cache	= 0;
+
+	#if 0
+	if(index == 0)
+	{
+		rtp_build_reset(handle->lives_mode_info.video_sindex.video_enc[index].HD_audio_rpt_hand);
+		rtp_build_reset(handle->lives_mode_info.video_sindex.video_enc[index].BD_audio_rpt_hand);
+	}
+	#endif
+	rtp_build_reset(handle->lives_mode_info.video_sindex.video_enc[index].HD_audio_rpt_hand);
+	rtp_build_reset(handle->lives_mode_info.video_sindex.video_enc[index].BD_audio_rpt_hand);
+	rtp_build_reset(handle->lives_mode_info.video_sindex.video_enc[index].HD_video_rpt_hand);
+	rtp_build_reset(handle->lives_mode_info.video_sindex.video_enc[index].BD_video_rpt_hand);
+
+
+	// init debug pack seq
+	handle->lives_mode_info.video_sindex.video_enc[index].BD_pack_seq.data_quqlity = 1;  // 低吗
+	handle->lives_mode_info.video_sindex.video_enc[index].BD_pack_seq.audio_seq_num_cache = 0;
+	handle->lives_mode_info.video_sindex.video_enc[index].BD_pack_seq.audio_seq_num_loss = 0;
+	handle->lives_mode_info.video_sindex.video_enc[index].BD_pack_seq.audio_seq_num_total = 0;
+	handle->lives_mode_info.video_sindex.video_enc[index].BD_pack_seq.video_seq_num_cache =0;
+	handle->lives_mode_info.video_sindex.video_enc[index].BD_pack_seq.video_seq_num_loss = 0 ;
+	handle->lives_mode_info.video_sindex.video_enc[index].BD_pack_seq.video_seq_num_total = 0;
+
+	handle->lives_mode_info.video_sindex.video_enc[index].HD_pack_seq.data_quqlity = 0;	// 高嘛
+	handle->lives_mode_info.video_sindex.video_enc[index].HD_pack_seq.audio_seq_num_cache = 0;
+	handle->lives_mode_info.video_sindex.video_enc[index].HD_pack_seq.audio_seq_num_loss = 0;
+	handle->lives_mode_info.video_sindex.video_enc[index].HD_pack_seq.audio_seq_num_total = 0;
+	handle->lives_mode_info.video_sindex.video_enc[index].HD_pack_seq.video_seq_num_cache =0;
+	handle->lives_mode_info.video_sindex.video_enc[index].HD_pack_seq.video_seq_num_loss = 0 ;
+	handle->lives_mode_info.video_sindex.video_enc[index].HD_pack_seq.video_seq_num_total = 0;
+		
+}
+
 static int32_t Interruption_msg(int32_t msg_id)
 {
 	int ret = -1;
@@ -163,6 +214,12 @@ int32_t	init_lives_mode_info(lives_mode_hand_t *arg)
 		arg->lives_mode_info.video_sindex.video_enc[index].BD_video_sindex			= -1;
 		arg->lives_mode_info.video_sindex.video_enc[index].HD_video_timestamp		= 0;
 		arg->lives_mode_info.video_sindex.video_enc[index].BD_video_timestamp		= 0;
+		arg->lives_mode_info.video_sindex.video_enc[index].HD_video_timestamp_ex		= 0;
+		arg->lives_mode_info.video_sindex.video_enc[index].BD_video_timestamp_ex		= 0;
+		arg->lives_mode_info.video_sindex.video_enc[index].HD_video_timestamp_cache		= 0;
+		arg->lives_mode_info.video_sindex.video_enc[index].BD_video_timestamp_cache		= 0;
+		arg->lives_mode_info.video_sindex.video_enc[index].HD_audio_timestamp_cache		= 0;
+		arg->lives_mode_info.video_sindex.video_enc[index].BD_audio_timestamp_cache		= 0;
 		arg->lives_mode_info.video_sindex.video_enc[index].enc_type					= -1;
 
 		// init debug pack seq
@@ -321,6 +378,7 @@ int32_t get_video_data_info(msgque *revmsg ,video_sindex_info_t *arg ,video_data
 					if(arg->video_enc[index].HD_video_timestamp == 0)
 					{
 						arg->video_enc[index].HD_video_timestamp = data_type->video_timestamp;
+						arg->video_enc[index].HD_audio_timestamp_cache = data_type->video_timestamp;
 						data_type->video_timestamp = 0;
 					}
 					else
@@ -376,17 +434,22 @@ int32_t get_video_data_info(msgque *revmsg ,video_sindex_info_t *arg ,video_data
 				else
 				{
 					#if 1
-					if(arg->video_enc[index].HD_video_timestamp == 0)
+					if(arg->video_enc[index].HD_video_timestamp_ex == 0)
 					{
 						nslog(NS_ERROR, "HD_video_timestamp == 0!!!!!!!!!!");
 						#if 0
 						if(index == 0)
 						{
+							arg->video_enc[index].HD_video_timestamp_ex = data_type->video_timestamp;
+							arg->video_enc[index].HD_video_timestamp_cache = data_type->video_timestamp;
 							nslog(NS_INFO,"Wait the audio time!<HD>\n");
 							return OPERATION_ERR;
 						}
 						#endif
-						arg->video_enc[index].HD_video_timestamp = data_type->video_timestamp;
+						arg->video_enc[index].HD_video_timestamp_ex = data_type->video_timestamp;
+						arg->video_enc[index].HD_video_timestamp_cache = data_type->video_timestamp;
+						nslog(NS_ERROR,"FUCK_GOD_1016 video_timestamp:%u   <%d>\n",
+							data_type->video_timestamp,msg_type);
 						data_type->video_timestamp = 0;
 					}
 					else
@@ -414,13 +477,14 @@ int32_t get_video_data_info(msgque *revmsg ,video_sindex_info_t *arg ,video_data
 						#endif
 
 						arg->video_enc[index].HD_video_timestamp_cache = data_type->video_timestamp;
-
-						data_type->video_timestamp = data_type->video_timestamp - arg->video_enc[index].HD_video_timestamp;
+						//add zl
+					//	data_type->video_timestamp = arg->video_enc[index].HD_video_timestamp + (data_type->video_timestamp - arg->video_enc[index].HD_video_timestamp_ex);
+						data_type->video_timestamp = data_type->video_timestamp - arg->video_enc[index].HD_video_timestamp_ex;
 						if(data_type->video_timestamp < 0 )
 						{
 							nslog(NS_ERROR ,"DATA_TIME_STAMP : %d ---- CACHE_TIME_STAMP : %d <SINDEX : %d > <H264_HD>\n",
 								data_type->video_timestamp,
-								arg->video_enc[index].HD_video_timestamp,
+								arg->video_enc[index].HD_video_timestamp_ex,
 								index);
 						}
 
@@ -428,7 +492,9 @@ int32_t get_video_data_info(msgque *revmsg ,video_sindex_info_t *arg ,video_data
 						if(data_type->video_timestamp > 0XFFFFFFFF/90 - 10000)
 						//if(data_type->video_timestamp > 300000)  // 5min
 						{
-							arg->video_enc[index].HD_video_timestamp = 0;
+							nslog(NS_ERROR,"FUCK_GOD_1016 video_timestamp : %u %d\n",
+								data_type->video_timestamp,msg_type);
+							arg->video_enc[index].HD_video_timestamp_ex = 0;
 						}
 					}
 					#endif
@@ -446,6 +512,7 @@ int32_t get_video_data_info(msgque *revmsg ,video_sindex_info_t *arg ,video_data
 					if(arg->video_enc[index].BD_video_timestamp == 0)
 					{
 						arg->video_enc[index].BD_video_timestamp = data_type->video_timestamp;
+						arg->video_enc[index].BD_audio_timestamp_cache = data_type->video_timestamp;
 						data_type->video_timestamp = 0;
 					}
 					else
@@ -502,17 +569,21 @@ int32_t get_video_data_info(msgque *revmsg ,video_sindex_info_t *arg ,video_data
 				else
 				{
 #if 1
-					if(arg->video_enc[index].BD_video_timestamp == 0)
+					if(arg->video_enc[index].BD_video_timestamp_ex == 0)
 					{
 						nslog(NS_ERROR, "BD_video_timestamp == 0!!!!!!!!!!");
 			#if 0
 						if(index == 0)
 						{
+							arg->video_enc[index].BD_video_timestamp_ex = data_type->video_timestamp;
+							arg->video_enc[index].BD_video_timestamp_cache = data_type->video_timestamp;
 							nslog(NS_INFO,"Wait the audio time! <BD> \n");
 							return OPERATION_ERR;
 						}
 			#endif
-						arg->video_enc[index].BD_video_timestamp = data_type->video_timestamp;
+						arg->video_enc[index].BD_video_timestamp_ex = data_type->video_timestamp;
+
+						arg->video_enc[index].BD_video_timestamp_cache = data_type->video_timestamp;
 						data_type->video_timestamp = 0;
 					}
 					else
@@ -540,19 +611,22 @@ int32_t get_video_data_info(msgque *revmsg ,video_sindex_info_t *arg ,video_data
 
 						#endif
 						arg->video_enc[index].BD_video_timestamp_cache = data_type->video_timestamp;
-						data_type->video_timestamp = data_type->video_timestamp - arg->video_enc[index].BD_video_timestamp;
+
+						//add zl
+						//data_type->video_timestamp = arg->video_enc[index].BD_video_timestamp + (data_type->video_timestamp - arg->video_enc[index].BD_video_timestamp_ex);
+						data_type->video_timestamp = data_type->video_timestamp - arg->video_enc[index].BD_video_timestamp_ex;
 						if(data_type->video_timestamp < 0 )
 						{
 							nslog(NS_ERROR ,"DATA_TIME_STAMP : %d ---- CACHE_TIME_STAMP : %d <SINDEX : %d > <H264_BD>\n",
 								data_type->video_timestamp,
-								arg->video_enc[index].BD_video_timestamp,
+								arg->video_enc[index].BD_video_timestamp_ex,
 								index);
 						}
 						// 附加解决时间戳爆掉问题 应用方案1.
 						if(data_type->video_timestamp > 0XFFFFFFFF/90 - 10000)
 						//if(data_type->video_timestamp > 300000)  // 5min
 						{
-							arg->video_enc[index].BD_video_timestamp = 0;
+							arg->video_enc[index].BD_video_timestamp_ex = 0;
 						}
 					}
 #endif
@@ -566,27 +640,28 @@ int32_t get_video_data_info(msgque *revmsg ,video_sindex_info_t *arg ,video_data
 		}
 		else if(arg->video_enc[index].enc_type == VIDEO_JPEG)
 		{
-			#if 1
-			if(arg->video_enc[index].HD_video_timestamp == 0)
-			{
-				arg->video_enc[index].HD_video_timestamp = data_type->video_timestamp;
-				data_type->video_timestamp = 0;
-			}
-			else
-			{
-				data_type->video_timestamp = data_type->video_timestamp - arg->video_enc[index].HD_video_timestamp;
-
-				// 附加解决时间戳爆掉问题 应用方案1.
-				if(data_type->video_timestamp > 0XFFFFFFFF/90 - 10000)
-				//if(data_type->video_timestamp > 300000)  // 5min
-				{
-					arg->video_enc[index].HD_video_timestamp = 0;
-				}
-			}
-			#endif
-
 			if(arg->video_enc[index].HD_video_sindex == msg_type )
 			{
+
+			//	nslog(NS_ERROR,"OOOSSSSXXX --- %d   ---%d\n",msg_type);
+#if 1
+				if(arg->video_enc[index].HD_video_timestamp == 0)
+				{
+					arg->video_enc[index].HD_video_timestamp = data_type->video_timestamp;
+					data_type->video_timestamp = 0;
+				}
+				else
+				{
+					data_type->video_timestamp = data_type->video_timestamp - arg->video_enc[index].HD_video_timestamp;
+
+					// 附加解决时间戳爆掉问题 应用方案1.
+					if(data_type->video_timestamp > 0XFFFFFFFF/90 - 10000)
+					//if(data_type->video_timestamp > 300000)  // 5min
+					{
+						arg->video_enc[index].HD_video_timestamp = 0;
+					}
+				}
+#endif
 				arg->video_enc[index].HD_recv_flag	=	1;
 				data_type->data_quqlity = VIDEO_DATA_TYPE_HD;
 				data_type->data_type = VIDEO_JPEG;
@@ -639,6 +714,7 @@ int32_t get_video_data_info(msgque *revmsg ,video_sindex_info_t *arg ,video_data
 	}
 	else
 	{
+
 		debug_data_flag ++ ;
 		if(debug_data_flag == 1000)
 		{
@@ -864,6 +940,10 @@ int32_t send_video_data_pdg(int8_t *send_buf ,video_send_user_t *data_user_info,
 		r_free(send_buf);
 		send_buf = NULL;
 	}
+	else
+	{
+		nslog(NS_ERROR,"XXXXXXXXXXXXXXXXXXXXXXXXX\n");
+	}
 	return OPERATION_SUCC;
 }
 
@@ -1063,6 +1143,11 @@ int32_t local_media_data_pkg(msgque *revmsg,lives_mode_hand_t *arg)
 	data_user_info.video_timestamp			= 0;
 	data_user_info.video_enc_addr			= NULL;
 
+//	if(pd->data_type == R_AUDIO)
+//	{
+//		nslog(NS_ERROR,"FUCK_GOD_1016 MSG_TYPE : %d\n",revmsg->msgtype);
+//	}
+
 	// debug
 	#if 0
 	if(R_VIDEO == pd->data_type)
@@ -1074,6 +1159,8 @@ int32_t local_media_data_pkg(msgque *revmsg,lives_mode_hand_t *arg)
 		nslog(NS_WARN,"<R_AUDIO>  ----------- <RECV_TIME : %u>  <TYPE : %d> \n",data_type.video_timestamp,pd->data_type);
 	}
 	#endif
+
+
 
 	for(index = 0; index < VIDEO_USER_MAX_NUM ;index ++)
 	{
@@ -1087,7 +1174,7 @@ int32_t local_media_data_pkg(msgque *revmsg,lives_mode_hand_t *arg)
 //	deal_video_jpeg_data(arg);
 
 #if 1
-//	nslog(NS_INFO , "< %d > < %d >  m_data_codec : %d   data_type : %d \n",JPG_CODEC_TYPE,R_JPEG,hdb_data->m_data_codec,pd->data_type);
+//	nslog(NS_INFO , "< %d > < %d >  m_data_codec : %d   data_type : %d \n",JPEG_CODEC_TYPE,R_JPEG,hdb_data->m_data_codec,pd->data_type);
 	if(pd->data_type == R_JPEG)
 	{
 		if(arg->lives_mode_info.jpeg_valid_flag == -1)
@@ -1125,6 +1212,7 @@ int32_t local_media_data_pkg(msgque *revmsg,lives_mode_hand_t *arg)
 			#endif
 		}
 
+		nslog(NS_ERROR,"FUCK_GOD_1114 ---- JPEG CACHE!\n");
 		arg->lives_mode_info.jpeg_msgque.msgbuf  	= revmsg->msgbuf;
 		arg->lives_mode_info.jpeg_msgque.msgtype 	= revmsg->msgtype;
 		jpeg_flag = 1;
@@ -1155,6 +1243,34 @@ int32_t local_media_data_pkg(msgque *revmsg,lives_mode_hand_t *arg)
 		}
 		return OPERATION_ERR;
 	}
+	#if 0
+	if(data_type.data_type == VIDEO_H264)
+	{
+		nslog(NS_ERROR,"FUCK_XXXXXXXXXXXXXXXXXXXX-----------1\n");
+	}
+	else if(data_type.data_type == VIDEO_JPEG)
+	{
+		nslog(NS_ERROR,"FUCK_XXXXXXXXXXXXXXXXXXXX-----------2\n");
+	}
+	else
+	{
+		nslog(NS_ERROR,"SHIRT_XXXXXXXXXXXXXXXXXXXX333333333\n");
+	}
+	#endif
+	#if 0
+	if(revmsg->msgtype == 1)// || revmsg->msgtype == 2)
+	{
+		if(pd->data_type == R_AUDIO)
+		{
+			nslog(NS_ERROR,"FUCK_GOD_1016 AUDIO TIMESTAMP <%u>  <STREAM_TYPE : %d>\n",data_type.video_timestamp,revmsg->msgtype);
+		}
+		else
+		{
+			nslog(NS_ERROR,"FUCK_GOD_1016 VIDEO TIMESTAMP <%u>  <STREAM_TYPE : %d>\n",data_type.video_timestamp,revmsg->msgtype);
+		}
+	}
+	#endif
+
 	// 2. get the user_info
 	if(get_send_userinfo(&data_type,&data_user_info,arg) < 0)
 	{
@@ -1167,7 +1283,7 @@ int32_t local_media_data_pkg(msgque *revmsg,lives_mode_hand_t *arg)
 		}
 		return OPERATION_ERR;
 	}
-
+//	nslog(NS_ERROR,"FUCK_GOD_1016 USER_NUM : %d\n",data_user_info.user_num);
 
 	// 3.   set RTP_BUILD_INFO
 	if(R_VIDEO == pd->data_type)
@@ -1201,6 +1317,10 @@ int32_t local_media_data_pkg(msgque *revmsg,lives_mode_hand_t *arg)
 	if(data_user_info.user_num != 0)
 	{
 		send_video_data_pdg(revmsg->msgbuf,&data_user_info,data_type.data_type,temp_rtp_hand);
+	}
+	else
+	{
+		nslog(NS_ERROR,"FUCK_XXXXXXXXXXXXXXXXXXXX333333333\n");
 	}
 	#if 0
 	if(jpeg_flag == 0)
@@ -1528,13 +1648,30 @@ void *lives_mode_thread(void *arg)
 		//预处理JPEG
 		deal_video_jpeg_data(lives_mode_hand);
 		pd = (parse_data_t *)(revmsg.msgbuf);
-
+		#if 0
+		if(revmsg.msgbuf != NULL)
+		{
+			if(pd->data != NULL)
+			{
+				r_free(pd->data);
+				pd->data = NULL;
+			}
+			r_free(revmsg.msgbuf);
+			revmsg.msgbuf = NULL;
+			continue;
+		}
+		#endif
 	//	nslog(NS_ERROR, "revmsg.msgtype = %ld\n", revmsg.msgtype);
 	//	nslog(NS_ERROR, "revmsg.msgbuf = %p\n", revmsg.msgbuf);
 //		nslog(NS_ERROR, "pd->data = %p\n", pd->data);
 
 //		nslog(NS_ERROR, "..........................\n");
 //		pd = (parse_data_t *)(revmsg.msgbuf);
+
+//		if(pd->data_type == R_AUDIO)
+//		{
+//			nslog(NS_ERROR,"FUCK_GOD_1016 MSG_TYPE : %d\n",revmsg.msgtype);
+//		}
 
 		#if 0	// debug zhengyb
 		if(revmsg.msgtype == 5)
@@ -1674,7 +1811,9 @@ void *lives_debug_thread(void *arg)
 				nslog(NS_DEBUG, "<VIDEO_ENCODE : %s >",lives_mode_hand->lives_mode_info.user_info[user_index].video_encode_index);
 				for(index = 0;index < enc_num ; index ++)
 				{
-					nslog(NS_DEBUG,"<VIDEO_QUALITY : %d ><VIDEO_INDEX : %d ><USER_ID : %d><USER_PROT : %d ><USER_RECV : %d ><USER_SENG : %d ><USER_ADDR : %s >",
+					if(lives_mode_hand->lives_mode_info.user_info[user_index].lives_user_addr[index].m_user_port != 0)
+					{
+						nslog(NS_DEBUG,"<VIDEO_QUALITY : %d ><VIDEO_INDEX : %d ><USER_ID : %d><USER_PROT : %d ><USER_RECV : %d ><USER_SENG : %d ><USER_ADDR : %s >",
 							lives_mode_hand->lives_mode_info.user_info[user_index].video_quality_type,
 							index,
 							lives_mode_hand->lives_mode_info.user_info[user_index].user_id,
@@ -1682,6 +1821,7 @@ void *lives_debug_thread(void *arg)
 							lives_mode_hand->lives_mode_info.user_info[user_index].user_debug_info[index].user_recv_flag,
 							lives_mode_hand->lives_mode_info.user_info[user_index].user_debug_info[index].user_send_flag,
 							lives_mode_hand->lives_mode_info.user_info[user_index].lives_user_addr[index].m_user_ip);
+					}
 
 					lives_mode_hand->lives_mode_info.user_info[user_index].user_debug_info[index].user_recv_flag = 0;
 					lives_mode_hand->lives_mode_info.user_info[user_index].user_debug_info[index].user_send_flag = 0;
@@ -1871,16 +2011,50 @@ int32_t send_rtp_video(void *arg , int8_t *send_buf,int32_t len)
 	for(index = 0; index < user->user_num ; index ++)
 	{
 		temp_len  = len;
-	//nslog(NS_WARN, "udp_fd:[%d] m_user_port:[%d] m_user_ip:[%s]\n",
-	//			user->user_addr_info[index].udp_fd,
-	//			user->user_addr_info[index].user_addr_info.m_user_port,
-	//			user->user_addr_info[index].user_addr_info.m_user_ip);
+		#if 0
+		if(frame_head->codec == 1)
+		{
+			nslog(NS_WARN, "udp_fd:[%d] m_user_port:[%d] m_user_ip:[%s]  len : %d\n",
+				user->user_addr_info[index].udp_fd,
+				user->user_addr_info[index].user_addr_info.m_user_port,
+				user->user_addr_info[index].user_addr_info.m_user_ip,
+				temp_len);
+
+		//	ret = async_sendto_data(user->user_addr_info[index].udp_fd, (void *)send_buf, &temp_len, user->user_addr_info[index].user_addr_info.m_user_port, user->user_addr_info[index].user_addr_info.m_user_ip);
+		}
+		#endif
+		#if 0
+		if(frame_head->codec == 1)
+		{
+			ret = async_sendto_data(user->user_addr_info[index].udp_fd, (void *)send_buf, &temp_len, user->user_addr_info[index].user_addr_info.m_user_port+1000, user->user_addr_info[index].user_addr_info.m_user_ip);
+		}
+		else
+		{
+			ret = async_sendto_data(user->user_addr_info[index].udp_fd, (void *)send_buf, &temp_len, user->user_addr_info[index].user_addr_info.m_user_port, user->user_addr_info[index].user_addr_info.m_user_ip);
+		}
+
+		#endif
+		#if 0
+		if(user->video_sindex == 0)
+		{
+			if(frame_head->codec == 1)
+			{
+				ret = async_sendto_data(user->user_addr_info[index].udp_fd, (void *)send_buf, &temp_len, 10000+1000, "192.168.4.26");
+			}
+			else
+			{
+				ret = async_sendto_data(user->user_addr_info[index].udp_fd, (void *)send_buf, &temp_len, 10000,"192.168.4.26");
+			}
+		}
+		#endif
+		#if 1
 		ret = async_sendto_data(user->user_addr_info[index].udp_fd, (void *)send_buf, &temp_len, user->user_addr_info[index].user_addr_info.m_user_port, user->user_addr_info[index].user_addr_info.m_user_ip);
 		if(ret < 0)
 		{
 			loss_pack_falg = 1;
 		}
 		(user->user_addr[index])->user_debug_info[user->video_sindex].user_send_flag = 1;
+		#endif
 	}
 	// 发送包累计  Debug
 	if(frame_head->codec == 1)
@@ -1972,6 +2146,12 @@ int32_t reset_live_mode_enc(void *arg)
 			handle->lives_mode_info.video_sindex.video_enc[index].BD_video_sindex	= -1;
 			handle->lives_mode_info.video_sindex.video_enc[index].HD_video_timestamp	= 0;
 			handle->lives_mode_info.video_sindex.video_enc[index].BD_video_timestamp	= 0;
+			handle->lives_mode_info.video_sindex.video_enc[index].HD_video_timestamp_ex	= 0;
+			handle->lives_mode_info.video_sindex.video_enc[index].BD_video_timestamp_ex	= 0;
+			handle->lives_mode_info.video_sindex.video_enc[index].HD_video_timestamp_cache	= 0;
+			handle->lives_mode_info.video_sindex.video_enc[index].BD_video_timestamp_cache	= 0;
+			handle->lives_mode_info.video_sindex.video_enc[index].HD_audio_timestamp_cache	= 0;
+			handle->lives_mode_info.video_sindex.video_enc[index].BD_audio_timestamp_cache	= 0;
 			handle->lives_mode_info.video_sindex.video_enc[index].enc_type			= -1;
 
 			#if 0
@@ -2075,6 +2255,8 @@ int32_t reset_live_mode_enc_time(void *arg)
 		{
 			handle->lives_mode_info.video_sindex.video_enc[index].HD_video_timestamp	= 0;
 			handle->lives_mode_info.video_sindex.video_enc[index].BD_video_timestamp	= 0;
+			handle->lives_mode_info.video_sindex.video_enc[index].HD_video_timestamp_ex	= 0;
+			handle->lives_mode_info.video_sindex.video_enc[index].BD_video_timestamp_ex	= 0;
 
 			handle->lives_mode_info.video_sindex.video_enc[index].HD_video_timestamp_cache	= 0;
 			handle->lives_mode_info.video_sindex.video_enc[index].BD_video_timestamp_cache	= 0;
@@ -2131,7 +2313,11 @@ int32_t recognition_req_strm_proc(void *arg,int32_t msgtype)
 		nslog(NS_ERROR ,"LIVE_MODE  <ARG_ADDR : %p> <msgtype : %d>\n",arg,msgtype);
 		return -1;
 	}
-	nslog(NS_INFO ,"ENC_NUM : %d  USER_NUM : %d  msgtype : %d \n",handle->lives_mode_info.user_num,handle->lives_mode_info.video_sindex.enc_num,msgtype);
+	nslog(NS_INFO ,"ENC_NUM : %d  USER_NUM : %d  msgtype : %d \n",handle->lives_mode_info.video_sindex.enc_num,handle->lives_mode_info.user_num,msgtype);
+//	reset_enc_time_info(handle,msgtype);
+
+	
+//	nslog(NS_INFO ,"ENC_NUM : %d  USER_NUM : %d  msgtype : %d \n",handle->lives_mode_info.video_sindex.enc_num,handle->lives_mode_info.user_num,msgtype);
 	if(handle->lives_mode_info.user_num == 0 || handle->lives_mode_info.video_sindex.enc_num == 0)
 	{
 		return 0;
@@ -2139,16 +2325,26 @@ int32_t recognition_req_strm_proc(void *arg,int32_t msgtype)
 
 	data_type.data_quqlity					= -1;
 	data_type.data_sindex					= '0';
-	data_type.data_type						= -1;
+	data_type.data_type					= -1;
 	data_type.video_sindex					= -1;
 	data_type.video_timestamp				= -1;
 	data_type.video_enc_addr				= NULL;
+
 
 	if(get_advance_request_enc_info(msgtype,&(handle->lives_mode_info.video_sindex),&data_type) < 0)
 	{
 		return 0;
 	}
-
+	
+	nslog(NS_ERROR,"FUCK_GOD_1210  data_type->data_quqlity :%d  data_type->data_type :%d data_type->data_sindex :%d\n",
+		data_type.data_quqlity,
+		data_type.data_type,
+		data_type.video_sindex);
+	if(reset_enc_time_info(handle,data_type.video_sindex) < 0)
+	{
+		nslog(NS_ERROR,"RESET ENC TIME INFO IS ERROR\n");
+		return 0;
+	}
 	ret = get_advance_request_user_info(handle,&data_type);
 
 	return ret;

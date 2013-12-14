@@ -115,7 +115,7 @@ int32_t pkg_placed_in_frame(int8_t *frame_data,  int32_t part_frame_len,  stream
 	}
 
 
-	if(JPG_CODEC_TYPE == fh->m_data_codec) {
+	if(JPEG_CODEC_TYPE == fh->m_data_codec) {
 		if(fh->m_time_tick < M_handle->recv_time_t.prev_video_time_tick) {
 			M_handle->recv_time_t.time_video_tick = M_handle->recv_time_t.time_video_tick + getJpgIntervalTime(M_handle->recv_time_t.prev_video_time, current_time);
 
@@ -348,14 +348,8 @@ int32_t write_long_tcp_data(FILE *fd, void *buf, int32_t buflen)
 	return total_recv;
 }
 
-/*==============================================================================
-  函数: <send_msg_to_rec>
-  功能: <发数据消息给录制>
-  参数: hdb_freame_head_t *fh, stream_handle *M_handle
-  返回值: 成功返回0，失败返回-1.
-  Created By liuchsh 2012.11.16 15:37:50 For EDU
-  ==============================================================================*/
-static int32_t send_msg_to_rec(hdb_freame_head_t *fh, stream_handle *M_handle)
+// add zl
+static int32_t send_msg_to_rec_media_res(hdb_freame_head_t *fh, stream_handle *M_handle)
 {
 	int return_code = OPERATION_SUCC;
 	int8_t *rec_frame_data = NULL;
@@ -391,14 +385,10 @@ static int32_t send_msg_to_rec(hdb_freame_head_t *fh, stream_handle *M_handle)
 		rec_frame_head->sample_rate = fh->m_frame_rate;
 		rec_frame_head->time_tick = M_handle->recv_time_t.time_video_tick;
 
-	} else if(AAC_CODEC_TYPE == fh->m_data_codec) {
-		r_memcpy(rec_frame_data, M_handle->audio_data, fh->m_frame_length);
-		rec_frame_head->data_type = R_AUDIO;
-		rec_frame_head->code_rate = fh->m_colors;
-		rec_frame_head->sample_rate = fh->m_hight;
-		rec_frame_head->time_tick = M_handle->recv_time_t.time_audio_tick;
+	}
 
-	} else if(JPG_CODEC_TYPE == fh->m_data_codec) {
+	else if(JPEG_CODEC_TYPE == fh->m_data_codec)
+	{
 		r_memcpy(rec_frame_data, M_handle->frame_data, fh->m_frame_length);
 		rec_frame_head->data_type = R_JPEG;
 		rec_frame_head->time_tick = M_handle->recv_time_t.time_video_tick;
@@ -419,6 +409,7 @@ static int32_t send_msg_to_rec(hdb_freame_head_t *fh, stream_handle *M_handle)
 	m_rec_msgque.msgtype = M_handle->stream_id;
 	m_rec_msgque.msgbuf = (int8_t *)rec_frame_head;
 	M_handle->recv_pri.to_rec = 1;
+
 	return_code = r_msg_send(M_handle->msg_recv_to_rec, &m_rec_msgque, MsgqueLen - sizeof(long), IPC_NOWAIT);
 
 	if(0 > return_code) {
@@ -443,23 +434,409 @@ static int32_t send_msg_to_rec(hdb_freame_head_t *fh, stream_handle *M_handle)
 
 	SET_FLAG_BIT_FALSE(M_handle->log_flag, RECORD_BIT);//置第0位为0.
 	return OPERATION_SUCC;
+
 }
 
-static int32_t send_msg_to_live(hdb_freame_head_t *fh, stream_handle *M_handle)
+static int32_t send_msg_to_rec_media_movie(hdb_freame_head_t *fh, stream_handle *M_handle)
+{
+	int return_code = OPERATION_SUCC;
+	int8_t *rec_frame_data = NULL;
+	parse_data_t *rec_frame_head = NULL;
+	m_msgque  m_rec_msgque  ;
+
+	rec_frame_data = (int8_t *)r_malloc(fh->m_frame_length);
+
+	if(NULL == rec_frame_data) {
+		nslog(NS_ERROR, "malloc is error !!!");
+		return_code = RECEIVE_MALLOC_ERR;
+		return return_code;
+	}
+
+	rec_frame_head = (parse_data_t *)r_malloc(sizeof(parse_data_t));
+
+	if(NULL == rec_frame_head) {
+		if(rec_frame_data) {
+			r_free(rec_frame_data);
+			rec_frame_data = NULL;
+		}
+
+		return_code = RECEIVE_MALLOC_ERR;
+		return return_code;
+	}
+
+	r_memset(rec_frame_head, 0, sizeof(parse_data_t));
+	r_memset(rec_frame_data, 0, fh->m_frame_length);
+
+	if(H264_CODEC_TYPE == fh->m_data_codec) {
+		r_memcpy(rec_frame_data, M_handle->frame_data, fh->m_frame_length);
+		rec_frame_head->data_type = R_VIDEO;
+		rec_frame_head->sample_rate = fh->m_frame_rate;
+		rec_frame_head->time_tick = M_handle->recv_time_t.time_video_tick;
+
+	}
+
+	else if(JPEG_CODEC_TYPE == fh->m_data_codec)
+	{
+		r_memcpy(rec_frame_data, M_handle->frame_data, fh->m_frame_length);
+		rec_frame_head->data_type = R_JPEG;
+		rec_frame_head->time_tick = M_handle->recv_time_t.time_video_tick;
+	}
+
+	rec_frame_head->data_len = fh->m_frame_length;
+	rec_frame_head->data = rec_frame_data;
+	rec_frame_data = NULL;
+	rec_frame_head->flags = fh->m_dw_flags;
+	rec_frame_head->sindex = M_handle->stream_id - 1;
+
+	rec_frame_head->index = 0;
+	rec_frame_head->audio_sindex = M_handle->stream_id - 1;
+	rec_frame_head->height = fh->m_hight;
+	rec_frame_head->width = fh->m_width;
+	rec_frame_head->blue_flag = !(fh->m_others);
+
+	m_rec_msgque.msgtype = M_handle->stream_id;
+	m_rec_msgque.msgbuf = (int8_t *)rec_frame_head;
+	M_handle->recv_pri.to_rec = 1;
+	if(rec_frame_head->data_type == R_JPEG)
+	{
+		nslog(NS_ERROR,"FUCK_GOD_1114 --- SEND TO RECORD A JPEG!\n");
+	}
+	return_code = r_msg_send(M_handle->msg_recv_to_usb_rec, &m_rec_msgque, MsgqueLen - sizeof(long), IPC_NOWAIT);
+
+	if(0 > return_code) {
+		if(rec_frame_head->data) {
+			r_free(rec_frame_head->data);
+			rec_frame_head->data = NULL;
+		}
+
+		if(rec_frame_head) {
+			r_free(rec_frame_head);
+			rec_frame_head = NULL;
+		}
+
+		if(FALSE == IS_FLAG_BIT_TRUE(M_handle->log_flag, RECORD_BIT)) {
+			nslog(NS_WARN, "msgsnd to record failed, msgid = %d, errno = %d, stream_id = %d", M_handle->msg_recv_to_rec, errno, M_handle->stream_id);
+			SET_FLAG_BIT_TRUE(M_handle->log_flag, RECORD_BIT);//置第0位为1.
+		}
+
+		M_handle->recv_pri.to_rec = 0;
+		return OPERATION_SUCC;
+	}
+
+	SET_FLAG_BIT_FALSE(M_handle->log_flag, RECORD_BIT);//置第0位为0.
+	return OPERATION_SUCC;
+
+}
+
+
+
+static int32_t send_msg_to_rec_audio_res(hdb_freame_head_t *fh, stream_handle *M_handle)
+{
+	int32_t index = 0;
+	int32_t audio_vaild_num = 0;
+	stream_handle *temp_handle = NULL;
+	int return_code = OPERATION_SUCC;
+	int8_t *rec_frame_data = NULL;
+	parse_data_t *rec_frame_head = NULL;
+	m_msgque  m_rec_msgque  ;
+
+	if(M_handle->audio_info == NULL)
+	{
+		nslog(NS_ERROR,"IMPORT ERROR, <RES AUDIO_INTO IS NULL >STREAM ID : %d\n",M_handle->stream_id);
+		return RECEIVE_MALLOC_ERR;
+	}
+
+	if(M_handle->audio_info->audio_tran_res_info.stream_num == 0)
+	{
+
+		nslog(NS_ERROR,"IMPORT ERROR, <RES AUDIO NUM IS 0>STREAM ID : %d\n",M_handle->stream_id);
+		return OPERATION_SUCC;
+	}
+	audio_vaild_num = M_handle->audio_info->audio_tran_res_info.stream_num;
+
+	for(index = 0 ;index < audio_vaild_num ;index++)
+	{
+		temp_handle = (stream_handle *)(M_handle->audio_info->audio_tran_res_info.stream_handle_addr[index]);
+		if(START_REC != get_rec_status(temp_handle))
+		{
+			continue;
+		}
+		rec_frame_data = (int8_t *)r_malloc(fh->m_frame_length);
+
+		if(NULL == rec_frame_data) {
+			nslog(NS_ERROR, "malloc is error !!!");
+			return_code = RECEIVE_MALLOC_ERR;
+			return return_code;
+		}
+
+		rec_frame_head = (parse_data_t *)r_malloc(sizeof(parse_data_t));
+
+		if(NULL == rec_frame_head) {
+			if(rec_frame_data) {
+				r_free(rec_frame_data);
+				rec_frame_data = NULL;
+			}
+
+			return_code = RECEIVE_MALLOC_ERR;
+			return return_code;
+		}
+
+		r_memcpy(rec_frame_data, M_handle->audio_data, fh->m_frame_length);
+		rec_frame_head->data_type = R_AUDIO;
+		rec_frame_head->code_rate = fh->m_colors;
+		rec_frame_head->sample_rate = fh->m_hight;
+		rec_frame_head->time_tick = M_handle->recv_time_t.time_audio_tick;
+
+		rec_frame_head->data_len = fh->m_frame_length;
+		rec_frame_head->data = rec_frame_data;
+		rec_frame_data = NULL;
+		rec_frame_head->flags = fh->m_dw_flags;
+		// add zl
+	//	rec_frame_head->sindex = M_handle->stream_id - 1;
+		rec_frame_head->sindex = temp_handle->stream_id;
+
+		rec_frame_head->index = 0;
+		rec_frame_head->audio_sindex = M_handle->stream_id - 1;
+		rec_frame_head->height = fh->m_hight;
+		rec_frame_head->width = fh->m_width;
+		rec_frame_head->blue_flag = !(fh->m_others);
+
+		//add zl
+	//	m_rec_msgque.msgtype = M_handle->stream_id;
+		m_rec_msgque.msgtype = temp_handle->stream_id;
+		m_rec_msgque.msgbuf = (int8_t *)rec_frame_head;
+		M_handle->recv_pri.to_rec = 1;
+//		nslog(NS_ERROR,"FUCK_GOD_1014_RES  MSG_TYPE: %d\n",m_rec_msgque.msgtype);
+		return_code = r_msg_send(temp_handle->msg_recv_to_rec, &m_rec_msgque, MsgqueLen - sizeof(long), IPC_NOWAIT);
+
+		if(0 > return_code)
+		{
+			if(rec_frame_head->data) {
+				r_free(rec_frame_head->data);
+				rec_frame_head->data = NULL;
+			}
+
+			if(rec_frame_head) {
+				r_free(rec_frame_head);
+				rec_frame_head = NULL;
+			}
+
+			if(FALSE == IS_FLAG_BIT_TRUE(M_handle->log_flag, RECORD_BIT)) {
+				nslog(NS_WARN, "msgsnd to record failed, msgid = %d, errno = %d, stream_id = %d", M_handle->msg_recv_to_rec, errno, M_handle->stream_id);
+				SET_FLAG_BIT_TRUE(M_handle->log_flag, RECORD_BIT);//置第0位为1.
+			}
+
+			M_handle->recv_pri.to_rec = 0;
+			return OPERATION_SUCC;
+		}
+
+	}
+
+	SET_FLAG_BIT_FALSE(M_handle->log_flag, RECORD_BIT);//置第0位为0.
+}
+
+static int32_t send_msg_to_rec_audio_movie(hdb_freame_head_t *fh, stream_handle *M_handle)
+{
+	int32_t index = 0;
+	int32_t audio_vaild_num = 0;
+	stream_handle *temp_handle = NULL;
+	int return_code = OPERATION_SUCC;
+	int8_t *rec_frame_data = NULL;
+	parse_data_t *rec_frame_head = NULL;
+	m_msgque  m_rec_msgque  ;
+
+	if(M_handle->audio_info == NULL)
+	{
+		nslog(NS_ERROR,"IMPORT ERROR, <AUDIO_INTO IS NULL >STREAM ID : %d\n",M_handle->stream_id);
+		return RECEIVE_MALLOC_ERR;
+	}
+
+	if(M_handle->audio_info->audio_tran_movie_info.stream_num == 0)
+	{
+
+		nslog(NS_ERROR,"IMPORT ERROR, <MOVIE AUDIO NUM IS 0>STREAM ID : %d\n",M_handle->stream_id);
+		return OPERATION_SUCC;
+	}
+	audio_vaild_num = M_handle->audio_info->audio_tran_movie_info.stream_num;
+
+	for(index = 0 ;index < audio_vaild_num ;index++)
+	{
+
+		temp_handle = (stream_handle *)(M_handle->audio_info->audio_tran_movie_info.stream_handle_addr[index]);
+
+		//		nslog(NS_ERROR,"FUCK_GOD_1016_MOVIE, %d   %d\n",temp_handle->stream_id ,get_usb_rec_status(temp_handle));
+		if(START_USB_REC != get_usb_rec_status(temp_handle))
+		{
+			continue;
+		}
+
+		rec_frame_data = (int8_t *)r_malloc(fh->m_frame_length);
+
+		if(NULL == rec_frame_data) {
+			nslog(NS_ERROR, "malloc is error !!!");
+			return_code = RECEIVE_MALLOC_ERR;
+			return return_code;
+		}
+
+		rec_frame_head = (parse_data_t *)r_malloc(sizeof(parse_data_t));
+
+		if(NULL == rec_frame_head) {
+			if(rec_frame_data) {
+				r_free(rec_frame_data);
+				rec_frame_data = NULL;
+			}
+
+			return_code = RECEIVE_MALLOC_ERR;
+			return return_code;
+		}
+
+		r_memcpy(rec_frame_data, M_handle->audio_data, fh->m_frame_length);
+		rec_frame_head->data_type = R_AUDIO;
+		rec_frame_head->code_rate = fh->m_colors;
+		rec_frame_head->sample_rate = fh->m_hight;
+		rec_frame_head->time_tick = M_handle->recv_time_t.time_audio_tick;
+
+		rec_frame_head->data_len = fh->m_frame_length;
+		rec_frame_head->data = rec_frame_data;
+		rec_frame_data = NULL;
+		rec_frame_head->flags = fh->m_dw_flags;
+
+		// add zl
+	//	rec_frame_head->sindex = M_handle->stream_id - 1;
+		rec_frame_head->sindex = temp_handle->stream_id;
+		rec_frame_head->index = 0;
+		rec_frame_head->audio_sindex = M_handle->stream_id - 1;
+		rec_frame_head->height = fh->m_hight;
+		rec_frame_head->width = fh->m_width;
+		rec_frame_head->blue_flag = !(fh->m_others);
+
+		// add zl
+	//	m_rec_msgque.msgtype = M_handle->stream_id;
+		m_rec_msgque.msgtype = temp_handle->stream_id;
+		m_rec_msgque.msgbuf = (int8_t *)rec_frame_head;
+		M_handle->recv_pri.to_rec = 1;
+
+//		nslog(NS_ERROR,"FUCK_GOD_1014_MOVIE  MSG_TYPE: %d\n",m_rec_msgque.msgtype);
+		return_code = r_msg_send(temp_handle->msg_recv_to_usb_rec, &m_rec_msgque, MsgqueLen - sizeof(long), IPC_NOWAIT);
+
+		if(0 > return_code)
+		{
+			if(rec_frame_head->data) {
+				r_free(rec_frame_head->data);
+				rec_frame_head->data = NULL;
+			}
+
+			if(rec_frame_head) {
+				r_free(rec_frame_head);
+				rec_frame_head = NULL;
+			}
+
+			if(FALSE == IS_FLAG_BIT_TRUE(M_handle->log_flag, RECORD_BIT)) {
+				nslog(NS_WARN, "msgsnd to record failed, msgid = %d, errno = %d, stream_id = %d", M_handle->msg_recv_to_rec, errno, M_handle->stream_id);
+				SET_FLAG_BIT_TRUE(M_handle->log_flag, RECORD_BIT);//置第0位为1.
+			}
+
+			M_handle->recv_pri.to_rec = 0;
+			return OPERATION_SUCC;
+		}
+
+	}
+
+	SET_FLAG_BIT_FALSE(M_handle->log_flag, RECORD_BIT);//置第0位为0.
+}
+
+
+
+/*==============================================================================
+  函数: <send_msg_to_rec>  res 资源模式
+  功能: <发数据消息给录制>
+  参数: hdb_freame_head_t *fh, stream_handle *M_handle
+  返回值: 成功返回0，失败返回-1.
+  Created By liuchsh 2012.11.16 15:37:50 For EDU
+  ==============================================================================*/
+static int32_t send_msg_to_rec_res(hdb_freame_head_t *fh, stream_handle *M_handle)
+{
+	int return_code = OPERATION_SUCC;
+	if(H264_CODEC_TYPE == fh->m_data_codec ||JPEG_CODEC_TYPE == fh->m_data_codec)
+	{
+		if(START_REC == get_rec_status(M_handle)&&
+			(M_handle->rec_mode == RECODE_MODE_RES ||
+			M_handle->rec_mode == RECODE_MODE_ALL))
+		{
+
+			return_code = send_msg_to_rec_media_res(fh,M_handle);
+		}
+	}
+	else if(AAC_CODEC_TYPE == fh->m_data_codec)
+	{
+		if(START_REC == get_rec_status(M_handle) || START_REC == get_usb_rec_status(M_handle))
+		{
+			return_code = send_msg_to_rec_audio_res(fh,M_handle);
+		}
+
+	}
+	else
+	{
+		;
+	}
+	SET_FLAG_BIT_FALSE(M_handle->log_flag, RECORD_BIT);//置第0位为0.
+	return OPERATION_SUCC;
+
+}
+
+
+/*==============================================================================
+  函数: <send_msg_to_rec>   movie 电影模式
+  功能: <发数据消息给录制>
+  参数: hdb_freame_head_t *fh, stream_handle *M_handle
+  返回值: 成功返回0，失败返回-1.
+  Created By liuchsh 2012.11.16 15:37:50 For EDU
+  ==============================================================================*/
+static int32_t send_msg_to_rec_movie(hdb_freame_head_t *fh, stream_handle *M_handle)
+{
+	int return_code = OPERATION_SUCC;
+	if(H264_CODEC_TYPE == fh->m_data_codec || JPEG_CODEC_TYPE == fh->m_data_codec)
+	{
+
+		if(START_REC == get_usb_rec_status(M_handle)&&
+			(M_handle->rec_mode == RECODE_MODE_MOVIE ||
+			M_handle->rec_mode == RECODE_MODE_ALL))
+		{
+
+			return_code = send_msg_to_rec_media_movie(fh,M_handle);
+		}
+	}
+	else if(AAC_CODEC_TYPE == fh->m_data_codec)
+	{
+
+		if(START_REC == get_rec_status(M_handle) || START_USB_REC == get_usb_rec_status(M_handle))
+		{
+			return_code = send_msg_to_rec_audio_movie(fh,M_handle);
+		}
+	}
+	else
+	{
+		;
+	}
+
+	return OPERATION_SUCC;
+
+}
+
+static int32_t send_msg_to_live_media(hdb_freame_head_t *fh, stream_handle *M_handle)
 {
 	int return_code = OPERATION_SUCC;
 	int8_t *live_frame_data = NULL;
 	parse_data_t *live_frame_head = NULL;
 	m_msgque  m_live_msgque  ;
 
-	if(NULL == M_handle->frame_data || NULL == M_handle->audio_data) {
-		nslog(NS_ERROR, "M_handle->frame_data = %p, M_handle->audio_data = %p, stream_id = %d", M_handle->frame_data, M_handle->audio_data, M_handle->stream_id);
-		return OPERATION_ERR;
-	}
-
 	live_frame_data = (int8_t *)r_malloc(fh->m_frame_length);
 
 	if(NULL == live_frame_data) {
+		if(live_frame_data) {
+			r_free(live_frame_data);
+			live_frame_data = NULL;
+		}
 		nslog(NS_ERROR, "malloc is error !!!");
 		return_code = RECEIVE_MALLOC_ERR;
 		return return_code;
@@ -468,9 +845,9 @@ static int32_t send_msg_to_live(hdb_freame_head_t *fh, stream_handle *M_handle)
 	live_frame_head = (parse_data_t *)r_malloc(sizeof(parse_data_t));
 
 	if(NULL == live_frame_head) {
-		if(live_frame_data) {
-			r_free(live_frame_data);
-			live_frame_data = NULL;
+		if(live_frame_head) {
+			r_free(live_frame_head);
+			live_frame_head = NULL;
 		}
 
 		return_code = RECEIVE_MALLOC_ERR;
@@ -480,21 +857,15 @@ static int32_t send_msg_to_live(hdb_freame_head_t *fh, stream_handle *M_handle)
 	r_memset(live_frame_head, 0, sizeof(parse_data_t));
 	r_memset(live_frame_data, 0, fh->m_frame_length);
 
-	//nslog(NS_WARN, "fh->m_data_codec:[%d]\n", fh->m_data_codec);
-	if(H264_CODEC_TYPE == fh->m_data_codec) {
+	if(H264_CODEC_TYPE == fh->m_data_codec)
+	{
 		r_memcpy(live_frame_data, M_handle->frame_data, fh->m_frame_length);
 		live_frame_head->data_type = R_VIDEO;
 		live_frame_head->sample_rate = fh->m_frame_rate;
 		live_frame_head->time_tick = M_handle->recv_time_t.time_video_tick;
-
-	} else if(AAC_CODEC_TYPE == fh->m_data_codec) {
-		r_memcpy(live_frame_data, M_handle->audio_data, fh->m_frame_length);
-		live_frame_head->data_type = R_AUDIO;
-		live_frame_head->code_rate = fh->m_colors;
-		live_frame_head->sample_rate = fh->m_hight;
-		live_frame_head->time_tick = M_handle->recv_time_t.time_audio_tick;
-
-	} else if(JPG_CODEC_TYPE == fh->m_data_codec) {
+	}
+	else if(JPEG_CODEC_TYPE == fh->m_data_codec)
+	{
 		r_memcpy(live_frame_data, M_handle->frame_data, fh->m_frame_length);
 		live_frame_head->data_type = R_JPEG;
 		live_frame_head->time_tick = M_handle->recv_time_t.time_video_tick;
@@ -517,7 +888,10 @@ static int32_t send_msg_to_live(hdb_freame_head_t *fh, stream_handle *M_handle)
 	m_live_msgque.msgbuf = (int8_t *)live_frame_head;
 
 	M_handle->recv_pri.to_live = 1;
-
+	if(live_frame_head->data_type == R_JPEG)
+	{
+		nslog(NS_ERROR,"FUCK_GOD_1114 SEND TO A JPEG !\n");
+	}
 	return_code = r_msg_send(M_handle->msg_recv_to_live, &m_live_msgque, MsgqueLen - sizeof(long), IPC_NOWAIT);
 
 	if(0 > return_code) {
@@ -532,15 +906,165 @@ static int32_t send_msg_to_live(hdb_freame_head_t *fh, stream_handle *M_handle)
 		}
 
 		if(FALSE == IS_FLAG_BIT_TRUE(M_handle->log_flag, LIVE_BIT)) {
-			nslog(NS_WARN, "msgsnd to record failed, msgid = %d, errno = %d, stream_id=%d", M_handle->msg_recv_to_live, errno, M_handle->stream_id);
+			nslog(NS_WARN, "msgsnd to live failed, msgid = %d, errno = %d, stream_id=%d", M_handle->msg_recv_to_live, errno, M_handle->stream_id);
 			SET_FLAG_BIT_TRUE(M_handle->log_flag, LIVE_BIT);//置第1位为1.
 		}
 
 		M_handle->recv_pri.to_live = 0;
-		return OPERATION_SUCC;
+		return -1;
 	}
 
 	SET_FLAG_BIT_FALSE(M_handle->log_flag, LIVE_BIT);//置第1位为0.
+	return OPERATION_SUCC;
+
+}
+
+static int32_t send_msg_to_live_audio(hdb_freame_head_t *fh, stream_handle *M_handle)
+{
+	int32_t index = 0;
+	int32_t audio_vaild_num = 0;
+	stream_handle *temp_handle = NULL;
+	int return_code = OPERATION_SUCC;
+	int8_t *live_frame_data = NULL;
+	parse_data_t *live_frame_head = NULL;
+	m_msgque  m_live_msgque  ;
+
+	if(M_handle->audio_info == NULL)
+	{
+		nslog(NS_ERROR,"IMPORT ERROR, < LIVE AUDIO_INTO IS NULL >STREAM ID : %d\n",M_handle->stream_id);
+		return RECEIVE_MALLOC_ERR;
+	}
+
+	if(M_handle->audio_info->audio_tran_live_into.stream_num == 0)
+	{
+
+		nslog(NS_ERROR,"IMPORT ERROR, <LIVE AUDIO NUM IS 0>STREAM ID : %d\n",M_handle->stream_id);
+		return OPERATION_SUCC;
+	}
+	audio_vaild_num = M_handle->audio_info->audio_tran_live_into.stream_num;
+//	nslog(NS_ERROR,"AUDIO NUM : %d\n",audio_vaild_num);
+	for(index =0 ;index < audio_vaild_num;index ++ )
+	{
+
+		// add zl
+		temp_handle = (stream_handle *)(M_handle->audio_info->audio_tran_live_into.stream_handle_addr[index]);
+		if(START_LIVE != get_live_status(temp_handle))
+		{
+			continue;
+		}
+
+//		nslog(NS_ERROR,"STREAM_ID : %d\n",temp_handle->stream_id);
+		live_frame_data = (int8_t *)r_malloc(fh->m_frame_length);
+
+		if(NULL == live_frame_data) {
+			if(live_frame_data) {
+				r_free(live_frame_data);
+				live_frame_data = NULL;
+			}
+			nslog(NS_ERROR, "malloc is error !!!");
+			return_code = RECEIVE_MALLOC_ERR;
+			return return_code;
+		}
+
+		live_frame_head = (parse_data_t *)r_malloc(sizeof(parse_data_t));
+
+		if(NULL == live_frame_head) {
+			if(live_frame_head) {
+				r_free(live_frame_head);
+				live_frame_head = NULL;
+			}
+
+			return_code = RECEIVE_MALLOC_ERR;
+			return return_code;
+		}
+
+		r_memset(live_frame_head, 0, sizeof(parse_data_t));
+		r_memset(live_frame_data, 0, fh->m_frame_length);
+
+		r_memcpy(live_frame_data, M_handle->audio_data, fh->m_frame_length);
+		live_frame_head->data_type = R_AUDIO;
+		live_frame_head->code_rate = fh->m_colors;
+		live_frame_head->sample_rate = fh->m_frame_rate;
+		live_frame_head->time_tick = M_handle->recv_time_t.time_audio_tick;
+
+		live_frame_head->data_len = fh->m_frame_length;
+		live_frame_head->data = live_frame_data;
+		live_frame_data = NULL;
+		live_frame_head->flags = fh->m_dw_flags;
+		// add zl
+	//	live_frame_head->sindex = M_handle->stream_id - 1;
+		live_frame_head->sindex = temp_handle->stream_id;
+		live_frame_head->index = 0;
+		live_frame_head->audio_sindex = M_handle->stream_id - 1;
+		live_frame_head->height = fh->m_hight;
+		live_frame_head->width = fh->m_width;
+		live_frame_head->end_flag = M_handle->live_status;
+		live_frame_head->blue_flag = !(fh->m_others);
+
+		// add zl
+	//	m_live_msgque.msgtype = M_handle->stream_id;
+		m_live_msgque.msgtype = temp_handle->stream_id;
+		m_live_msgque.msgbuf = (int8_t *)live_frame_head;
+
+		M_handle->recv_pri.to_live = 1;
+
+		return_code = r_msg_send(temp_handle->msg_recv_to_live, &m_live_msgque, MsgqueLen - sizeof(long), IPC_NOWAIT);
+
+		if(0 > return_code) {
+			if(live_frame_head->data) {
+				r_free(live_frame_head->data);
+				live_frame_head->data = NULL;
+			}
+
+			if(live_frame_head) {
+				r_free(live_frame_head);
+				live_frame_head = NULL;
+			}
+
+			if(FALSE == IS_FLAG_BIT_TRUE(M_handle->log_flag, LIVE_BIT)) {
+				nslog(NS_WARN, "msgsnd to live failed, msgid = %d, errno = %d, stream_id=%d", M_handle->msg_recv_to_live, errno, M_handle->stream_id);
+				SET_FLAG_BIT_TRUE(M_handle->log_flag, LIVE_BIT);//置第1位为1.
+			}
+
+			M_handle->recv_pri.to_live = 0;
+			return -1;
+		}
+	}
+
+	SET_FLAG_BIT_FALSE(M_handle->log_flag, LIVE_BIT);//置第1位为0.
+	return 0;
+}
+
+static int32_t send_msg_to_live(hdb_freame_head_t *fh, stream_handle *M_handle)
+{
+	int return_code = OPERATION_SUCC;
+
+	if(NULL == M_handle->frame_data || NULL == M_handle->audio_data) {
+		nslog(NS_ERROR, "M_handle->frame_data = %p, M_handle->audio_data = %p, stream_id = %d", M_handle->frame_data, M_handle->audio_data, M_handle->stream_id);
+		return OPERATION_ERR;
+	}
+	#if 1 //debug jpeg
+	if(JPEG_CODEC_TYPE == fh->m_data_codec)
+	{
+		nslog(NS_ERROR,"FUCK_GOD_1114 ------- JPEG <STREAM_ID : %d> <%s><%d>\n",M_handle->stream_id,M_handle->ipaddr,get_live_status(M_handle));
+		//return_code = send_msg_to_live_media(fh,M_handle);
+	}
+	#endif
+	if((H264_CODEC_TYPE == fh->m_data_codec ||
+		JPEG_CODEC_TYPE == fh->m_data_codec)&&
+		START_LIVE == get_live_status(M_handle))
+	{
+		return_code = send_msg_to_live_media(fh,M_handle);
+	}
+	else if(AAC_CODEC_TYPE == fh->m_data_codec)
+	{
+		return_code = send_msg_to_live_audio(fh,M_handle);
+	}
+	else
+	{
+		;
+	}
+
 	return OPERATION_SUCC;
 }
 
@@ -561,16 +1085,27 @@ int32_t send_media_frame_data(stream_handle *M_handle, void *data, int32_t data_
 		return OPERATION_ERR;
 	}
 
-	if((!(AUDIO_ID == M_handle->stream_id || AUDIO_IDT == M_handle->stream_id)) && AAC_CODEC_TYPE == fh->m_data_codec) {
+	if(AAC_CODEC_TYPE == fh->m_data_codec && M_handle->rec_audio_falg != RECODE_AUDIO_ON)
+	{
 		return OPERATION_SUCC;
 	}
 
-	// add zl questino ??
-	if(AAC_CODEC_TYPE == fh->m_data_codec) {
-		return OPERATION_SUCC;//add by lcs
-	}
+ // add zl
+//	if((!(AUDIO_ID == M_handle->stream_id || AUDIO_IDT == M_handle->stream_id)) && AAC_CODEC_TYPE == fh->m_data_codec) {
+//		return OPERATION_SUCC;
+//	}
 
-	if(H264_CODEC_TYPE == fh->m_data_codec || JPG_CODEC_TYPE == fh->m_data_codec) {
+	// add zl questino ??
+//	if(AAC_CODEC_TYPE == fh->m_data_codec) {
+//		return OPERATION_SUCC;//add by lcs
+//	}
+//	if(JPEG_CODEC_TYPE == fh->m_data_codec)
+//	{
+
+//		nslog(NS_ERROR,"FUCK_GOD_1114 ------- JPEG <STREAM_ID : %d> <%s>\n",M_handle->stream_id,M_handle->ipaddr);
+//	}
+
+	if(H264_CODEC_TYPE == fh->m_data_codec || JPEG_CODEC_TYPE == fh->m_data_codec) {
 
 		M_handle->recv_pri.width = fh->m_width;
 		M_handle->recv_pri.hight = fh->m_hight;
@@ -582,11 +1117,11 @@ int32_t send_media_frame_data(stream_handle *M_handle, void *data, int32_t data_
 
 		if(FALSE == IS_FLAG_BIT_TRUE(M_handle->log_flag, RECV_VIDEO_I_FRAME_DATA) && I_FRAME == fh->m_dw_flags) {
 			SET_FLAG_BIT_TRUE(M_handle->log_flag, RECV_VIDEO_I_FRAME_DATA);
-			//            nslog(NS_INFO, "M_handle->recv_time_t.time_tick = %u getCurrentTime() = %u, stream_id = %d", M_handle->recv_time_t.time_tick, getCurrentTime(), M_handle->stream_id);
+		  //     nslog(NS_INFO, " getCurrentTime() = %u, stream_id = %d",getCurrentTime(), M_handle->stream_id);
 		}
 
 
-		if((TRUE == IS_FLAG_BIT_TRUE(M_handle->log_flag, RECV_VIDEO_I_FRAME_DATA)) || JPG_CODEC_TYPE == fh->m_data_codec) {
+		if((TRUE == IS_FLAG_BIT_TRUE(M_handle->log_flag, RECV_VIDEO_I_FRAME_DATA)) || JPEG_CODEC_TYPE == fh->m_data_codec) {
 
 
 #if 0   // add zl
@@ -604,14 +1139,27 @@ int32_t send_media_frame_data(stream_handle *M_handle, void *data, int32_t data_
 			M_handle->recv_time_t.reserve = M_handle->recv_time_t.time_video_tick;
 
 #endif
-
-			if(START_REC == get_rec_status(M_handle)) {
-				return_code = send_msg_to_rec(fh, M_handle);
+			#if 0
+		//	if(START_REC == get_rec_status(M_handle))
+			{
+		//		if(M_handle->rec_mode == RECODE_MODE_RES || M_handle->rec_mode == RECODE_MODE_ALL)
+				{
+					return_code = send_msg_to_rec_res(fh, M_handle);
+				}
 			}
 
-			if(START_LIVE == get_live_status(M_handle)) {
-				return_code = send_msg_to_live(fh, M_handle);
+		//	if(START_USB_REC == get_usb_rec_status(M_handle))
+			{
+				nslog(NS_ERROR,"FUCK_GOD_1015 ---- 1\n");
+		//		if(M_handle->rec_mode == RECODE_MODE_MOVIE || M_handle->rec_mode == RECODE_MODE_ALL)
+				{
+					return_code = send_msg_to_rec_movie(fh, M_handle);
+				}
 			}
+			#endif
+			send_msg_to_rec_res(fh, M_handle);
+			send_msg_to_rec_movie(fh, M_handle);
+			send_msg_to_live(fh, M_handle);
 
 			// add zl
 			if(NULL != p_udp_hand) {
@@ -645,14 +1193,27 @@ int32_t send_media_frame_data(stream_handle *M_handle, void *data, int32_t data_
 			return OPERATION_SUCC;
 		}
 
-		if(TRUE == IS_FLAG_BIT_TRUE(M_handle->log_flag, RECV_VIDEO_I_FRAME_DATA)) {
+		// add zl question ???
+	//	if(TRUE == IS_FLAG_BIT_TRUE(M_handle->log_flag, RECV_VIDEO_I_FRAME_DATA))
+		{
+			#if 0
 			if(START_REC == get_rec_status(M_handle)) {
-				return_code = send_msg_to_rec(fh, M_handle);
+				nslog(NS_ERROR,"FUCK_GOD_1014 ----------- AUDIO!\n");
+				return_code = send_msg_to_rec_res(fh, M_handle);
 			}
 
-			if(START_LIVE == get_live_status(M_handle)) {
-				return_code = send_msg_to_live(fh, M_handle);
+			if(START_USB_REC == get_usb_rec_status(M_handle)) {
+				return_code = send_msg_to_rec_movie(fh, M_handle);
 			}
+
+
+			#endif
+			send_msg_to_rec_res(fh, M_handle);
+			send_msg_to_rec_movie(fh, M_handle);
+			send_msg_to_live(fh, M_handle);
+
+
+
 
 			// add zl
 			if(NULL != p_udp_hand) {
@@ -716,7 +1277,7 @@ int32_t send_media_frame_data(stream_handle *M_handle, void *data, int32_t data_
 		fp = NULL;
 	}
 
-	if(JPG_CODEC_TYPE == fh->m_data_codec) {
+	if(JPEG_CODEC_TYPE == fh->m_data_codec) {
 		FILE *fp = NULL;
 		char buf[20] = {0};
 		sprintf(buf, "%d.jpg", fh->m_dw_packet_number);
@@ -768,6 +1329,9 @@ int recv_deal_udp_recv_data(udp_recv_stream_info_t *p_stream_info, char *data, i
 	fh.m_colors = p_stream_info->m_colors;
 	fh.m_frame_rate = p_stream_info->frame_rate;
 	fh.m_frame_length = len;
+
+
+
 	if(AAC_CODEC_TYPE == fh.m_data_codec) {
 
 		fh.m_frame_rate = p_stream_info->samplerate;
@@ -777,23 +1341,44 @@ int recv_deal_udp_recv_data(udp_recv_stream_info_t *p_stream_info, char *data, i
 		M_handle->recv_pri.stream_type = 2;
 		M_handle->recv_pri.data_type = R_AUDIO;
 		M_handle->recv_pri.code_rate = fh.m_colors;
-		M_handle->recv_pri.sample_rate = fh.m_hight;
+		M_handle->recv_pri.sample_rate = fh.m_frame_rate;
 		M_handle->recv_pri.is_data = 1;
 		M_handle->recv_pri.frame_rate = fh.m_frame_rate;
 #endif
+//	 	nslog(NS_ERROR,"FUCK_GOD_1014  AAC RATE :%d   %d\n",fh.m_frame_rate,M_handle->recv_pri.frame_rate);
 		r_memcpy(M_handle->audio_data, data, fh.m_frame_length);// 都写两个函数可以少10次拷贝。
 
-		if(START_REC == get_rec_status(M_handle)) {
-			return_code = send_msg_to_rec(&fh, M_handle);
-		} else {
+
+		#if 0
+		// 音频  add zl question
+		if(START_REC == get_rec_status(M_handle))
+		{
+			return_code = send_msg_to_rec_res(&fh, M_handle);
+		}
+		else
+		{
 			M_handle->recv_pri.to_rec = 0;
 		}
 
-		if(START_LIVE == get_live_status(M_handle)) {
+		if(START_USB_REC == get_usb_rec_status(M_handle))
+		{
+			return_code = send_msg_to_rec_movie(&fh, M_handle);
+		}
+
+		if(START_LIVE == get_live_status(M_handle))
+		{
 			return_code = send_msg_to_live(&fh, M_handle);
-		} else {
+		}
+		else
+		{
 			M_handle->recv_pri.to_live = 0;
 		}
+		#endif
+		send_msg_to_rec_res(&fh, M_handle);
+		send_msg_to_rec_movie(&fh, M_handle);
+		send_msg_to_live(&fh, M_handle);
+
+
 	}
 
 	if(H264_CODEC_TYPE == fh.m_data_codec || JPEG_CODEC_TYPE == fh.m_data_codec) {
@@ -808,19 +1393,45 @@ int recv_deal_udp_recv_data(udp_recv_stream_info_t *p_stream_info, char *data, i
 #endif
 		M_handle->recv_time_t.time_video_tick = p_stream_info->timestamp;
 		r_memcpy(M_handle->frame_data, data, fh.m_frame_length);
+		if(JPEG_CODEC_TYPE == fh.m_data_codec)
+	 		nslog(NS_ERROR,"FUCK_GOD_1014[%d]  H264 RATE :%d   %d\n", fh.m_data_codec, fh.m_frame_rate,M_handle->recv_pri.frame_rate);
 
-		if(START_REC == get_rec_status(M_handle)) {
-			return_code = send_msg_to_rec(&fh, M_handle);
-		} else {
+		#if 0
+		if(START_REC == get_rec_status(M_handle) )
+		{
+			if(M_handle->rec_mode == RECODE_MODE_RES || M_handle->rec_mode == RECODE_MODE_ALL)
+			{
+				return_code = send_msg_to_rec_res(&fh, M_handle);
+			}
+		}
+		else
+		{
 			M_handle->recv_pri.to_rec = 0;
 		}
 
-		if(START_LIVE == get_live_status(M_handle)) {
+		if(START_USB_REC == get_usb_rec_status(M_handle))
+		{
+			if(M_handle->rec_mode == RECODE_MODE_MOVIE || M_handle->rec_mode == RECODE_MODE_ALL)
+			{
+				return_code = send_msg_to_rec_movie(&fh, M_handle);
+			}
+		}
+
+		if(START_LIVE == get_live_status(M_handle))
+		{
 			return_code = send_msg_to_live(&fh, M_handle);
-		} else {
+		}
+		else
+		{
 			M_handle->recv_pri.to_live = 0;
 		}
+		#endif
+		send_msg_to_rec_res(&fh, M_handle);
+		send_msg_to_rec_movie(&fh, M_handle);
+		send_msg_to_live(&fh, M_handle);
+
 	}
 
+	return 0;
 }
 

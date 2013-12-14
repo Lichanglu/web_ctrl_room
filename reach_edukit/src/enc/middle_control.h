@@ -30,7 +30,7 @@ enum
 
 #define ENCODESERVER_1260_PORT   30113
 #define SDK_LISTEN_PORT		4000
- 
+#define	ENCODESERVER_PORT		41110
 
 typedef enum __webparsetype__ {
     INT_TYPE = 0,
@@ -57,7 +57,7 @@ typedef struct __webMsgInfo_1260 {
 //CARD_1命令 cmd = old_cmd | INPUT_CARD_2
 
 //channel num (cmd>>4)&0xf
-//cmd = cmd | (((channel+1)&0xf)<<16) ;	
+//cmd = cmd | (((channel+1)&0xf)<<16) ;
 
 
 //############信号状态########################
@@ -69,7 +69,8 @@ typedef struct __webMsgInfo_1260 {
 #define MSG_GETCOLORSPACE				0x1136   //得到颜色空间
 #define MSG_SETCOLORSPACE				0x1137   //设置颜色空间
 #define MSG_GETHDCPVALUE				0x113F  //获取信号HDCP状态
-
+#define	MSG_GETSIGNALINFO				0x222F  //信号源信息
+#define	MSG_GET_ENC_INFO				0x223F  //编码器信息
 //###########视频编码信息######################
 #define	MSG_GETOUTPUTVIDEOINFO			0x1117	//获取编码输出参数
 #define	MSG_SETOUTPUTVIDEOINFO			0x1118	//设置编码输出参数
@@ -78,8 +79,8 @@ typedef struct __webMsgInfo_1260 {
 #define	MSG_SETVIDEOPARAM				0x111F   //设置视频参数
 #define MSG_GETH264ENCODEPARAM 			0x113D  //获取H264高级编码
 
-#define MSG_SETSCALEINFO  				0X2025				//zl		
-#define MSG_GETSCALEINFO  				0X2026				//zl	
+#define MSG_SETSCALEINFO  				0X2025				//zl
+#define MSG_GETSCALEINFO  				0X2026				//zl
 
 #define CONTROL_ROOM_SET_PREVIEW_PASS     	(0X9000)	  //ZL
 #define ROOM_CONTROL_GET_PREVIEW_PASS		(0X9001)	  //ZL
@@ -112,13 +113,16 @@ typedef struct __webMsgInfo_1260 {
 #define MSG_GETSOFTCONFIGTIME 			0x1110  //获取软件编译时间
 #define	MSG_GETCPULOAD  				0x1111	//获取CPU占用率
 
+#define 	MSG_GET_NETWORK					0X111B	//获取网络参数
+#define 	MSG_SET_NETWORK					0x111a//设置网络参数
 #define	MSG_GETSYSPARAM					0x111C	 //获取系统参数
 #define	MSG_SETSYSPARAM					0x1120   //设置系统参数
 #define	MSG_UPDATESYS					0x112B  //设置系统升级
 #define	MSG_REBOOTSYS					0x112C  //设置系统重启
 
-#define	MSG_GETSERIALNO					0x112A  //获取串号
+#define	MSG_REBOOTSYS_F					0xFF2C  //设置系统重启
 
+#define	MSG_GETSERIALNO					0x112A  //获取串号
 
 
 //############远遥协议############################
@@ -213,11 +217,16 @@ typedef struct __webMsgInfo_1260 {
 
 
 //add by lichl
-#define MSG_SET_SWMS_LAYOUT			0x1f00
-#define MSG_GET_SWMS_LAYOUT			0x1f01
+#define MSG_SET_SWMS_INFO				0x1f00
+#define MSG_GET_SWMS_INFO				0x1f01
 #define MSG_SET_HDMI_RES				0X1f04
 #define MSG_GET_HDMI_RES				0x1f05
 
+#define WEB_SET_TRACER_INFO				0x1f06
+#define WEB_GET_TRACER_INFO				0x1f07
+
+#define WEB_GET_RAMOTE_CTRL			0x1f08
+#define WEB_SET_RAMOTE_CTRL			0x1f09
 
 
 
@@ -253,7 +262,7 @@ typedef struct __webMsgInfo_1260 {
 #define             SERVER_VERIFYFILE_FAILED				    0XF0A
 #define             SERVER_SYSUPGRADE_FAILED				    0XF0B
 #define             SERVER_SYSROLLBACK_FAILED					0xF0C
-#define             SERVER_GETDEVINFO_FAILED       				0xF0D       
+#define             SERVER_GETDEVINFO_FAILED       				0xF0D
 #define             SERVER_HAVERECORD_FAILED					0xF0E
 
 
@@ -262,6 +271,12 @@ typedef struct __webMsgInfo_1260 {
 #define  webMsgInfo webMsgInfo_1260
 #define MSGINFOHEAD			sizeof(webMsgInfo_1260)
 
+typedef struct REMOTE_CTRL_INFO{
+	int tea_procotol;
+	int tea_addr;
+	int stu_procotol;
+	int stu_addr;
+}Remote_Ctrl_t;
 
 typedef enum __OutputResolution_1 {
     LOCK_AUTO = 0,
@@ -284,7 +299,9 @@ typedef struct _SYSTEM_INFO_{
 	char web_version[16];
 	char ctrl_version[16];
 	char ctrl_built_time[64];
-	char hd_version[16];
+	char hd_version[32];
+	char hd_ker_version[32];
+	char hd_FPGA_version[32];
 	char hd_built_time[64];
 	int total_space;
 	int available_space;
@@ -313,9 +330,9 @@ typedef struct WEB_AUDIOEncodePARAM_{
 	unsigned int 	SampleBit;  						//SampleBit  16
 	unsigned char  	LVolume;					//left volume       0 --------31
 	unsigned char  	RVolume;					//right volume      0---------31
-	unsigned short  InputMode;             // 需要在上面做支持，区分平衡与非平衡MAC	
+	unsigned short  InputMode;             // 需要在上面做支持，区分平衡与非平衡MAC
 	unsigned int	mp_input;               // 合成输出号1  or 2
-	unsigned int 	Mute;                    //mute 0 not  1 mute      
+	unsigned int 	Mute;                    //mute 0 not  1 mute
 	unsigned int    type;                    //line in  or Mic
 }WEB_AudioEncodeParam;
 
@@ -325,7 +342,7 @@ typedef struct _PANEL_REC_INFO_{
 
 	int rec_total_time;
 	char rec_file_path[256];
-	
+
 }PanelRecInfo;
 
 
@@ -336,7 +353,7 @@ typedef struct _VIDEO_ENCODE_INFO_{
 	unsigned int			IFrameinterval; 	//I 帧间隔
 	unsigned int 			sBitrate;			//视频码率
 	unsigned int 			sCbr;
-	unsigned int 			nQuality;	
+	unsigned int 			nQuality;
 }WebVideoEncodeInfo;
 
 typedef struct _ENABLE_TEXT_INFO_
@@ -351,7 +368,7 @@ typedef enum {
     UNLOCK_SCALE = 2
 } LOCK_SCALE_STATUS;
 
-#define VIDEO_QUALITY 0 
+#define VIDEO_QUALITY 0
 #define VIDEO_SBITRATE 1
 
 typedef struct _RTP_SDP_INFO_T{
@@ -416,7 +433,7 @@ typedef enum _POS_TYPE_T{
     TOP_RIGHT ,
     BOTTOM_LEFT ,
     BOTTOM_RIGHT ,
-    CENTERED 
+    CENTERED
 } POS_TYPE;
 
 #if 1
@@ -452,6 +469,7 @@ typedef enum __SceneConfiguration {
     custom,
 } SceneConfiguration;
 
+#define JEPG_FILE_NEMA  ("/opt/dvr_rdk/ti816x_2.8/logo_temp.jpg")
 typedef struct LogoInfo {
 	int x;	//显示位置坐标,左上角为0,0
 	int y;
@@ -562,6 +580,20 @@ typedef struct __RESIZE_PARAM__ {
 	int nBitrate;   //带宽
 	int nTemp;		//保留
 } ResizeParam;
+
+typedef struct SignalInfo_ {
+	char Signal[32];
+	int HPV;
+	int TMDS;
+	int VsyncF;
+	int HDCP;
+	int RGB_YPRPR;
+} SignalInfo_t;
+
+typedef struct EncInfo_ {
+	char fpga_version[8];
+	char kernel_version[16];
+} EncInfo_t;
 
 #endif
 #endif

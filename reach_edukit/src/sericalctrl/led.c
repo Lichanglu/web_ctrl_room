@@ -901,6 +901,8 @@ int ShowString(int fd,char *string,int x, int y);
 
 
 
+static int g_lcd_fd=0;
+
 int ClearScreen(int spi_fd)
 {
 	int value = 0;
@@ -1206,8 +1208,11 @@ int ResetMenu(int spi_fd)
 	return 1;
 }
 
+
 int InitLed()
 {
+	return -1;
+	#if 0
 	int spi_fd;
 	
 	spi_fd = open ("/dev/spidev1.1", O_RDWR);
@@ -1226,6 +1231,7 @@ int InitLed()
 	pthread_mutex_init(&usblock, NULL);
 	
 	return spi_fd;
+	#endif
 }
 
 int DeInitLed(int fd)
@@ -1329,6 +1335,69 @@ int CharToIndex8x16(char c)
 						}
 	return 1;
 }
+
+static int s_InitLed()
+{
+	int spi_fd;
+	
+	spi_fd = open ("/dev/spidev1.1", O_RDWR);
+	if (spi_fd == -1)
+	{
+		printf("failed to open spidev1.1\n");
+		return -1;
+	}
+
+	if(pBuffer == NULL)
+	{
+		pBuffer = (int short *)malloc(sizeof(int short)*100*200);
+		printf("Malloc Size %d\n",sizeof(int short)*100*200);
+	}
+		
+	pthread_mutex_init(&usblock, NULL);
+	
+	return spi_fd;
+}
+
+static void* led_display_pthread(void)
+{	
+	int ret=0;
+	int fd = 0;
+	char buf[64]={0};
+	fd = s_InitLed();
+	 
+	sleep(3);
+	while(1){
+		ClearScreen(fd);
+		InfoIpMenu(fd);
+		sleep(5);
+		
+		if(0 < app_get_usb_cpy_flag() ){
+			memset(buf,0,64);
+			if( 1 == app_get_usb_cpy_flag() ){
+				sprintf(buf,"Copying to USB Device... ");	
+			}else if( 2 == app_get_usb_cpy_flag() ){
+				sprintf(buf,"File Copy Success!");	
+				app_set_usb_cpy_flag(0);
+			}else if( 3 == app_get_usb_cpy_flag() ){
+				sprintf(buf,"File Copy Fail!");	
+				app_set_usb_cpy_flag(0);
+			}
+			ClearScreen(fd);
+			ShowString(fd,buf,10,20);
+			sleep(3);
+		}else{
+			ret = web_process_usb_download_file(1,3);
+			if( ret >= 0 ){
+				sprintf(buf,"Found USB Device! ");	
+				ClearScreen(fd);
+				ShowString(fd,buf,10,20);
+				sleep(3);
+			}
+		}
+	}
+
+}
+
 
 /*==============================================================================
     º¯Êý: <ShowString>
@@ -1463,6 +1532,14 @@ int YinCodeShowString(int fd,char *string,int x, int y)
 	return 1;
 }
 
+void init_led_tsk()
+{
+	pthread_t thid = 0;
+	if (r_pthread_create(&thid,NULL, led_display_pthread, NULL))
+	{
+		return ;
+	}
+}
 
 int main111()
 {

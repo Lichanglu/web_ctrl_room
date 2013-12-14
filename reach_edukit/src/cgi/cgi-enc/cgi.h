@@ -1,7 +1,7 @@
 #ifndef __CGI__H
 #define __CGI__H
 #define USERNAME "admin"
-#define WEBUSERNAME "operator"
+#define WEBUSERNAME "guest"
 
 #define WEB_INPUT_1 1
 #define WEB_INPUT_2 2

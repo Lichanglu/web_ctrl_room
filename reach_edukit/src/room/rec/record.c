@@ -3,6 +3,7 @@
 #include "record_xml.h"
 #include "media_msg.h"
 #include "dirmd5.h"
+
 mp4_course_record_t *register_mp4_course_record_mode(mp4_course_record_condition_t *crc);
 void unregister_mp4_course_record_mode(mp4_course_record_t **cr);
 static int32_t get_mp4_file_limits(void)
@@ -181,11 +182,13 @@ void *mp4_record_process(void *arg)
 			}
 
 			Vreftime = pd.time_tick;
-
+			//nslog(NS_ERROR,"FUCK_GOD_1130_3<Vreftime : %u> <stream_id : %d> \n",Vreftime,mr->record_info.media_msg_type);
 			if(firststartRecord) {
+				nslog(NS_ERROR,"SHIRT_GOD_1016 audio_SampleRate : %d  audio_BitRate : %d\n",
+					mr->record_info.audio_SampleRate ,mr->record_info.audio_BitRate);
 				if(mr->record_info.audio_SampleRate > 0 && mr->record_info.audio_BitRate > 0) {
 					AudioStreamIdx = AudioStreamAdd(pMW, CODEC_ID_AAC, mr->record_info.audio_SampleRate, mr->record_info.audio_BitRate, 2, 1);
-
+					nslog(NS_ERROR,"SHIRT_GOD_1016 \n");
 					if(AudioStreamIdx < 0) {
 						nslog(NS_ERROR, "AudioStreamAdd is failed!!!");
 						return NULL;
@@ -230,12 +233,16 @@ void *mp4_record_process(void *arg)
 				//			nslog(NS_INFO, "Apts:[%lld]", Apts);
 				if(MediaWriteFrame(pMW, pd.data, pd.data_len, Apts, AudioStreamIdx, 1, 1) < 0) {
 					nslog(NS_WARN, "audio[%d] MediaWriteFrame is failed : [%s]", sindex, strerror(errno));
+					nslog(NS_ERROR,"FUCK_GOD_1014 : MSG_TYPE : %d\n",mr->record_info.media_msg_type);
 					pd.data_len = 0;
 				}
+
 
 				Atotalsize += pd.data_len;
 
 				if(audio_ok) {
+
+					nslog(NS_INFO,"STREAM_ID : %d\n",mr->record_info.media_msg_type);
 					nslog(NS_INFO, "=<Asindex> <ASample> <ABit> <Apts>");
 					nslog(NS_INFO, "=<%7d> <%7d> <%4d> <%4d>",
 					      sindex,  mr->record_info.audio_SampleRate,
@@ -250,7 +257,9 @@ void *mp4_record_process(void *arg)
 			} else {
 				Areftime = pd.time_tick;
 			}
-		} else {
+		}
+		else
+		{
 
 			if(Vflag) {
 				Vpts = (pd.time_tick - Vreftime) + pause_Vpts;
@@ -279,6 +288,7 @@ void *mp4_record_process(void *arg)
 			Vtotalsize += pd.data_len;
 
 			if(video_ok) {
+				nslog(NS_INFO,"STREAM_ID : %d\n",mr->record_info.media_msg_type);
 				nslog(NS_INFO, "=<Vsindex> <Vwidth> <Vheight> <Vpts>");
 				nslog(NS_INFO, "=<%7d> <%6d> <%7d> <%4d>",
 				      sindex,  mr->record_info.width,
@@ -301,6 +311,17 @@ void *mp4_record_process(void *arg)
 			if(!pd.data_len) {
 				rep_info->totaltime = 0;
 			}
+
+			#if 0 // add zl
+			if(rep_info->totaltime == 0)
+			{
+				nslog(NS_ERROR,"FUCK_GOD_1130 ---<Vpts : %lld> <Apts : %lld>---<pd.data_len : %d> ---<pd.time_tick : %lld> ---<Vreftime : %u> ---<Areftime : %u> ---<pause_Apts :%lld> ---<pause_Vpts : %lld>\n",
+					Vpts,Apts,pd.data_len,pd.time_tick,Vreftime,Areftime,pause_Apts,pause_Vpts);
+
+				nslog(NS_ERROR,"FUCK_GOD_1130 ---<preVpts : %lld> ---<preApts : %lld> ----<MEDIA_TYPE: %d> <stream_id:%d>\n"
+					,preVpts,preApts,pd.data_type,mr->record_info.media_msg_type);
+			}
+			#endif
 
 			rep_info->blue_flag = pd.blue_flag;
 			r_strcpy(rep_info->filename, mr->filename);
@@ -376,6 +397,12 @@ mp4_record_t *register_mp4_record_mode(mp4_record_condition_t *rcond)
 		r_free(mr);
 		return NULL;
 	}
+	// add zl
+
+	mr->audio_base_time = 0;
+	mr->audio_chace_time = 0;
+	mr->video_base_time = 0;
+	mr->video_chace_time = 0;
 
 	r_strcpy(mr->filename, p);
 	mr->record_info = rcond->record_info;
@@ -556,6 +583,7 @@ void *jpeg_record_process(void *arg)
 		}
 
 		r_sprintf(hd_jpegname, "%s/%d.jpg", jr->jpeg_dir, jpeg_index);
+		nslog(NS_ERROR,"FUCK_GOD_1114 JPEG NUM :%d\n",jpeg_index);
 
 		if(1 == jpeg_index) {
 			if(fdata2file(hd_jpegname, pd.data, pd.data_len) < 0) {
@@ -594,8 +622,8 @@ void *jpeg_record_process(void *arg)
 		if(!pd.data_len) {
 			rep_info->totaltime = 0;
 		}
-		nslog(NS_WARN, " pd.time_tick : [%lld] jts:[%u] totaltime:[%d]",  
-				pd.time_tick, jts, rep_info->totaltime);
+//		nslog(NS_WARN, " pd.time_tick : [%lld] jts:[%u] totaltime:[%d]",
+//				pd.time_tick, jts, rep_info->totaltime);
 		rep_info->totalsize = pd.data_len;
 		rep_info->blue_flag = 0;//pd.blue_flag;
 		int8_t *p = r_strstr(hd_jpegname, "images/");
@@ -643,7 +671,7 @@ int32_t jpeg_record_start(jpeg_record_t *jr)
 jpeg_record_t *register_jpeg_record_mode(jpeg_record_condition_t *rcond)
 {
 	nslog(NS_INFO, "start ...");
-
+	int32_t sindex = 0;
 	if(NULL == rcond) {
 		nslog(NS_ERROR, "register_jpeg_record_mode param is NULL");
 		return NULL;
@@ -655,7 +683,6 @@ jpeg_record_t *register_jpeg_record_mode(jpeg_record_condition_t *rcond)
 		nslog(NS_ERROR, "jpeg_record_t malloc is failed !!!");
 		return NULL;
 	}
-
 	r_memset(jr, 0, sizeof(jpeg_record_t));
 	jr->sindex = rcond->sindex;
 	r_strcpy(jr->jpeg_dir, rcond->record_file_dir);
@@ -771,17 +798,22 @@ mp4_course_record_t *register_mp4_course_record_mode(mp4_course_record_condition
 		rc.sindex = sindex;
 		r_memcpy(&(rc.record_info), &(crc->rinfo[sindex]), sizeof(record_info_t));
 
-		if(RECORD_HD == crc->rinfo[sindex].stream_type) {
+		if(RECORD_HD == crc->rinfo[sindex].stream_type)
+		{
 			r_sprintf(rc.record_file, "%s/HD/%s/%d_%d.mp4",
 			          crc->course_root_dir, VIDEO_DIR,
 			          hd_sindex, crc->video_split_index);
 			hd_sindex ++;
-		} else if(RECORD_SD == crc->rinfo[sindex].stream_type) {
+		}
+		else if(RECORD_SD == crc->rinfo[sindex].stream_type)
+		{
 			r_sprintf(rc.record_file, "%s/SD/%s/%d_%d.mp4",
 			          crc->course_root_dir, VIDEO_DIR,
 			          sd_sindex, crc->video_split_index);
 			sd_sindex ++;
-		} else {
+		}
+		else
+		{
 			if(0 == sindex) {
 				hd_sindex ++;
 			} else if(1 == sindex) {
@@ -890,6 +922,10 @@ static void create_preview_to_img(int8_t *course_root_dir, stream_type_sindex_su
 	int8_t record_file[512] = {0};
 	int8_t preview_file[512] = {0};
 
+	int8_t preview_file_HD[512] = {0};
+	int8_t cp_cmd[512] = {0};
+
+	#if 0
 	for(sindex = 0; sindex < s->hd_sindex_sum; sindex ++) {
 		r_sprintf(record_file, "%s/HD/%s/%d_1.mp4",
 		          course_root_dir, VIDEO_DIR, hd_sindex);
@@ -916,6 +952,45 @@ static void create_preview_to_img(int8_t *course_root_dir, stream_type_sindex_su
 		if(access(record_file, F_OK) == 0) {
 			if(get_file_size(record_file) > 0) {
 				MediaGenIndexImage(record_file, preview_file, 0, 0, 0);
+				r_memset(record_file, 0, 512);
+				r_memset(preview_file, 0, 512);
+			}
+		}
+
+		sd_sindex ++;
+	}
+	nslog(NS_INFO, "end...");
+#endif
+
+	// add junbao
+	for(sindex = 0; sindex < s->sd_sindex_sum; sindex ++)
+	{
+		r_sprintf(record_file, "%s/SD/%s/%d_1.mp4",
+				  course_root_dir, VIDEO_DIR, sd_sindex);
+		r_sprintf(preview_file, "%s/SD/%s/start%d.jpg",
+				  course_root_dir, IMG_DIR, sd_sindex);
+
+		if(access(record_file, F_OK) == 0) {
+			if(get_file_size(record_file) > 0) {
+				nslog(NS_INFO,"Debug_create_image start!\n");
+				MediaGenIndexImage(record_file, preview_file, 0, 0, 0);
+				nslog(NS_INFO,"Debug_create_image over!\n");
+				r_sprintf(preview_file_HD, "%s/HD/%s/start%d.jpg",
+						  course_root_dir, IMG_DIR, sd_sindex);
+				r_sprintf(cp_cmd, "cp %s %s", preview_file, preview_file_HD);
+
+				nslog(NS_INFO, "create_preview_to_img:[%s]", cp_cmd);
+#if 1
+				if (CopyFile(preview_file, preview_file_HD) != 0)
+					nslog(NS_ERROR, "cp_cmd error");
+				else
+					nslog(NS_INFO, "cp_cmd sucess");
+#else
+				if (r_system((int8_t *)cp_cmd) != 0)
+					nslog(NS_ERROR, "cp_cmd error");
+				else
+					nslog(NS_INFO, "cp_cmd sucess");
+#endif
 				r_memset(record_file, 0, 512);
 				r_memset(preview_file, 0, 512);
 			}
@@ -1015,7 +1090,8 @@ void course_record_close(course_record_t *cr)
 
 	create_course_record_xml(cr->course_root_dir, cr->course_record_totaltime, &(cr->s));
 
-	if(1 == cr->crc.video_split_index) {
+	nslog(NS_ERROR,"FUCK_GOD_1019  MODE : %d\n",cr->mode_type);
+	if(1 == cr->crc.video_split_index && cr->mode_type == RESOURCES_USB_DISK_MODE) {
 		create_preview_to_img(cr->course_root_dir, &(cr->s));
 	}
 
@@ -1109,11 +1185,11 @@ static void check_mp4_split_totaltime(record_report_info_t *rep_info, int32_t mi
 {
 	int32_t i = 0;
 	int32_t min = rep_info[0].totaltime;
-	
+
 	for(i = 1; i < mindex_sum; i ++) {
 		if(min >= rep_info[i].totaltime && 0 != rep_info[i].totaltime) {
 			min = rep_info[i].totaltime;
-		}	
+		}
 	}
 
 	for(i = 0; i < mindex_sum; i ++) {
@@ -1135,23 +1211,23 @@ void *course_record_process(void *arg)
 	int32_t mindex_sum = mcr->mindex_sum;
 	int32_t ret = 0;
 	record_report_info_t *rep_info = NULL;
-	r_memset(cr->rep_info_tmp, 0, sizeof(record_report_info_t) * MAX_STREAMS);
+	r_memset(cr->rep_info_tmp, 0, sizeof(record_report_info_t) * RECODE_MAX_STREAM);
 	msgque msgp;
 	r_memset(&msgp, 0, sizeof(msgque));
-	FILE *info_xml_x_fp[MAX_STREAMS] = {0};
+	FILE *info_xml_x_fp[RECODE_MAX_STREAM] = {0};
 
-	FILE *blue_x_fp[MAX_STREAMS] = {0};
-	int32_t blue_start_flag[MAX_STREAMS];
+	FILE *blue_x_fp[RECODE_MAX_STREAM] = {0};
+	int32_t blue_start_flag[RECODE_MAX_STREAM];
 
-	for(mindex = 0; mindex < MAX_STREAMS; mindex ++) {
+	for(mindex = 0; mindex < RECODE_MAX_STREAM; mindex ++) {
 		blue_start_flag[mindex] = 1;
 	}
 
-	int32_t blue_end_flag[MAX_STREAMS] = {0};
-	int32_t blue_start[MAX_STREAMS] = {0};
-	int32_t blue_end[MAX_STREAMS] = {0};
+	int32_t blue_end_flag[RECODE_MAX_STREAM] = {0};
+	int32_t blue_start[RECODE_MAX_STREAM] = {0};
+	int32_t blue_end[RECODE_MAX_STREAM] = {0};
 	fpos_t pos;
-	int32_t course_totaltime[MAX_STREAMS] = {0};
+	int32_t course_totaltime[RECODE_MAX_STREAM] = {0};
 	uint32_t starttime = 0;
 	uint32_t curtime = 0;
 	uint32_t jpeg_starttime = 0;
@@ -1200,7 +1276,16 @@ void *course_record_process(void *arg)
 				pack_header_msg_xml(reqbuf, r_strlen(reqbuf + MSG_HEAD_LEN), EDU_MSG_VER);
 				msgque msgp;
 				r_memset(&msgp, 0, sizeof(msgque));
-				msgp.msgtype = REQ_MSG_BASE_TYPE;
+
+				// zl
+				if(cr->mode_type == RESOURCES_USB_DISK_MODE)
+				{
+					msgp.msgtype = REQ_MSG_BASE_TYPE_USB;
+				}
+				else
+				{
+					msgp.msgtype = REQ_MSG_BASE_TYPE;
+				}
 				msgp.msgbuf = (int8_t *)reqbuf;
 				ret = r_msg_send(cr->room_ctrl_msg_fd, &msgp, sizeof(msgque) - sizeof(long), IPC_NOWAIT);
 
@@ -1259,6 +1344,20 @@ void *course_record_process(void *arg)
 		}
 
 		rep_info = (record_report_info_t *)(msgp.msgbuf);
+
+		#if 0
+
+
+		nslog(NS_ERROR,"FUCK_GOD_1014  , ---------------<H264><%2d:%d> <%4d*%4d> <%s> <%8d> <%5d> ",
+					      rep_info->sindex,
+					    //  (cr->mcr->mr[sindex]->rs),
+					      rep_info->blue_flag,
+					      rep_info->height,
+					      rep_info->width,
+					      rep_info->filename,
+					      rep_info->totalsize / 1024,
+					      rep_info->totaltime);
+		#endif
 		r_memcpy(&(cr->rep_info_tmp[rep_info->sindex]), rep_info, sizeof(record_report_info_t));
 
 		if((cr->sindex_sum == rep_info->sindex + 1) && (NULL != jr)) {
@@ -1309,7 +1408,7 @@ void *course_record_process(void *arg)
 					course_totaltime[mindex] += cr->rep_info_tmp[mindex].totaltime;
 				}
 
-				r_memset(cr->rep_info_tmp, 0, sizeof(record_report_info_t) * MAX_STREAMS);
+				r_memset(cr->rep_info_tmp, 0, sizeof(record_report_info_t) * RECODE_MAX_STREAM);
 
 				pthread_mutex_lock(&(cr->print_mutex));
 				mcr->record_close(mcr);
@@ -1382,12 +1481,12 @@ void *print_course_record_process(void *arg)
 		nslog(NS_INFO, "<Si:St:B> <High*Widt> <Filename      > <Totalsize> <Totaltime>");
 		pthread_mutex_lock(&(cr->print_mutex));
 
-		for(sindex = 0; sindex < MAX_STREAMS; sindex ++) {
+		for(sindex = 0; sindex < RECODE_MAX_STREAM; sindex ++) {
 			if(NULL != cr->mcr) {
 				if(NULL != cr->mcr->mr[sindex]
 				   && ((RECORD_SD == cr->crc.rinfo[sindex].stream_type)
 				       || (RECORD_HD == cr->crc.rinfo[sindex].stream_type))) {
-					nslog(NS_INFO, "<%2d:%2d:%d> <%4d*%4d> <%s> <%8d> <%5d> ",
+					nslog(NS_INFO, "<H264><%2d:%2d:%d> <%4d*%4d> <%s> <%8d> <%5d> ",
 					      sindex,
 					      (cr->mcr->mr[sindex]->rs),
 					      cr->rep_info_tmp[sindex].blue_flag,
@@ -1397,7 +1496,7 @@ void *print_course_record_process(void *arg)
 					      cr->rep_info_tmp[sindex].totalsize / 1024,
 					      cr->rep_info_tmp[sindex].totaltime);
 				} else if(NULL != cr->jr && RECORD_JPEG == cr->crc.rinfo[sindex].stream_type) {
-					nslog(NS_INFO, "<%2d:%2d:%d> <%4d*%4d> <%s> <%8d> <%5d> ",
+					nslog(NS_INFO, "<JEPG><%2d:%2d:%d> <%4d*%4d> <%s> <%8d> <%5d> ",
 					      sindex,
 					      (cr->jr->rs),
 					      cr->rep_info_tmp[sindex].blue_flag,
@@ -1462,13 +1561,11 @@ struct tm {
 }
 */
 
-static void make_course_dir_name(int8_t *course_dir_name, int32_t roomid, int8_t *dev_id)
+static void make_course_dir_name(int8_t *course_dir_name, int32_t roomid, int8_t *dev_id,int8_t *path_suffix,int8_t *record_time)
 {
-	localtime_t t;
-	get_localtime(&t);
-	r_sprintf(course_dir_name, "%04d%02d%02d%02d%02d%02dr%d%s",
-	          t.tm_year, t.tm_mon, t.tm_mday,
-	          t.tm_hour, t.tm_min, t.tm_sec, roomid, dev_id);
+//	localtime_t t;
+//	get_localtime(&t);
+	r_sprintf(course_dir_name, "%sr%d%s%s",record_time,roomid, dev_id,path_suffix);
 }
 
 int8_t *get_course_root_dir(course_record_t *cr)
@@ -1485,23 +1582,42 @@ static int32_t create_course_recovery(int8_t *recovery_course, int8_t *record_ro
 	return data2file(recovery_course, NULL, 0);
 }
 
-static int32_t create_course_template(int8_t *course_root_dir, int8_t *course_dir_name, int8_t *dev_id, int8_t *record_root_dir, int32_t roomid)
+static int32_t create_course_template(int8_t *course_root_dir, int8_t *course_dir_name, int8_t *dev_id, int8_t *record_root_dir, int32_t roomid,int8_t *path_suffix,int8_t *record_time)
 {
 	nslog(NS_INFO, "start ...");
-	make_course_dir_name(course_dir_name, roomid, dev_id);
+	int8_t record_file_cmd[512] = {0};
+	if(access(COURSE_TEMPLATE_DIR_NEW, F_OK) != 0)
+	{
+		nslog(NS_INFO,"THERE IS NO A RECORD_TEMP_FILE!\n");
+		r_snprintf(record_file_cmd,511,"cp -rf %s %s/",COURSE_TEMPLATE_DIR,RECORD_DEFAULT_ROOT_DIR);
+		nslog(NS_INFO,"RECORD_CMD_1 : %s\n",record_file_cmd);
+		if(r_system(record_file_cmd) != 0)
+		{
+			nslog(NS_ERROR, "course_init_cmd : [%s] is failed : [%s]!!!", record_file_cmd, strerror(errno));
+			return -1;
+		}
+	}
+	else
+	{
+		nslog(NS_INFO,"THERE IS A RECORD_TEMP_FILE!\n");
+	}
+	nslog(NS_INFO,"CREATE RECORD FILE BGING!\n");
+	make_course_dir_name(course_dir_name, roomid, dev_id,path_suffix,record_time);
 	r_sprintf(course_root_dir, "%s/%s",
 	          record_root_dir, course_dir_name);
 	mkdir(course_root_dir, 0777);
 	nslog(NS_INFO, "course_root_dir:[%s]\n", course_root_dir);
 	int8_t course_init_cmd[1024] = {0};
 	r_snprintf(course_init_cmd, 1023, "cp -rf %s/* %s",
-	           COURSE_TEMPLATE_DIR, course_root_dir);
+	           COURSE_TEMPLATE_DIR_NEW, course_root_dir);
 
+
+	nslog(NS_INFO,"RECORD_CMD_2 : %s\n",course_init_cmd);
 	if(r_system(course_init_cmd) != 0) {
 		nslog(NS_ERROR, "course_init_cmd : [%s] is failed : [%s]!!!", course_init_cmd, strerror(errno));
 		return -1;
 	}
-
+	nslog(NS_INFO,"CREATE RECORD FILE OVER!\n");
 	nslog(NS_INFO, "course_init_cmd:[%s]", course_init_cmd);
 	return 0;
 }
@@ -1524,7 +1640,20 @@ static int8_t *get_RecordID(course_record_t *cr)
 {
 	return cr->RecordID;
 }
+// add zl
 
+#if 1
+static int32_t get_record_time(course_record_t *cr)
+{
+	return (cr->rep_info_tmp[0].totaltime);
+}
+
+static int8_t *get_record_start_time(course_record_t *cr)
+{
+	return cr->RecDateTime;
+}
+
+#endif
 static void strRevcpy(int8_t *dst, char *src)
 {
 	int32_t i = 0;
@@ -1539,7 +1668,7 @@ static void check_ContentInfo(ContentInfo_t *ci, int8_t *course_dir_name)
 	if(!r_strlen(ci->CName)) {
 		r_strcpy(ci->CName, course_dir_name);
 	}
-	
+
 	if(!r_strlen(ci->RecordID)) {
 		strRevcpy(ci->RecordID, course_dir_name);
 	}
@@ -1566,12 +1695,35 @@ course_record_t *register_course_record_mode(course_record_condition_t *cond)
 
 	course_record_t *cr = NULL;
 	jpeg_record_t *jr = NULL;
+
 	int32_t course_data_msgid = -1;
 	int32_t course_msg_msgid  = -1;
-	
+
+	mp4_course_record_t *mcr = NULL;
+	mp4_course_record_condition_t crc;
+	int32_t msgid_msg_key = 0;
+	int32_t msgid_data_key= 0;
+	int8_t mk_root_cmd[128] = {0};
+
+	#if 1  //zl
+	if(cond->resources_mode.Resources_Type == RESOURCES_USB_DISK_MODE)
+	{
+		check_record_root_dir(cond->resources_mode.Course_Name);
+		cret = create_course_template(course_root_dir, course_dir_name,
+									  cond->dev_id, cond->resources_mode.Course_Name, cond->roomid,RECORD_PATH_SUFFIX_MOVIE,cond->RecDatefileTime);
+	}
+	else
+	{
+		check_record_root_dir(cond->resources_mode.Course_Name);
+		cret = create_course_template(course_root_dir, course_dir_name,
+									  cond->dev_id, cond->resources_mode.Course_Name, cond->roomid,RECORD_PATH_SIFFIX_RES,cond->RecDatefileTime);
+	}
+
+	#else
 	check_record_root_dir(cond->record_root_dir);
 	cret = create_course_template(course_root_dir, course_dir_name,
 	                              cond->dev_id, cond->record_root_dir, cond->roomid);
+	#endif
 
 	if(cret < 0) {
 		nslog(NS_ERROR, "create_course_template is failed!");
@@ -1593,35 +1745,68 @@ course_record_t *register_course_record_mode(course_record_condition_t *cond)
 	}
 
 	r_memset(cr, 0, sizeof(course_record_t));
-	rret = create_course_recovery(cr->recovery_course, cond->record_root_dir, course_dir_name);
 
-	if(rret < 0) {
-		nslog(NS_ERROR, "create_course_recovery is failed!");
+//	if(cond->resources_mode.Resources_Type != RESOURCES_USB_DISK_MODE){
+		rret = create_course_recovery(cr->recovery_course, cond->resources_mode.Course_Name, course_dir_name);
+		if(rret < 0) {
+			nslog(NS_ERROR, "create_course_recovery is failed!");
+			goto EXIT;
+		}
+//	}
+
+	#if 1     //zl
+	if(cond->resources_mode.Resources_Type == RESOURCES_USB_DISK_MODE)
+	{
+		msgid_msg_key = RECORD_MSG_BASE_KEY_USB;
+		msgid_data_key = RECORD_DATA_BASE_KEY_USB;
+	}
+	else
+	{
+		msgid_msg_key = RECORD_MSG_BASE_KEY;
+		msgid_data_key = RECORD_DATA_BASE_KEY;
+	}
+
+	course_data_msgid = r_msg_create_u(msgid_data_key + cond->roomid);
+	if(course_data_msgid < 0) {
+		nslog(NS_ERROR, "r_msg_create course_data_msgid is failed!");
 		goto EXIT;
 	}
 
-	course_data_msgid = r_msg_create_u(RECORD_DATA_BASE_KEY + cond->roomid);
+	course_msg_msgid = r_msg_create_u(msgid_msg_key + cond->roomid);
+	if(course_msg_msgid < 0) {
+		nslog(NS_ERROR, "r_msg_create  course_msg_msgid is failed!");
+		goto EXIT;
+	}
+
+	#else
+
+	int32_t course_data_msgid = r_msg_create_u(RECORD_DATA_BASE_KEY + cond->roomid);
 
 	if(course_data_msgid < 0) {
 		nslog(NS_ERROR, "r_msg_create course_data_msgid is failed!");
 		goto EXIT;
 	}
 
-	course_msg_msgid = r_msg_create_u(RECORD_MSG_BASE_KEY + cond->roomid);
+	int32_t course_msg_msgid = r_msg_create_u(RECORD_MSG_BASE_KEY + cond->roomid);
 
 	if(course_msg_msgid < 0) {
 		nslog(NS_ERROR, "r_msg_create  course_msg_msgid is failed!");
 		goto EXIT;
 	}
 
+	#endif
+
+
 
 	if(NULL != cond->get_jpeg_buf_info_callback
 	   && NULL != cond->release_jpeg_buf_callback
 	   && RECORD_JPEG == cond->rinfo[cond->sindex_sum - 1].stream_type) {
+	   	nslog(NS_ERROR,"FUCK_GOD_1114 ----- RECORD JPEG VAILD!\n");
 		jpeg_record_condition_t rc;
 		rc.sindex = cond->sindex_sum - 1;
 		rc.course_data_fd = course_data_msgid;
 		rc.course_msg_fd = course_msg_msgid;
+		r_memcpy(&(rc.record_info), &(cond->rinfo[cond->sindex_sum - 1]), sizeof(record_info_t));
 		r_sprintf(rc.record_file_dir, "%s/HD/%s", course_root_dir, IMG_DIR);
 		rc.get_jpeg_buf_info_callback = cond->get_jpeg_buf_info_callback;
 		rc.release_jpeg_buf_callback = cond->release_jpeg_buf_callback;
@@ -1638,7 +1823,7 @@ course_record_t *register_course_record_mode(course_record_condition_t *cond)
 		nslog(NS_WARN, "Not Jpeg ...");
 	}
 
-	mp4_course_record_condition_t crc;
+//	mp4_course_record_condition_t crc;
 	r_memcpy(crc.course_root_dir, course_root_dir, 256 - 1);
 	crc.video_split_index = 1;
 	crc.course_msg_fd = course_msg_msgid;
@@ -1651,10 +1836,10 @@ course_record_t *register_course_record_mode(course_record_condition_t *cond)
 		crc.mindex_sum = cond->sindex_sum - 1;
 	}
 
-	r_memcpy(crc.rinfo, cond->rinfo, sizeof(record_info_t) * MAX_STREAMS);
+	r_memcpy(crc.rinfo, cond->rinfo, sizeof(record_info_t) * RECODE_MAX_STREAM);
 	crc.get_media_buf_info_callback = cond->get_media_buf_info_callback;
 	crc.release_media_buf_callback = cond->release_media_buf_callback;
-	mp4_course_record_t *mcr = register_mp4_course_record_mode(&crc);
+	mcr = register_mp4_course_record_mode(&crc);
 
 	if(NULL == mcr) {
 		nslog(NS_ERROR, "register_mp4_course_record_mode failed");
@@ -1671,6 +1856,8 @@ course_record_t *register_course_record_mode(course_record_condition_t *cond)
 
 	int32_t sindex = 0;
 	r_memset(&(cr->s), 0, sizeof(stream_type_sindex_sum_t));
+
+	nslog(NS_ERROR,"FUCK_GOD_1014,stream_num  :%d\n",cond->sindex_sum);
 
 	for(sindex = 0; sindex < cond->sindex_sum; sindex ++) {
 		if(RECORD_HD == cond->rinfo[sindex].stream_type) {
@@ -1698,6 +1885,9 @@ course_record_t *register_course_record_mode(course_record_condition_t *cond)
 	cr->sindex_sum = cond->sindex_sum;
 	r_memcpy(cr->RecordID, cond->cinfo.RecordID, 128);
 	cr->get_RecordID = get_RecordID;
+	r_memcpy(cr->RecDateTime, cond->cinfo.RecDateTime, 32);  // add zl
+	cr->get_record_time = get_record_time;						// add zl
+	cr->get_record_start_time = get_record_start_time;						//add zl
 	cr->mcr = mcr;
 	cr->record_start = course_record_start;
 	cr->record_resume = course_record_resume;
@@ -1707,6 +1897,7 @@ course_record_t *register_course_record_mode(course_record_condition_t *cond)
 	cr->get_course_root_dir = get_course_root_dir;
 	cr->room_ctrl_msg_fd = cond->room_ctrl_msg_fd;
 	cr->print_close = 0;
+	cr->mode_type = cond->resources_mode.Resources_Type;
 	nslog(NS_INFO, "end.");
 	return cr;
 EXIT:
@@ -1743,12 +1934,21 @@ EXIT:
 	nslog(NS_ERROR, "register_course_record_mode is failed end!");
 	return NULL;
 }
+static void getRecourseName(char *recourse_name, char *recovery_course)
+{
+	char *p = NULL;
+	char recovery[] = "recovery/";
+	p = r_strstr(recovery_course, recovery);
+	if(NULL != p) {
+		r_strcpy(recourse_name, p+r_strlen(recovery));
+	}
+}
 
 void unregister_course_record_mode(course_record_t **cr)
 {
 	nslog(NS_INFO, "start ...");
 	course_record_t *pcr = *cr;
-
+	char recourse_name[128] = {0};
 	if(NULL == pcr) {
 		return;
 	}
@@ -1757,6 +1957,8 @@ void unregister_course_record_mode(course_record_t **cr)
 	remove(pcr->recovery_course);
 	r_msg_del(pcr->course_msg_fd);
 	r_msg_del(pcr->course_data_msgid);
+	nslog(NS_INFO, "start ...[%s]", basename(pcr->recovery_course));
+	add_recourse_list_fileinfo(basename(pcr->recovery_course));
 	r_free(pcr);
 	*cr = NULL;
 	nslog(NS_INFO, "end ...");

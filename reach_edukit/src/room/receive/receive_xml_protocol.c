@@ -2,14 +2,62 @@
 #include "media_msg.h"
 #include "xml_base.h"
 
+//add zl
+#if 0
+int32_t room_auto_send_req(int8_t *out_buf,int32_t *out_len,int32_t quality,int32_t stream_id)
+{
+	int8_t passkeybuf[20] = {0};
+    int32_t return_code = OPERATION_ERR;
+	parse_xml_t send_xml;
+	xmlNodePtr New_node, New_node2,New_node3;
+    send_xml.pdoc = xmlNewDoc(BAD_CAST"1.0");
 
-int32_t receive_xml_login(recv_xml_handle *xml_hand, int8_t *out_buf, int32_t *out_len)
+	send_xml.proot = xmlNewNode(NULL, BAD_CAST"RequestMsg");
+    xmlDocSetRootElement(send_xml.pdoc, send_xml.proot);
+    New_node =  xmlNewNode(NULL, BAD_CAST "MsgHead");
+    xmlAddChild(send_xml.proot, New_node);
+    xmlNewTextChild(New_node, NULL, "MsgCode", "30011");
+	sprintf(passkeybuf, "%s%d","ROOM_AUTO_REQ" ,stream_id);
+    xmlNewTextChild(New_node, NULL, "PassKey", passkeybuf);
+    New_node2 =  xmlNewNode(NULL, BAD_CAST "MsgBody");
+	New_node3 =  xmlNewNode(NULL, BAD_CAST "StrmReq");
+    xmlAddChild(send_xml.proot, New_node2);
+    xmlAddChild(New_node2, New_node3);
+    xmlNewTextChild(New_node3, NULL, "RoomID", "0");
+	if(quality == 1)
+	{
+		xmlNewTextChild(New_node3, NULL, "Quality", "0");
+	}
+	else
+	{
+		xmlNewTextChild(New_node3, NULL, "Quality", "1");
+	}
+
+	xmlChar *temp_xml_buf = NULL;
+    xmlDocDumpFormatMemoryEnc(send_xml.pdoc, &temp_xml_buf, out_len,  "UTF-8", 1);
+    r_memcpy(out_buf, temp_xml_buf, *out_len);
+
+	release_dom_tree(send_xml.pdoc);
+    return_code = OPERATION_SUCC;
+	
+EXIT:
+	 if(temp_xml_buf)  {
+        xmlFree(temp_xml_buf);
+    }
+    return return_code;
+}
+#endif
+
+int32_t receive_xml_login(recv_xml_handle *xml_hand, int8_t *out_buf, int32_t *out_len,int32_t enc_id)
 {
     int32_t return_code = OPERATION_ERR;
     parse_xml_t recv_module_xml_t;
     xmlNodePtr New_node, New_node2;
-
+	int8_t record_time[96] = {0};
+	int8_t temp_buf[10] = {0};
 	//assert(xml_hand && out_buf && out_len);
+
+	localtime_t t;
 
     recv_module_xml_t.pdoc = xmlNewDoc(BAD_CAST"1.0");
 
@@ -30,6 +78,29 @@ int32_t receive_xml_login(recv_xml_handle *xml_hand, int8_t *out_buf, int32_t *o
     xmlNewTextChild(New_node2, NULL, "UserName", xml_hand->user);
     xmlNewTextChild(New_node2, NULL, "Password", xml_hand->password);
     //return_code= xmlSaveFormatFileEnc("ReceiveLog.xml", recv_module_xml_t.pdoc, "UTF-8", 1);
+
+	if(enc_id == 1)
+	{
+		get_localtime(&t);
+				
+		r_sprintf(record_time, "%04d-%02d-%02d %02d:%02d:%02d",\
+					t.tm_year, t.tm_mon, t.tm_mday,	t.tm_hour, t.tm_min, t.tm_sec);
+
+		nslog(NS_INFO,"ENC_TIME : %s\n",record_time);
+
+		r_sprintf(temp_buf,"%d",t.tm_year);
+		xmlNewTextChild(New_node2, NULL, "Year", temp_buf);
+		r_sprintf(temp_buf,"%d",t.tm_mon);
+		xmlNewTextChild(New_node2, NULL, "Month", temp_buf);
+		r_sprintf(temp_buf,"%d",t.tm_mday);
+		xmlNewTextChild(New_node2, NULL, "Day", temp_buf);
+		r_sprintf(temp_buf,"%d",t.tm_hour);
+		xmlNewTextChild(New_node2, NULL, "Hour", temp_buf);
+		r_sprintf(temp_buf,"%d",t.tm_min);
+		xmlNewTextChild(New_node2, NULL, "Minute", temp_buf);
+		r_sprintf(temp_buf,"%d",t.tm_sec);
+		xmlNewTextChild(New_node2, NULL, "Second", temp_buf);
+	}
 
     xmlChar *temp_xml_buf = NULL;
     xmlDocDumpFormatMemoryEnc(recv_module_xml_t.pdoc, &temp_xml_buf, out_len,  "UTF-8", 1);
@@ -177,6 +248,7 @@ int32_t recv_xml_login_response(stream_handle *M_handle, int8_t *xml_buf)
 #endif
 				goto EXIT;
 		}
+		nslog(NS_INFO,"ENC_LOGIN_INFO  <31001> ENC_IP :%s  STREAM_ID :%d\n",M_handle->ipaddr,M_handle->stream_id);
 		if (RECV_LOGIN_SUC != atoi(recv_returncode_buf)) {
 				goto EXIT;
 		}

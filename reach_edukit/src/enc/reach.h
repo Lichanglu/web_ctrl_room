@@ -36,6 +36,13 @@
 
 #define INPUT_DVI 0
 
+//如修改 请同步修改
+#define STU_CHID			0
+#define STUSIDE_CHID		1
+#define TEACH_CHID		2
+#define VGA_CHID			3
+#define JPEG_CHID			4
+
 #define MAX_CHANNEL CHANNEL_INPUT_MAX
 enum
 {
@@ -84,21 +91,28 @@ typedef struct _RtlockResolution
 	pthread_mutex_t rtlock;	//锁
 }RtlockResolution;
 
+typedef struct HDMIDisplayResolution_ {
+	int	ResIdx;
+	int width;
+	int height;
+} HDMIDisplayResolution_t;
+
 typedef struct _EDUKIT_LINK_STRUCT_ {
 	Int32			start_runing;
 	Int32			gpiofd;
 	Int32			vp1_cap_type;
 	Int32			vp2_cap_type;
-	void *sendhand;
+	void *sendhand[3];
 	void *recvhand;
 	layout_st		layout;
+	HDMIDisplayResolution_t HDMIRes;
 
 	audio_struct	audioencLink[2];
 	audio_struct	audiodecLink;
 	cap_struct		capLink;
 	nullsrc_struct	nullSrcLink;
 	dei_struct      deiLink;
-	dup_struct	    dupLink;
+	dup_struct	    dupLink[2];
 	merge_struct	mergeLink[3];
 	Uint32				nullLinkId;
 	NullLink_CreateParams	nullLinkPrm;
@@ -120,6 +134,9 @@ typedef struct _EDUKIT_LINK_STRUCT_ {
 	RtVideoParam rtvideoparm[2];
 	RtlockResolution LockResolution;
 	pthread_mutex_t ledrtlock;	//锁
+
+	Int32 Start;
+	Int32 SupportStuSide;
 }EduKitLinkStruct_t;
 
 typedef struct _R_GPIO_data_ {
@@ -141,7 +158,6 @@ typedef struct {
 //#define LOW_STREAM         				(0x95)     //enc1200
 #define LOW_STREAM_T						(0x96)    //enc110
 #define JPG_STREAM							(0x94)     //enc120
-#define JPG_CODEC_TYPE					(0x6765706A)
 
 #define CONNECT_SUC  						(0x3)
 #define MSG_VAL_LEN						(128)

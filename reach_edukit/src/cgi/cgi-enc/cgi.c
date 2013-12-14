@@ -9,6 +9,7 @@
 #define LINUX
 #ifdef LINUX
 #include <unistd.h>
+#include <dirent.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -24,6 +25,8 @@
 #include "../../enc/middle_control.h"
 #include "../../enc/input_to_channel.h"
 #include "webTcpCom.h"
+#include "../../control/web/webmiddle.h"
+//#include "../../control/command_resolve.h"
 #include "../../enc/stream_output/stream_output_struct.h"
 //#include "app_web_stream_output.h"
 
@@ -53,7 +56,7 @@
 #define PAGE_REMOTECTRL_SHOW 307
 #define PAGE_NETWORK_SHOW 310
 #define PAGE_MODIFYPASSWORD_SHOW 311
-#define PAGE_DEVICESET_SHOW 312
+#define PAGE_NetControlIp_SHOW 312
 #define PAGE_SYSUPGRADE_SHOW 313
 #define PAGE_FTP_SHOW 314
 #define PAGE_INPUTDETAILS_SHOW 315
@@ -84,9 +87,15 @@
 #define ACTION_SERIALNO_SET 423
 #define ACTION_CBCR_SET 424
 #define ACTION_INPUTTYPE_GET 425
-#define ACTION_DEVICENAME_SET 433
+#define ACTION_NETCONTROL_IP_SET 433
 #define ACTION_FTP_SET 435
-
+#define ACTION_USB_SHOW 436
+#define ACTION_USBSTATUS_GET 437
+#define ACTION_USBCOPY 438
+#define ACTION_FTPTOOL_DOWNLOAD 439
+#define PAGE_FILEMGR_FILELIST 440
+#define ACTION_GETCOPYSTATUS 441
+#define ACTION_GETFTPUSERPW 442
 
 #define RESULT_SUCCESS 1
 #define RESULT_FAILURE 2
@@ -145,13 +154,13 @@
 #define BufferLen 500
 #define UPFILEHEADLEN 8
 
-#define WEBVERSION "1.1.3"
+#define WEBVERSION "1.0.2"
 
 
 #define INPUT1_HIGH_STRING "input 1 / high"
 #define INPUT1_LOW_STRING  "input 1 / low"
 #define INPUT2_HIGH_STRING "input 2 / high"
-#define INPUT2_LOW_STRING  "input 2 / low"			
+#define INPUT2_LOW_STRING  "input 2 / low"
 
 
 char sys_password[100];
@@ -159,6 +168,14 @@ char sys_webpassword[100];
 char sys_timeout[100];
 char sys_language[100];
 char script_language[100];
+
+typedef struct package
+{
+	unsigned int version;
+	unsigned int len;
+	unsigned int reserves;
+	unsigned char hash[32];
+}Package;
 
 
 char* trim(char * str)
@@ -196,7 +213,7 @@ static int loginaction()
 	cgiFormString("username", username, sizeof(username));
 	cgiFormString("password", password, sizeof(password));
 
-	if((!strcmp(username,"admin")&&!strcmp(password,sys_password))||(!strcmp(username,"operator")&&!strcmp(password,sys_webpassword))||(!strcmp(username,"ReachWebAdmin")&&!strcmp(password,"ReachWebAdmin2006")))
+	if((!strcmp(username,"admin")&&!strcmp(password,sys_password))||(!strcmp(username,"guest")&&!strcmp(password,sys_webpassword))||(!strcmp(username,"ReachWebAdmin")&&!strcmp(password,"ReachWebAdmin2006")))
 	{
 		long now;
 		now = (long)time(NULL);
@@ -217,10 +234,13 @@ static int loginaction()
 		return -1;
 	}
 }
-//????
+
+
+
+//升级系统
 static int updatesystems(void)
 {
-	FILE *targetFile;
+	//FILE *targetFile;
 	cgiFilePtr file;
 	char name[128];
 	//int retCode = 0;
@@ -228,23 +248,25 @@ static int updatesystems(void)
 	int t;
 	char *tmpStr=NULL;
 	char fileNameOnServer[64];
-	char buffer[1024];
-	int rec = 0;
+	char buffer[2050];
+	int rec = -1;
 	int flag = 0;
+	int platform = 0;
+	char cmd[128] = {0};
 
-
-	char languagebuf[150]={0};
+	char languagebuf[150]= {0};
 	getLanguageValue(sys_language,"uploadFileFail",languagebuf);
-	if (cgiFormFileName("file", name, sizeof(name)) !=cgiFormSuccess)
+	if (cgiFormFileName("file", name, sizeof(name)) != cgiFormSuccess)
 	{
 		//forwardPage(CGI_NAME,207,languagebuf);
-		fprintf(cgiOut,"<script type='text/javascript'>alert('%s');parent.closeUploading();</script>",languagebuf);
+		fprintf(cgiOut,"<script type='text/javascript'>alert('%s [-1]');parent.closeUploading();</script>",languagebuf);
 		return -1;
 	}
 
 	t=-1;
-	//??·?????????????????
-	while(1){
+	//从路径名解析出用户文件名
+	while(1)
+	{
 		tmpStr=strstr(name+t+1,"\\");
 		if(NULL==tmpStr)
 			tmpStr=strstr(name+t+1,"/");//if "\\" is not path separator, try "/"
@@ -254,68 +276,126 @@ static int updatesystems(void)
 			break;
 	}
 
+	#if 0
+	printf("<script>");
+	printf("alert('%s');",name);
+	printf("</script>");
+	#endif
 	if(strstr(name,".bin")==NULL||(name-strstr(name,".bin"))!=(4-strlen(name)))
 	{
 		memset(languagebuf,0,150);
 		getLanguageValue(sys_language,"binfile",languagebuf);
-		//forwardPage(CGI_NAME,207,languagebuf);
 		fprintf(cgiOut,"<script type='text/javascript'>alert('%s');parent.closeUploading();</script>",languagebuf);
 		return -1;
 	}
-	//?????е???????
-	if ((rec=cgiFormFileOpen("file", &file)) != cgiFormSuccess) {
-		//memset(languagebuf,0,150);
-		//sprintf(languagebuf,"%d",rec);
-		//forwardPage(CGI_NAME,207,languagebuf);
+
+	if ((rec=cgiGetFormFileName("file", fileNameOnServer)) != cgiFormSuccess)
+	{
+	//	memset(languagebuf,0,150);
+	//	getLanguageValue(sys_language,"binfile",languagebuf);
 		fprintf(cgiOut,"<script type='text/javascript'>alert('%s');parent.closeUploading();</script>",languagebuf);
 		return -1;
 	}
-#ifdef LINUX
-	strcpy(fileNameOnServer,"/update.tgz");
-#else
-	strcpy(fileNameOnServer,"D:\\update\\update.bin");
-#endif
-	targetFile=fopen(fileNameOnServer,"wb+");
-	if(targetFile==NULL){
-		//forwardPage(CGI_NAME,207,languagebuf);
-//		fprintf(cgiOut,"<script type='text/javascript'>alert('%s');parent.closeUploading();</script>",languagebuf);
+
+	//根据表单中的值打开文件
+	if ((rec=cgiFormFileOpen("file", &file)) != cgiFormSuccess)
+	{
+		fprintf(cgiOut,"<script type='text/javascript'>alert('%s');parent.closeUploading();</script>",languagebuf);
 		return -1;
 	}
-       	while (cgiFormFileRead(file, buffer, BufferLen, &got) ==cgiFormSuccess){		
-		if(got>0){			 
-			if(flag == 0){				
-				char tmpsync[20]={0};
-				sprintf(tmpsync,"%02X%02X%02X%02X%02X%02X%02X%02X",buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7]);
-				if(strcmp(UPDATEFILEHEAD,tmpsync))
+
+	while (cgiFormFileRead(file, buffer, BufferLen, &got) ==cgiFormSuccess)
+	{
+		if(got>0)
+		{
+			//效验文件合法
+			if(flag == 0)
+			{
+				if(got > sizeof(Package))
 				{
-					memset(languagebuf,0,150);
-					getLanguageValue(sys_language,"uploadFileFail",languagebuf);
-					//forwardPage(CGI_NAME,207,languagebuf);
-					fprintf(cgiOut,"<script type='text/javascript'>alert('%s');parent.closeUploading();</script>",languagebuf);
-					return -1;
-				}else{
-					fwrite(buffer+8,1,got-8,targetFile);
+					Package *pack = (Package*)buffer;
+
+					//是8168
+					if((pack->version == 2012) && (pack->len == sizeof(Package)))
+					{
+						//fwrite(buffer + sizeof(Package),1,got- sizeof(Package),targetFile);
+						flag = 1;
+						platform = 0;
+						break;
+					}
+
+					//是6467
+					else if((buffer[0] == 0x7e)&&(buffer[1] == 0x7e)&&(buffer[2] == 0x7e) && (buffer[3] == 0x7e)
+							&& (buffer[4] == 0x48) && (buffer[5] == 0x45) && (buffer[6] == 0x4e) && (buffer[7] == 0x43))
+					{
+						//fwrite(buffer + 8,1,got - 8,targetFile);
+
+						//fwrite(buffer,1,got,targetFile);
+						flag = 1;
+						platform = 1;
+						break;
+					}
 				}
-				flag = 1;
-			}else
-				fwrite(buffer,1,got,targetFile);
+
+				cgiFormFileClose(file);
+//				fclose(targetFile);
+//				unlink(fileNameOnServer);
+				memset(languagebuf,0,150);
+				getLanguageValue(sys_language,"uploadFileError",languagebuf);
+				fprintf(cgiOut,"<script type='text/javascript'>alert('%s [-5]');parent.closeUploading();</script>",languagebuf);
+				return -1;
+
+			}
+//			else
+//				fwrite(buffer,1,got,targetFile);
 		}
 	}
-	cgiFormFileClose(file);
-	fclose(targetFile);
-	sync();
-	memset(languagebuf,0,150);
-	getLanguageValue(sys_language,"uploadFileSuccess",languagebuf);
-	rec = WebUpdateFile(fileNameOnServer);
-        //forwardPage(CGI_NAME,207,languagebuf);
 
-	if(0 != rec) {
-		memset(languagebuf,0,150);
+	cgiFormFileClose(file);
+//	fclose(targetFile);
+
+	sprintf(cmd, "mv %s /tmp/update.bin", fileNameOnServer);
+	system(cmd);
+	system("chmod 777 /tmp/update.bin");
+
+	if(platform == 0)
+	{
+		rec = WebUpdateFile("/tmp/update.bin");
+	}
+	else if(platform == 1)
+	{
+		rec = WebSysUpgrade_6467("/tmp/update.bin");
+	}
+	else
+	{
+		rec = -1;
+	}
+
+	memset(languagebuf,0,150);
+	if(rec == 0)
+	{
+		getLanguageValue(sys_language,"uploadFileSuccess",languagebuf);
+		//fprintf(cgiOut,"<script type='text/javascript'>alert('%s');parent.closeUploading();</script>",languagebuf);
+	//	fopen("/tmp/success","w");
+	}
+	else if(rec == SERVER_HAVERECORD_FAILED)
+	{
+		getLanguageValue(sys_language,"uploadstateerror",languagebuf);
+		//fprintf(cgiOut,"<script type='text/javascript'>alert('%s');parent.closeUploading();</script>",languagebuf);
+		//fopen("/tmp/fail","w");
+	}
+
+	else
+	{
 		getLanguageValue(sys_language,"uploadFileFail",languagebuf);
-	}	
-        fprintf(cgiOut,"<script type='text/javascript'>alert('%s');parent.closeUploading();</script>",languagebuf);
+		//fprintf(cgiOut,"<script type='text/javascript'>alert('%s');parent.closeUploading();</script>",languagebuf);
+	}
+	//webRebootSystem();
 	return 0;
 }
+
+
+
 #if 0
 //???LOGO??
 static int updateLogoPic(void)
@@ -409,6 +489,8 @@ static int updateLogoPic(void)
 }
 
 #endif
+#define JEPG_TEMP_FILENEMA  ("/opt/dvr_rdk/ti816x_2.8/logo_temp.jpg")
+
 static int uploadLogo(int channel)
 {
 	FILE *targetFile;
@@ -423,9 +505,9 @@ static int uploadLogo(int channel)
 	int ret = 0;
 //	int flag = 0;
 
-	char tempname[512] = {0}; 
+	char tempname[512] = {0};
 
-	snprintf(tempname,sizeof(tempname),"/opt/dvr_rdk/ti816x_2.8/logo_temp.png");
+	sprintf(tempname,JEPG_TEMP_FILENEMA);
 	char languagebuf[150]={0};
 	getLanguageValue(sys_language,"uploadFileFail1",languagebuf);
 	if (cgiFormFileName("file", name, sizeof(name)) !=cgiFormSuccess)
@@ -446,8 +528,8 @@ static int uploadLogo(int channel)
 			break;
 	}
 
-	if((strstr(name,".png")==NULL && (strstr(name,".PNG")==NULL))
-	||((name-strstr(name,".png"))!=(4-strlen(name))&&(name-strstr(name,".PNG"))!=(4-strlen(name))))
+	if((strstr(name,".jpg")==NULL && (strstr(name,".JPG")==NULL))
+	||((name-strstr(name,".jpg"))!=(4-strlen(name))&&(name-strstr(name,".JPG"))!=(4-strlen(name))))
 	{
 		memset(languagebuf,0,150);
 		getLanguageValue(sys_language,"pngfile",languagebuf);
@@ -553,7 +635,7 @@ static int mid_ip_is_vailed(char *ip) {
 	if(((dwAddr & 0xFF000000) >> 24) < 1) {
 		return 0;
 	}
-	
+
 
 	return 1;
 }
@@ -658,6 +740,15 @@ int webinput_to_channel(int webinput)
 
 	return channel;
 }
+void formatTime(time_t time1, char *szTime)
+{
+	struct tm tm1;
+	localtime_r(&time1, &tm1);
+	sprintf(szTime, "%4d-%02d-%02d %02d:%02d:%02d",
+	tm1.tm_year+1900, tm1.tm_mon+1, tm1.tm_mday,
+	tm1.tm_hour, tm1.tm_min,tm1.tm_sec);
+}
+
 
 static int CheckIPNetmask(int ipaddr, int netmask, int gw)
 {
@@ -708,21 +799,39 @@ static int CheckIPNetmask(int ipaddr, int netmask, int gw)
 	return 1;
 }
 
+static int web_download_ftptool(void)
+{
+	int total=0;
+	char buf[1024];
+	int ret =0;
+	FILE* fd = fopen("/var/www/html/download/ReachDownload.exe","rb+");
+	if( NULL == fd){
+		return -1;
+	}
+	while(( ret = fread(buf,1,1024,fd)) >= 0){
+		if( ret > 0){
+			fwrite(buf,1,ret,cgiOut);
+		}
+	}
+	fclose(fd);
+	return 0;
+}
+
 int cgiMain(void) {
 	int actionCode  = 0;
 	int ret = 0;
 	int lang = 0;
-	
-	int max_x = 0;
-	int max_y = 0;
-	
+	int need_reboot =0;
+	int max_x = 1860;
+	int max_y = 1000;
+
 	cgiFormInteger("actioncode", &actionCode, 0);
 	memset(sys_password,0,100);
 	memset(sys_webpassword,0,100);
 	memset(sys_timeout,0,100);
 	memset(sys_language,0,100);
 
-	
+
 	ret = getLanguageValue("sysinfo.txt","password",sys_password);
 	if(ret == -1 || strlen(sys_password) == 0) {
 		strcpy(sys_password,USERNAME);
@@ -745,7 +854,7 @@ int cgiMain(void) {
 		lang = 1;
 		strcpy(script_language,"en");
 	}
-	
+
 	if(actionCode == UPDATE_LANGUAGE)
 	{
 		char local[10]={0};
@@ -756,9 +865,11 @@ int cgiMain(void) {
 		else
 			//fprintf(cgiOut,"Content-Type:text/html;charset=utf-8\n\n");
 			fprintf(cgiOut,"Content-Type:text/html;charset=gb2312\n\n");
-	}else if(actionCode == ACTION_DOWNLOAD_SDP) {
+	} else if(actionCode == ACTION_DOWNLOAD_SDP) {
 		fprintf(cgiOut,"Content-Type:text/plain;charset=gb2312\n");
-	}else{
+	} else if(actionCode == ACTION_FTPTOOL_DOWNLOAD) {
+		// 不输出相应类型
+	} else {
 		if(strcmp(sys_language,"us"))
 			//fprintf(cgiOut,"Content-Type:text/html;charset=gbk\n\n");
 			fprintf(cgiOut,"Content-Type:text/html;charset=gb2312\n\n");
@@ -776,7 +887,7 @@ int cgiMain(void) {
 		//	int outvalue = 0;
 			int webinput =WEB_INPUT_1;
 			int channel=0;
-			
+
 			cgiFormInteger("use",&index,0);
 			WebSetCtrlProto(index,&index,channel);
 			forwardPages(CGI_NAME,208);
@@ -807,6 +918,50 @@ int cgiMain(void) {
 				updatesystems();
 			}
 		break;
+
+		case ACTION_SYSUPGRADE_STATUS:
+		{
+			if(0 == access("/var/tmp/success",F_OK))
+			{
+				fprintf(cgiOut, "%d",RESULT_SUCCESS);
+				unlink("/var/tmp/success");
+				webRebootSystem();
+			}
+			else if(0 == access("/var/tmp/fail",0))
+			{
+				fprintf(cgiOut, "%d", RESULT_FAILURE);
+				unlink("/var/tmp/fail");
+			}
+			else if(0 == access("/var/tmp/recording",0))
+			{
+				fprintf(cgiOut, "%d", RESULT_MUSTMULTIIP);
+				unlink("/var/tmp/recording");
+			}
+			break;
+		}
+
+		case ACTION_SETDEFAULT_SET:
+		{
+			int ret = 0;
+			//need reboot
+			ret = WebSysRollBack("");
+			if(ret == 0)
+			{
+				//webRebootSystem();
+				fprintf(cgiOut, "%d", RESULT_SUCCESS);
+			}
+			else if(ret == SERVER_HAVERECORD_FAILED)
+			{
+				fprintf(cgiOut, "%d", RESULT_MUSTMULTIIP);
+			}
+			else
+			{
+				fprintf(cgiOut, "%d", RESULT_FAILURE);
+			}
+
+			break;
+		}
+
 		case ACTION_LOGOUT:
 		{
 			fprintf(cgiOut, "document.cookie = '';\n");
@@ -849,8 +1004,8 @@ int cgiMain(void) {
 			break;
 		case RESTART_SYS:
 			{
-				webRebootSystem();
-				fprintf(cgiOut, "%d", RESULT_SUCCESS);
+				ret = webfReboot();
+				fprintf(cgiOut, "%d", ret);
 			}
 			break;
 		case ACTION_SAVEUPDATE:
@@ -906,26 +1061,34 @@ int cgiMain(void) {
 		 */
 		case PAGE_SYSINFO_SHOW: {
 			int outlen = 0;
+			DevInfo devinfo = {0};
+			DiskInfo disinfo = {0};
 			char deviceModelNO[64] = {0};
 			char webVersion[64] = {0};
 			char serialNO[64] = {0};
+			char NetContorlIp[16] = {0};
 			System_Info_t in;
 			System_Info_t out;
-
+			EncInfo_t enc_info;
 			float disksize = 3000000000;
-			disksize = disksize/1024/1024;
 			float remainsize = 10000000;
-			remainsize = remainsize/1024/1024;
 			char exception[20] = {0};
 			getLanguageValue(sys_language,"sysinfoException",exception);
+			webGetEncInfo(&enc_info, 0);
 			WebGetSystemInfo(&in,&out);
+			WebGetNetControlIp(NetContorlIp);
+			disksize = out.total_space;
+			remainsize = out.available_space;
+			disksize = disksize/1024/1024;
+			remainsize = remainsize/1024/1024;
 //			appCmdStringParse(MSG_GETSERIALNO, NULL, strlen(serialNO), serialNO, &outlen);
 //			WebGetDevideType(deviceModelNO, sizeof(deviceModelNO));
 			strcat(webVersion, WEBVERSION);
 
 			showPage("./sysinfo.html", sys_language);
 			fprintf(cgiOut, "<script type='text/javascript'>\n");
-				fprintf(cgiOut, "setFormItemValue('wmform', [{'name': 'serialNO','value': '%s','type': 'text' }", out.serial_no);
+			#if 0
+				fprintf(cgiOut, "setFormItemValue('wmform', [{'name': 'serialNO','value': '%s','type': 'text' }", devinfo.serialnum);
 				fprintf(cgiOut, ",{'name': 'deviceModelNO','value': '%s','type': 'text' }", out.type_no);
 				fprintf(cgiOut, ",{'name': 'webVersion','value': '%s','type': 'text' }", webVersion);
 				fprintf(cgiOut, ",{'name': 'aiosysversion','value': '%s','type': 'text' }", out.ctrl_version);
@@ -936,156 +1099,201 @@ int cgiMain(void) {
 					fprintf(cgiOut, ",{'name': 'hardDiskSpace','value': '%s','type': 'text' }", exception);
 					fprintf(cgiOut, ",{'name': 'freeDiskSpace','value': '%s','type': 'text' }", exception);
 				} else {
+					fprintf(cgiOut, ",{'name': 'hardDiskSpace','value': '%0.2f GByte','type': 'text' }", disinfo.disksize);
+					fprintf(cgiOut, ",{'name': 'freeDiskSpace','value': '%0.2f GByte','type': 'text' }", disinfo.remainsize);
+				}
+				fprintf(cgiOut, ",{'name': 'mediaIp','value': '%s','type': 'text' }]);\n",out.ip);
+				fprintf(cgiOut, ",{'name': 'zhongkongIP','value': '%s','type': 'text' }]);\n",out.ip);
+				#endif
+				fprintf(cgiOut, "setFormItemValue('wmform', [{'name': 'serialNO','value': '%s','type': 'text' }", out.serial_no);
+				fprintf(cgiOut, ",{'name': 'deviceModelNO','value': '%s','type': 'text' }", out.type_no);
+				fprintf(cgiOut, ",{'name': 'webVersion','value': '%s','type': 'text' }", webVersion);
+				fprintf(cgiOut, ",{'name': 'aiosysversion','value': '%s(%s/%s)','type': 'text' }", out.ctrl_version, enc_info.kernel_version, enc_info.fpga_version);
+				fprintf(cgiOut, ",{'name': 'aiosysenctime','value': '%s','type': 'text' }", "2013/11/16 13:36:22");
+				fprintf(cgiOut, ",{'name': 'hdsysversion','value': '%s(%s/%s)','type': 'text' }",out.hd_version,out.hd_ker_version,out.hd_FPGA_version);
+				fprintf(cgiOut, ",{'name': 'hdsysenctime','value': '%s','type': 'text' }", out.hd_built_time);
+				if(disksize < 1) {
+					fprintf(cgiOut, ",{'name': 'hardDiskSpace','value': '%s','type': 'text' }", exception);
+					fprintf(cgiOut, ",{'name': 'freeDiskSpace','value': '%s','type': 'text' }", exception);
+				} else {
 					fprintf(cgiOut, ",{'name': 'hardDiskSpace','value': '%0.2f GByte','type': 'text' }", disksize);
 					fprintf(cgiOut, ",{'name': 'freeDiskSpace','value': '%0.2f GByte','type': 'text' }", remainsize);
 				}
-				fprintf(cgiOut, ",{'name': 'mediaIp','value': '%s','type': 'text' }]);\n",out.ip);
+				fprintf(cgiOut, ",{'name': 'mediaIp','value': '%s','type': 'text' }",out.ip);
+				fprintf(cgiOut, ",{'name': 'zhongkongIP','value': '%s','type': 'text' }]);\n",NetContorlIp);
 			fprintf(cgiOut, "</script>\n");
 			break;
 		}
+#if 0
+		// 课件文件夹重命名
+		case ACTION_FILEMGR_RENAME:
+		{
+			char renameCmd[160] = "mv /opt/Rec/";
+			char courseName[80]={0};
+			char newCourseName[80]={0};
+			cgiFormString("courseName", courseName, 80);
+			cgiFormString("newCourseName", newCourseName, 80);
+			strcat(renameCmd,courseName);
+			strcat(renameCmd," /opt/Rec/");
+			strcat(renameCmd,newCourseName);
+			int exeStatus = system(renameCmd);
 
+			if(exeStatus != -1)
+			fprintf(cgiOut, "%d", RESULT_SUCCESS);
+			else
+			fprintf(cgiOut, "%d", RESULT_FAILURE);
+			//fprintf(cgiOut, " - %s", renameCmd);
+			break;
+		}
 
+		case ACTION_FILEMGR_DEL:
+		{
+			char delCmd[100] = "rm -rf /opt/Rec/";
+			char courseName[80]={0};
+			cgiFormString("courseName", courseName, 80);
+			strcat(delCmd,courseName);
+			int exeStatus = system(delCmd);
+
+			if(exeStatus != -1)
+			fprintf(cgiOut, "%d", RESULT_SUCCESS);
+			else
+			fprintf(cgiOut, "%d", RESULT_FAILURE);
+			break;
+		}
+
+#endif
 		case PAGE_FILEMGR_SHOW: {
-//			char recDir[9] = "/opt/Rec";
+			char recDir[9] = "/opt/Rec";
 			char temp[1024] = {0};
-//			char tempDownloadList[100] = {0};
+			char tempDownloadList[100] = {0};
 			char formData[1024*1024] = {0};
-//			char mtime[26] = {};
-//			int pageIndex = 0;
-//			int rowIndex = 1;
-//			float totalSize = 0;
-//			struct stat buf;
-//			char currentDir[100] = {0};
-//			char currentFile[100] = {0};
-//			char currentMd5[100] = {0};
-//			char currentTimeInfo[100] = {0};
-//			char courseDir[100] ={0};
-//
-//			cgiFormInteger("pageIndex",&pageIndex,0);
-//
-			strcat(formData," formData = [");
-//
-//			DIR *dirp, *dirList;
-//			struct dirent *direntp;
-//			struct dirent *direnList;
-//			struct stat info;
-//
-//			dirp = opendir(recDir);
-//			if(dirp != NULL)
-//			{
-//
-//				while(1)
-//				{
-//					direntp = readdir(dirp);
-//
-//					if(direntp == NULL){
-//						break;
-//					}
-//
-//					if(direntp->d_name[0] != '.' && (direntp->d_type & DT_DIR))
-//					{
-//
-//						sprintf(currentMd5, "%s", recDir);
-//						strcat(currentMd5,"/");
-//						strcat(currentMd5, direntp->d_name);
-//						strcat(currentMd5, "/md5.info");
-//
-//						memset(currentTimeInfo, 0, 100);
-//						sprintf(currentTimeInfo, "%s", recDir);
-//						strcat(currentTimeInfo,"/");
-//						strcat(currentTimeInfo, direntp->d_name);
-//						strcat(currentTimeInfo, "/Time.info");
-//
-//						if(access(currentMd5, F_OK) != 0)
-//							continue;
-//
-//						sprintf(currentDir, "%s", recDir);
-//						strcat(currentDir,"/");
-//						strcat(currentDir,direntp->d_name);
-//						strcat(currentDir,"/HD/resource/videos/");
-//
-//						dirList = opendir(currentDir);
-//
-//						if(dirList != NULL)
-//						{
-//							while(1)
-//							{
-//								direnList = readdir(dirList);
-//
-//								if(direnList == NULL){
-//									break;
-//								}
-//								if(direnList->d_name[0] != '.'){
-//									strcat(currentFile, currentDir);
-//									strcat(currentFile, direnList->d_name);
-//									stat(currentFile, &buf);
-//									totalSize = totalSize + (float)buf.st_size;
-//									if(access(currentTimeInfo, F_OK) != 0){
-//										formatTime(buf.st_mtime, mtime);
-//									}
-//									else{
-//										FILE *timefp = fopen(currentTimeInfo, "r");
-//										memset(mtime, 0, 26);
-//										fread(mtime, 19, 1, timefp);
-//										fclose(timefp);
-//									}
-//									memset(&buf, 0, sizeof(struct stat));
-//									memset(currentFile,0,100);
-//									strcat(tempDownloadList, direnList->d_name);
-//									strcat(tempDownloadList, ",");
-//								}
-//							}
-//							closedir(dirList);
-//						}
-//						strcat(formData, "{'courseName': '");
-//						strcat(formData, direntp->d_name);
-//						strcat(formData, "', 'createDate': '");
-//						strcat(formData, mtime);
-//						strcat(formData, "', 'size': ");
-//						sprintf(temp,"%0.2f", totalSize/(1024*1024));
-//						strcat(formData, temp);
-//						strcat(formData, ", 'download': '");
-//						strcat(formData, tempDownloadList);
-//						strcat(formData, "'},");
-//						rowIndex++;
-//						memset(temp, 0, 1024);
-//						memset(tempDownloadList,0,100);
-//						memset(currentDir,0,100);
-//						totalSize = 0;
-//					}
-//
-//				}
-//				closedir(dirp);
-//			}
-//
+			char mtime[26] = {};
+			int pageIndex = 0;
+			int rowIndex = 1;
+			float totalSize = 0;
+			struct stat buf;
+			char currentDir[100] = {0};
+			char currentFile[100] = {0};
+			char currentMd5[100] = {0};
+			char currentTimeInfo[100] = {0};
+			char courseDir[100] ={0};
+			char recovery[100] = {0};
 
+			cgiFormInteger("pageIndex",&pageIndex,0);
 
+			strcat(formData,"var formData = [");
 
+			DIR *dirp, *dirList;
+			struct dirent *direntp;
+			struct dirent *direnList;
+			struct stat info;
 
+			dirp = opendir(recDir);
+			if(dirp != NULL)
+			{
 
-			int i = 0;
-			for(; i<10; i++) {
-				strcat(formData, "{'courseName': '");
-				strcat(formData, "counrseNamess");
-				sprintf(temp,"%d", i);
-				strcat(formData, temp);
-				strcat(formData, "', 'createDate': '");
-				strcat(formData, "2013-09-27 16:14:18");
-				strcat(formData, "', 'size': ");
-				sprintf(temp,"%0.2f", 123.68 + i);
-				strcat(formData, temp);
-				strcat(formData, "},");
+			while(1)
+			{
+			direntp = readdir(dirp);
+
+			if(direntp == NULL){
+			break;
 			}
 
+			if(direntp->d_name[0] != '.' && (direntp->d_type & DT_DIR))
+			{
+
+			sprintf(currentMd5, "%s", recDir);
+			strcat(currentMd5,"/");
+			strcat(currentMd5, direntp->d_name);
+			strcat(currentMd5, "/md5.info");
+
+			memset(currentTimeInfo, 0, 100);
+			sprintf(currentTimeInfo, "%s", recDir);
+			strcat(currentTimeInfo,"/");
+			strcat(currentTimeInfo, direntp->d_name);
+
+			strcat(currentTimeInfo, "/Time.info");
+
+			if( strcmp(direntp->d_name, "recovery")  == 0 ){
+				continue;
+			}
+
+		//	if( access(currentMd5, F_OK)  != 0 ){
+				sprintf(recovery, "%s", recDir);
+				strcat(recovery,"/recovery/");
+				strcat(recovery, direntp->d_name);
+				if( access(recovery, F_OK) == 0){
+					continue;
+				}
+		//	}
 
 
+			sprintf(currentDir, "%s", recDir);
+			strcat(currentDir,"/");
+			strcat(currentDir,direntp->d_name);
+			strcat(currentDir,"/HD/resource/videos/");
 
+			dirList = opendir(currentDir);
+
+			if(dirList != NULL)
+			{
+			while(1)
+			{
+				direnList = readdir(dirList);
+
+				if(direnList == NULL){
+					break;
+				}
+				if(direnList->d_name[0] != '.'){
+					strcat(currentFile, currentDir);
+					strcat(currentFile, direnList->d_name);
+					stat(currentFile, &buf);
+					totalSize = totalSize + (float)buf.st_size;
+					if(access(currentTimeInfo, F_OK) != 0){
+						formatTime(buf.st_mtime, mtime);
+					}
+					else{
+						FILE *timefp = fopen(currentTimeInfo, "r");
+						memset(mtime, 0, 26);
+						fread(mtime, 19, 1, timefp);
+						fclose(timefp);
+					}
+					memset(&buf, 0, sizeof(struct stat));
+					memset(currentFile,0,100);
+					strcat(tempDownloadList, direnList->d_name);
+					strcat(tempDownloadList, ",");
+				}
+			}
+			closedir(dirList);
+			}
+			strcat(formData, "{\"courseName\": \"");
+			strcat(formData, direntp->d_name);
+			strcat(formData, "\", \"createDate\": \"");
+			strcat(formData, mtime);
+			strcat(formData, "\", \"size\": ");
+			sprintf(temp,"%0.2f", totalSize/(1024*1024));
+			strcat(formData, temp);
+			strcat(formData, ", \"download\": \"");
+			strcat(formData, tempDownloadList);
+			strcat(formData, "\"},");
+			rowIndex++;
+			memset(temp, 0, 1024);
+			memset(tempDownloadList,0,100);
+			memset(currentDir,0,100);
+			totalSize = 0;
+			}
+
+			}
+			closedir(dirp);
+			}
 
 			strcat(formData, "];\n");
 			fprintf(cgiOut, "<script type='text/javascript'>\n");
 			fprintf(cgiOut, formData);
 			fprintf(cgiOut, "</script>\n");
 			showPage("./filemgr.html", sys_language);
+
 			break;
 		}
 
@@ -1093,39 +1301,15 @@ int cgiMain(void) {
 		 * page input show action
 		 */
 		case PAGE_INPUT_SHOW: {
-		//	int outlen = 0;
-			char inputInfo[100] = {0};
-			int colorSpace = 0;
-			int hdcp = 9;
-			int inputType = 0;
 			int webinput = WEB_INPUT_1;
 			int channel = CHANNEL_INPUT_1;
-
-			//add by zm
-			cgiFormInteger("input", &webinput, WEB_INPUT_1);
-		//	webSetChannel(webinput);
-			
-			channel = webinput_to_channel(webinput);
-			//webSetChannel(channel);
-
-
-			webGetColorSpace(&colorSpace,channel);
-			webGetHDCPFlag(&hdcp,channel);
-			webgetInputSignalInfo(inputInfo,channel);
-			WebGetinputSource(&inputType,channel);
-			
+			char outSignalInfo[16] = {0};
+			webGetSignalInfo(outSignalInfo, 16, channel);
 			showPage("./input.html", sys_language);
 
 			fprintf(cgiOut, "<script type='text/javascript'>\n");
-				fprintf(cgiOut, "setFormItemValue('wmform', [{'name': 'inputInfo','value': '%s','type': 'text' }", inputInfo);
-				fprintf(cgiOut, ",{'name': 'colorSpace','value': '%d','type': 'select' }",colorSpace);
-				fprintf(cgiOut, ",{'name': 'inputType','value': '%d','type': 'select' }",inputType);
-				fprintf(cgiOut, ",{'name': 'hdcp','value': '%d','type': 'text'}]);\n", hdcp);
-//				fprintf(cgiOut, "fixedHDCPText();\n");
-				//fprintf(cgiOut, "formBeautify();\n");
-				//fprintf(cgiOut, "initInputType(%d);\n",inputType);
-				
-//				fprintf(cgiOut, "initInputTab(%d);\n", webinput);
+				fprintf(cgiOut, "setFormItemValue('wmform', [{'name': 'inputInfo','value': '%s','type': 'text' }])", outSignalInfo);
+
 			fprintf(cgiOut, "</script>\n");
 			break;
 		}
@@ -1140,7 +1324,7 @@ int cgiMain(void) {
 			int inputType = 0;
 			int oldinput = 0;
 			int netreboot =0;
-		
+
 			int webinput = WEB_INPUT_1;
 			int channel = CHANNEL_INPUT_1;
 
@@ -1156,18 +1340,18 @@ int cgiMain(void) {
 				channel = CHANNEL_INPUT_2;
 			}
 			//	webSetChannel(webinput);
-			
+
 			cgiFormInteger("colorSpace", &colorSpace, 0);
 			cgiFormInteger("inputType", &inputType, 0);
 			WebGetinputSource(&oldinput,channel);
 			webGetColorSpace(&old_colorSpace,channel);
 
-			//set color space ,for 8168,not need 
-			
+			//set color space ,for 8168,not need
+
 			if(oldinput != inputType)
 			{
-				WebSetinputSource(inputType, &outValue,channel);				
-				netreboot = 5;	
+				WebSetinputSource(inputType, &outValue,channel);
+				netreboot = 5;
 			}
 			if( old_colorSpace!=colorSpace){
 				webSetColorSpace(colorSpace,&old_colorSpace,channel);
@@ -1187,7 +1371,7 @@ int cgiMain(void) {
 				int channel = CHANNEL_INPUT_1;
 				cgiFormInteger("input", &webinput, WEB_INPUT_1);
 				WebGetinputSource(&oldinput,channel);
-				
+
 				fprintf(cgiOut, "%d", oldinput);
 				break;
 			}
@@ -1197,7 +1381,7 @@ int cgiMain(void) {
 			int hdmi = 1;
 			int mergeRes = 1;
 			int autoModel = 1;
-			
+
 
 			// 调用接口获取值
 			ret = WebGetHDMIRes(&hdmi);
@@ -1205,7 +1389,7 @@ int cgiMain(void) {
 			mergeRes = info.res;
 			autoModel = info.model;
 		//	fprintf(cgiOut, "<script type='text/javascript'>alert('ret=%d');</script>", ret);
-			
+
 		//	fprintf(cgiOut, "<script type='text/javascript'>alert('ret=%x');</script>", ret);
 			showPage("./movieModel.html", sys_language);
 			fprintf(cgiOut, "<script type='text/javascript'>\n");
@@ -1218,22 +1402,22 @@ int cgiMain(void) {
 		}
 
 		case PAGE_TRACKINGSET_SHOW: {
-			int jiwei = 5;
-			char camIP1[16] = {0};
-			char camIP2[16] = {0};
-			char camIP3[16] = {0};
-			char camIP4[16] = {0};
-
-			// 调用接口获取值
-
+			Tracer_Info_t in;
+			Tracer_Info_t out;
+			WebGetTracerInfo(&in,&out);
 			showPage("./trackingSet.html", sys_language);
 			fprintf(cgiOut, "<script type='text/javascript'>\n");
 			fprintf(cgiOut, "setFormItemValue('wmform', [");
-			fprintf(cgiOut, "{'name': 'jiwei','value': '%d','type': 'radio' }", jiwei);
-			fprintf(cgiOut, ",{'name': 'camIP1','value': '%s','type': 'text' }", "11");
-			fprintf(cgiOut, ",{'name': 'camIP2','value': '%s','type': 'text' }", camIP2);
-			fprintf(cgiOut, ",{'name': 'camIP3','value': '%s','type': 'text' }", camIP3);
-			fprintf(cgiOut, ",{'name': 'camIP4','value': '%s','type': 'text' }]);\n", "44");
+			fprintf(cgiOut, "{'name': 'jiwei','value': '%d','type': 'radio' }", out.num);
+			fprintf(cgiOut, ",{'name': 'status1','value': '%d','type': 'hidden' }", out.Status[0]);
+			fprintf(cgiOut, ",{'name': 'status2','value': '%d','type': 'hidden' }", out.Status[1]);
+			fprintf(cgiOut, ",{'name': 'status3','value': '%d','type': 'hidden' }", out.Status[2]);
+			fprintf(cgiOut, ",{'name': 'status4','value': '%d','type': 'hidden' }", out.Status[3]);
+			fprintf(cgiOut, ",{'name': 'camIP1','value': '%s','type': 'text' }", out.ip[0]);
+			fprintf(cgiOut, ",{'name': 'camIP2','value': '%s','type': 'text' }", out.ip[1]);
+			fprintf(cgiOut, ",{'name': 'camIP3','value': '%s','type': 'text' }", out.ip[2]);
+			fprintf(cgiOut, ",{'name': 'camIP4','value': '%s','type': 'text' }]);\n", out.ip[3]);
+			fprintf(cgiOut, "init();");
 			fprintf(cgiOut, "</script>\n");
 
 			break;
@@ -1251,10 +1435,10 @@ int cgiMain(void) {
 			int audioLevelRight = 0;
 			int bitRate = 0;
 			int mute = 0;
-			
+
 			int webinput = WEB_INPUT_1;
 			int mp_status = IS_IND_STATUS;
-			int channel = CHANNEL_INPUT_1;			
+			int channel = CHANNEL_INPUT_1;
 
 			cgiFormInteger("audioInput", &audio_input, 0);
 			cgiFormInteger("sampleRate", &SampleRateIndex, 0);
@@ -1262,7 +1446,7 @@ int cgiMain(void) {
 			cgiFormInteger("audioLevelRight", &audioLevelRight, 0);
 			cgiFormInteger("bitRate", &bitRate, 0);
 			cgiFormInteger("mute", &mute, 0);
-			
+
 			WEB_AudioEncodeParam audioParamIn;
 			WEB_AudioEncodeParam audioParamOut;
 			memset(&audioParamIn, 0, sizeof(WEB_AudioEncodeParam));
@@ -1271,7 +1455,7 @@ int cgiMain(void) {
 			WebGetAudioEncodeParam(&audioParamIn, channel);
 
 			audioParamIn.mp_input = audio_input;
-			
+
 			audioParamIn.SampleRateIndex = SampleRateIndex;
 			audioParamIn.LVolume 	= audioLevelLeft &0xff;
 			audioParamIn.RVolume 	= audioLevelRight &0xff;
@@ -1283,8 +1467,8 @@ int cgiMain(void) {
 			audioParamIn.Mute 		= mute;
 			ret = WebSetAudioEncodeParam(&audioParamIn, &audioParamOut,channel);
 			if (SERVER_RET_USER_INVALIED == ret ){
-				fprintf(cgiOut, "%d", RESULT_NO_ANSWER);				
-			}else 
+				fprintf(cgiOut, "%d", RESULT_NO_ANSWER);
+			}else
 				fprintf(cgiOut, "%d", RESULT_SUCCESS);
 			break;
 		}
@@ -1300,41 +1484,40 @@ int cgiMain(void) {
 			int stuCamPro = 0;
 			int teaCamAddrBit = 0;
 			int stuCamAddrBit = 0;
+			Remote_Ctrl_t info;
+			Remote_Ctrl_t out;
 			cgiFormInteger("teaCamPro", &teaCamPro, 1);
 			cgiFormInteger("stuCamPro", &stuCamPro, 1);
 			cgiFormInteger("teaCamAddrBit", &teaCamAddrBit, 1);
 			cgiFormInteger("stuCamAddrBit", &stuCamAddrBit, 1);
-
-			// do something
-
+			info.tea_addr = teaCamAddrBit;
+			info.tea_procotol= teaCamPro;
+			info.stu_procotol = stuCamPro;
+			info.stu_addr= stuCamAddrBit;
+			WebSetRemoteCtrl(&info,&out);
 			break;
 		}
 
 		case ACTION_FILEMGR_DELETE: {
-//			char delCmd[100] = "rm -rf /opt/Rec/";
-//			char courseName[80]={0};
-//			cgiFormString("courseName", courseName, 80);
-//			strcat(delCmd,courseName);
-//			int exeStatus = system(delCmd);
-//
-//			if(exeStatus != -1)
-				fprintf(cgiOut, "%d", RESULT_SUCCESS);
-//			else
-//				fprintf(cgiOut, "%d", RESULT_FAILURE);
+			char courseName[80]={0};
+			cgiFormString("courseName", courseName, 80);
+			WebDelRecourse(courseName, 80);
+
+			fprintf(cgiOut, "%d", RESULT_SUCCESS);
 			break;
 		}
 
 		case ACTION_FILEMGR_USBCOPY: {
-//			char copyCmd[100] = "rm -rf /opt/Rec/";
-//			char courseName[80]={0};
-//			cgiFormString("courseName", courseName, 80);
-//			strcat(copyCmd,courseName);
-//			int exeStatus = system(copyCmd);
-//
-//			if(exeStatus != -1)
+//			char copyCmd[256] = {0};
+			char courseName[80]={0};
+			cgiFormString("courseName", courseName, 80);
+//			sprintf(copyCmd,256,"%s",courseName);
+			ret = WebDownload(courseName,strlen(courseName));
+			if(ret != -1)
 				fprintf(cgiOut, "%d", RESULT_SUCCESS);
-//			else
-//				fprintf(cgiOut, "%d", RESULT_FAILURE);
+			else
+				fprintf(cgiOut, "%d", RESULT_FAILURE);
+
 			break;
 		}
 
@@ -1345,11 +1528,11 @@ int cgiMain(void) {
 			//int outvalue = 0;
 			//int outlen = 0;
 			int cap_position = 0;
-			
+
 			int cap_x = 0;
 			int cap_y = 0;
-			
-			
+
+
 			char cap_text[128] = {0};
 			int cap_alpha = 0;
 			int cap_displaytime = 0;
@@ -1378,12 +1561,12 @@ int cgiMain(void) {
 			WebGetTextOsd(&textIn, &textInfo,channel);
 			WebGetLogoOsd(&logoIn, &logoInfo,channel);
 //			WebGetEnabelTextParam(&osd_enable,channel);
-			
+
 //			WebGetMaxPos(channel, &max_x, &max_y);
 
 			isLogoOn = logoInfo.enable;
 			isTextOn = textInfo.enable;
-			
+
 			cap_position = textInfo.postype;
 			cap_x = textInfo.xpos;
 			cap_y = textInfo.ypos;
@@ -1400,7 +1583,7 @@ int cgiMain(void) {
 				}
 			if( logo_alpha < 0){
 				logo_alpha = 0;
-				}		
+				}
 			showPage("./captionlogo.html", sys_language);
 
 			fprintf(cgiOut, "<script type='text/javascript'>\n");
@@ -1444,14 +1627,15 @@ int cgiMain(void) {
 			int logo_x = 0;
 			int logo_y = 0;
 			int logo_alpha = 0;
+			// 是否上传logo图片
+	//		int isFileUpload = 0;
 			TextInfo textInfoIn;
 			TextInfo textInfoOut;
 			LogoInfo logoInfoIn;
 			LogoInfo logoInfoOut;
-
 			int isLogoOn =0;
 			int isTextOn= 0;
-			
+
 			int channel = CHANNEL_INPUT_1;
 
 
@@ -1473,7 +1657,9 @@ int cgiMain(void) {
 
 			cgiFormInteger("logo", &isLogoOn, 0);
 			cgiFormInteger("caption",&isTextOn,0);
-		
+
+	//		cgiFormInteger("isFileUpload",&isFileUpload,0);
+
 			if(cap_position != ABSOLUTE2) {
 				WebGetTextPos(cap_position, &cap_x, &cap_y);
 			}
@@ -1486,12 +1672,12 @@ int cgiMain(void) {
 			}
 			if( logo_alpha < 0){
 				logo_alpha = 0;
-			}	
-			
+			}
+
 			logo_alpha =128*(1- logo_alpha/100.0);
 			cap_alpha =128*(1-  cap_alpha/100.0);
-			
-			
+
+
 			textInfoIn.postype = cap_position;
 			textInfoIn.xpos = cap_x;
 			textInfoIn.ypos = cap_y;
@@ -1505,7 +1691,8 @@ int cgiMain(void) {
 			logoInfoIn.y = logo_y;
 			logoInfoIn.alpha = logo_alpha;
 			logoInfoIn.enable = isLogoOn;
-			
+//			logoInfoIn.channel = isFileUpload;
+
 			WebSetTextOsd(&textInfoIn,  &textInfoOut,channel);
 			WebSetLogoOsd(&logoInfoIn,  &logoInfoOut,channel);
 
@@ -1529,18 +1716,20 @@ int cgiMain(void) {
 			int stuCamPro = 2;
 			int teaCamAddrBit = 3;
 			int stuCamAddrBit = 4;
+			Remote_Ctrl_t in,out;
+//			WebGetRemoteCtrl(&in, &out);
 
 			// 调用接口获取值
 
-			showPage("./remotectrl.html", sys_language);
+/*			showPage("./remotectrl.html", sys_language);
 
 			fprintf(cgiOut, "<script type='text/javascript'>\n");
-				fprintf(cgiOut, "setFormItemValue('wmform', [{'name': 'teaCamPro','value': '%d','type': 'select' }", teaCamPro);
-				fprintf(cgiOut, ",{'name': 'stuCamPro','value': '%d','type': 'select' }",stuCamPro);
-				fprintf(cgiOut, ",{'name': 'teaCamAddrBit','value': '%d','type': 'select' }",teaCamAddrBit);
-				fprintf(cgiOut, ",{'name': 'stuCamAddrBit','value': '%d','type': 'select'}]);\n", stuCamAddrBit);
+				fprintf(cgiOut, "setFormItemValue('wmform', [{'name': 'teaCamPro','value': '%d','type': 'select' }", out.tea_procotol);
+				fprintf(cgiOut, ",{'name': 'stuCamPro','value': '%d','type': 'select' }",out.stu_procotol);
+				fprintf(cgiOut, ",{'name': 'teaCamAddrBit','value': '%d','type': 'select' }",out.tea_addr);
+				fprintf(cgiOut, ",{'name': 'stuCamAddrBit','value': '%d','type': 'select'}]);\n", out.stu_addr);
 			fprintf(cgiOut, "</script>\n");
-
+*/
 			break;
 		}
 
@@ -1555,13 +1744,13 @@ int cgiMain(void) {
 			int channel ;
 			cgiFormInteger("input", &webinput, WEB_INPUT_1);
 	//		webSetChannel(webinput);
-			
+
 			channel =  webinput_to_channel(webinput);
-			
+
 			cgiFormInteger("speed", &speed, 1);
 			cgiFormInteger("type", &type, 14);
 			cgiFormInteger("addressbit",&addr,1);
-			
+
 			webFarCtrlCamera(addr,type, speed,channel);
 			break;
 		}
@@ -1572,40 +1761,19 @@ int cgiMain(void) {
 		case PAGE_NETWORK_SHOW: {
 			int outlen = 0;
 			int dhcp = 0;
-			int IPAddress[2] = {0};
-			int gateWay[2] = {0};
-			int subMask[2] = {0};
-			SYSPARAMS sysParamsOut;
-			struct in_addr inAddr;   
-/*			Enc2000_Sys sysOut;
-			memset(&sysOut, 0, sizeof(Enc2000_Sys));
-			
-			webGetSysInfo(&sysOut,&outlen);
-			memcpy(&sysParamsOut,&(sysOut.eth0),sizeof(SYSPARAMS));
-			dhcp = sysParamsOut.nTemp[0];
-			IPAddress[0] = sysParamsOut.dwAddr;
-			subMask[0] = sysParamsOut.dwNetMask ;
-			gateWay[0]	 = sysParamsOut.dwGateWay;
-
-			memset(&sysParamsOut,0,sizeof(sysParamsOut));
-			memcpy(&sysParamsOut,&(sysOut.eth1),sizeof(SYSPARAMS));
-			dhcp = sysParamsOut.nTemp[0];
-			IPAddress[1] = sysParamsOut.dwAddr;
-			subMask[1] = sysParamsOut.dwNetMask;
-			gateWay[1]	 = sysParamsOut.dwGateWay;
-*/
+			IpConfig sysParamsOut;
+			struct in_addr inAddr;
+			WebGetNetwork(&sysParamsOut,&outlen);
+			dhcp = sysParamsOut.iptype;
+		
 			showPage("./network.html", sys_language);
-
 			fprintf(cgiOut, "<script type='text/javascript'>\n");
 				fprintf(cgiOut, "setFormItemValue('wmform', [");
-				memcpy(&inAddr,&IPAddress[0],4); 
-				fprintf(cgiOut, "{'name': 'IPAddress','value': '%s','type': 'text' }", inet_ntoa(inAddr));
-				memcpy(&inAddr,&subMask[0],4); 
-				fprintf(cgiOut, ",{'name': 'subMask','value': '%s','type': 'text' }", inet_ntoa(inAddr));
-				memcpy(&inAddr,&gateWay[0],4); 
-				fprintf(cgiOut, ",{'name': 'gateWay','value': '%s','type': 'text' }", inet_ntoa(inAddr));
-				fprintf(cgiOut, ",{'name': 'dhcp','value': '%d','type': 'checkbox' }]);", dhcp);
-
+				fprintf(cgiOut, "{'name': 'dhcp','value': '%d','type': 'checkbox' }", dhcp);
+				fprintf(cgiOut, ",{'name': 'IPAddress','value': '%s','type': 'text' }", sysParamsOut.ipaddr);
+				fprintf(cgiOut, ",{'name': 'subMask','value': '%s','type': 'text' }", sysParamsOut.netmask);
+				fprintf(cgiOut, ",{'name': 'gateWay','value': '%s','type': 'text' }]);", sysParamsOut.gateway);
+				fprintf(cgiOut, "init();");
 			fprintf(cgiOut, "</script>\n");
 			break;
 		}
@@ -1616,54 +1784,38 @@ int cgiMain(void) {
 		case ACTION_NETWORK_SET: {
 			int outlen = 0;
 			int dhcp = 0;
-			char IPAddress[20] = {0};
-			char IPAddress1[20] = {0};
-			char gateWay[20] = {0};
-			char subMask[20] = {0};
-			char subMask1[20] = {0};
 			int r1=0;
 
-		
-			SYSPARAMS sysParamsIn;
-			memset(&sysParamsIn, 0, sizeof(SYSPARAMS));
-			
-			cgiFormInteger("dhcp", &dhcp, 0);
-			cgiFormString("IPAddress", IPAddress, 20);
-			cgiFormString("IPAddress1", IPAddress1, 20);
 
-			cgiFormString("gateWay", gateWay, 20);
-			
-			cgiFormString("subMask", subMask, 20);
-			cgiFormString("subMask1", subMask1, 20);
-			
-			sysParamsIn.dwAddr = inet_addr(IPAddress);
-			sysParamsIn.dwNetMark = inet_addr(subMask);
-			sysParamsIn.dwGateWay = inet_addr(gateWay);
-			sysParamsIn.nTemp[0] = dhcp;
-			
+			IpConfig sysParamsIn;
+			IpConfig sysParamsout;
+			memset(&sysParamsIn, 0, sizeof(IpConfig));
+
+			cgiFormInteger("dhcp", &dhcp, 0);
+			cgiFormString("IPAddress", sysParamsIn.ipaddr, 20);
+			cgiFormString("subMask", sysParamsIn.netmask, 20);
+			cgiFormString("gateWay", sysParamsIn.gateway, 20);
+
+			sysParamsIn.iptype = dhcp;
+
 			ret=0;
-			r1 = CheckIPNetmask( sysParamsIn.dwAddr,sysParamsIn.dwNetMark,sysParamsIn.dwGateWay);
+			r1 = CheckIPNetmask(inet_addr(sysParamsIn.ipaddr),inet_addr(sysParamsIn.netmask),inet_addr(sysParamsIn.gateway));
 			if( 0 == r1){
 				ret=SERVER_RET_INVAID_PARM_VALUE;
 			}
-			/*
-			if(1 ==r1 && 0 == ret){
-				Enc2000_Sys sysin,sysout;
-				memset(&sysin,0,sizeof(Enc2000_Sys));
-				memset(&sysout,0,sizeof(Enc2000_Sys));
-				memcpy(&(sysin.eth0),&sysParamsIn,sizeof(SYSPARAMS));
-				ret = appCmdStructParse(MSG_SETSYSPARAM, &sysin, sizeof(Enc2000_Sys), &sysout, &outlen);
+			if(1 ==r1 ){
+				ret = appCmdStructParse(MSG_SET_NETWORK, &sysParamsIn, sizeof(IpConfig), &sysParamsout, &outlen);
 			}
-			*/
+
 			if( ret == SERVER_RET_INVAID_PARM_VALUE ){
-				fprintf(cgiOut, "%d", RESULT_FAILURE);
+				fprintf(cgiOut, "%d", r1);
 			}else if (SERVER_RET_OK == ret ){
 				fprintf(cgiOut, "%d", RESULT_SUCCESS);
 				webRebootSystem();
 			}else{
 				fprintf(cgiOut, "%d", RESULT_SUCCESS);
 			}
-
+			//fprintf(cgiOut, "%d", RESULT_SUCCESS);
 			break;
 		}
 
@@ -1671,19 +1823,21 @@ int cgiMain(void) {
 			showPage("./modifypassword.html", sys_language);
 			break;
 		}
-		case PAGE_DEVICESET_SHOW: {
-			char devicenamelbl[40] = {0};
 
-			// 获取一体机名称
+		case PAGE_NetControlIp_SHOW: {
+			char ip[16] = {0};
 
+			// 获取网络中控ip
+			WebGetNetControlIp(ip);
 			showPage("./deviceset.html", sys_language);
 
 			fprintf(cgiOut, "<script type='text/javascript'>\n");
 				fprintf(cgiOut, "setFormItemValue('wmform', [");
-				fprintf(cgiOut, ",{'name': 'devicenamelbl','value': '%s','type': 'text' }]);", "一体机的名称OK");
+				fprintf(cgiOut, ",{'name': 'zhongkongIP','value': '%s','type': 'text' }]);", ip);
 			fprintf(cgiOut, "</script>\n");
 			break;
 		}
+
 		case PAGE_SYSUPGRADE_SHOW: {
 			char temp[10] = {0};
 			char encoderTime[256] = {0};
@@ -1722,36 +1876,20 @@ int cgiMain(void) {
 			fprintf(cgiOut, "</script>\n");
 			break;
 		}
+
 		case PAGE_FTP_SHOW: {
-//			ftp_info pinfo = {0};
-//			WebGetThrFtpinfo(&pinfo);
+			ftp_info pinfo = {0};
+			WebGetThrFtpinfo(&pinfo);
 			showPage("./ftp.html", sys_language);
-//			fprintf(cgiOut, "<script type='text/javascript'>\n");
-//			fprintf(cgiOut, "setFormItemValue('wmform', [");
-//			fprintf(cgiOut, "{'name': 'ftpstatus','value': '%d','type': 'checkbox' }", pinfo.Mode);
-//			fprintf(cgiOut, ",{'name': 'thrftpport','value': '%d','type': 'text' }", pinfo.THRFTPPort);
-//			fprintf(cgiOut, ",{'name': 'ftpaddress','value': '%s','type': 'text' }", pinfo.THRFTPAddr);
-//			fprintf(cgiOut, ",{'name': 'ftpusername','value': '%s','type': 'text' }", pinfo.THRFTPUserName);
-//			fprintf(cgiOut, ",{'name': 'ftppassword','value': '%s','type': 'text' }", pinfo.THRFTPPassword);
-//			fprintf(cgiOut, ",{'name': 'ftppath','value': '%s','type': 'text' }]);\n",pinfo.THRFTPPath);
-//			fprintf(cgiOut, "</script>\n");
-			break;
-		}
-
-		case ACTION_SETDEFAULT_SET: {
-			/*Websetrestore();
-			fprintf(cgiOut, "%d", RESULT_SUCCESS);
-			break;*/
-			int ret = 0;
-//			ret = WebSysRollBack("");
-			if(ret == 0) {
-				fprintf(cgiOut, "%d", RESULT_SUCCESS);
-//			} else if(ret == SERVER_HAVERECORD_FAILED) {
-//				fprintf(cgiOut, "%d", RESULT_MUSTMULTIIP);
-			} else {
-				fprintf(cgiOut, "%d", RESULT_FAILURE);
-			}
-
+			fprintf(cgiOut, "<script type='text/javascript'>\n");
+			fprintf(cgiOut, "setFormItemValue('wmform', [");
+			fprintf(cgiOut, "{'name': 'ftpstatus','value': '%d','type': 'checkbox' }", pinfo.Mode);
+			fprintf(cgiOut, ",{'name': 'thrftpport','value': '%d','type': 'text' }", pinfo.THRFTPPort);
+			fprintf(cgiOut, ",{'name': 'ftpaddress','value': '%s','type': 'text' }", pinfo.THRFTPAddr);
+			fprintf(cgiOut, ",{'name': 'ftpusername','value': '%s','type': 'text' }", pinfo.THRFTPUserName);
+			fprintf(cgiOut, ",{'name': 'ftppassword','value': '%s','type': 'text' }", pinfo.THRFTPPassword);
+			fprintf(cgiOut, ",{'name': 'ftppath','value': '%s','type': 'text' }]);\n",pinfo.THRFTPPath);
+			fprintf(cgiOut, "</script>\n");
 			break;
 		}
 
@@ -1763,22 +1901,7 @@ int cgiMain(void) {
 		case ACTION_INPUTDETAILS_GET: {
 			char inputDetailInfo[2048];
 
-			int webinput = WEB_INPUT_1;
-			int channel = CHANNEL_INPUT_1;
-			//add by zm
-			cgiFormInteger("input", &webinput, WEB_INPUT_1);
-		//	webSetChannel(webinput);
-			if(webinput == WEB_INPUT_1)
-			{
-				channel = CHANNEL_INPUT_1;
-			}
-			else if(webinput == WEB_INPUT_2)
-			{
-				channel = CHANNEL_INPUT_2;
-			}
-
-
-			webSignalDetailInfo(inputDetailInfo,2048,channel);
+			webSignalDetailInfo(inputDetailInfo,2048,CHANNEL_INPUT_1);
 			fprintf(cgiOut, "setFormItemValue('wmform_videoAdvancedSet', [");
 			fprintf(cgiOut, "{'name': 'inputDetailInfo','value': '%s','type': 'textarea' }]);\n", inputDetailInfo);
 			break;
@@ -1795,19 +1918,6 @@ int cgiMain(void) {
 			int webinput = WEB_INPUT_1;
 			int channel = CHANNEL_INPUT_1;
 
-			//add by zm
-			cgiFormInteger("input", &webinput, WEB_INPUT_1);
-		//	webSetChannel(webinput);
-			if(webinput == WEB_INPUT_1)
-			{
-				channel = CHANNEL_INPUT_1;
-			}
-			else if(webinput == WEB_INPUT_2)
-			{
-				channel = CHANNEL_INPUT_2;
-			}
-
-			
 			cgiFormInteger("sdiajust", &sdiajust ,0);
 			cgiFormInteger("speed", &speed, 1);
 			cgiFormInteger("cmdType" ,&value, 1);
@@ -1827,8 +1937,7 @@ int cgiMain(void) {
 				hporch = 10;
 				vporch = 4;
 			}
-			
-			
+
 			if(value == 0)//Reset
 				webRevisePicture(0,0,channel);
 			if(value == 5)//right
@@ -1840,23 +1949,10 @@ int cgiMain(void) {
 			if(value == 8)//up
 				webRevisePicture(0,vporch,channel);
 
-			
+
 			break;
 		}
 
-		case ACTION_SYSUPGRADE_STATUS: {
-//			if(0 == access("/tmp/success",0)){
-//				fprintf(cgiOut, "%d", RESULT_SUCCESS);
-//				unlink("/tmp/success");
-//			} else if(0 == access("/tmp/fail",0)) {
-//				fprintf(cgiOut, "%d", RESULT_FAILURE);
-//				unlink("/tmp/fail");
-//			} else if (0 == access("/tmp/recording",0)) {
-//				fprintf(cgiOut, "%d", RESULT_MUSTMULTIIP);
-//				unlink("/tmp/recording");
-//			}
-			break;
-		}
 
 		case ACTION_VIDEOADVANCEDSET_SET: {
 			int param1 = 0;
@@ -1891,9 +1987,9 @@ int cgiMain(void) {
 			rtsp_server_config rtsp_config;
 			memset(&output_out,0,sizeof(stream_output_server_config));
 			memset(&rtsp_config,0,sizeof(rtsp_server_config));
-	
+
 			isRtspUsed = app_rtsp_get_used();
-				
+
 			if(isRtspUsed == 1) {
 				//get rtsp info
 				app_rtsp_get_cinfo(&output_out);
@@ -1903,7 +1999,7 @@ int cgiMain(void) {
 				len += snprintf(url+len,sizeof(url) - len,"CH0/LOW:\n<br/>  %s/stream0/low\n<br/>",ip_temp);
 				len += snprintf(url+len,sizeof(url) - len,"CH1/HIGH:\n<br/>  %s/stream1/high\n<br/>",ip_temp);
 				len += snprintf(url+len,sizeof(url) - len,"CH1/LOW:\n<br/>  %s/stream1/low\n<br/>",ip_temp);
-	
+
 			}
 			else
 			{
@@ -1914,7 +2010,7 @@ int cgiMain(void) {
 			break;
 		}
 #endif
-		case ACTION_MERGE_SET:{			
+		case ACTION_MERGE_SET:{
 		//	char tmp[150]={0};
 			int layout = 1;
 //			Mp_Info info;
@@ -1930,13 +2026,13 @@ int cgiMain(void) {
 	//			info.win1 = SIGNAL_INPUT_2;
 //				info.win2 = SIGNAL_INPUT_1;
 			}
-//			info.mp_status = mp_status; 
+//			info.mp_status = mp_status;
 //			info.layout  = layout;
 //			ret = WebSetMpInfo(&info);
 		//	fprintf(cgiOut, "<script type='text/javascript'>alert('ret=%x');</script>", ret);
 			if(SERVER_RET_USER_INVALIED == ret ){
-				fprintf(cgiOut, "%d", RESULT_NO_ANSWER);				
-			}else{ 
+				fprintf(cgiOut, "%d", RESULT_NO_ANSWER);
+			}else{
 				fprintf(cgiOut, "%d", RESULT_SUCCESS);
 				}
 			break;
@@ -1949,9 +2045,9 @@ int cgiMain(void) {
 			cgiFormInteger("enclevel", &enclevel, 0);
 			if(zoomModel==0)
 				zoomModel=1;
-			else 
+			else
 				zoomModel=0;
-		
+
 			//
 			fprintf(cgiOut, "%d", RESULT_SUCCESS);
 			break;
@@ -1962,7 +2058,7 @@ int cgiMain(void) {
 			int total_len = 0;
 			int w_len = 0;
 			char inputstring[32]={0};
-			
+
 		 	char ip[16] = {0};
 			int videoport = 0;
 			int audioport = 0;
@@ -1981,7 +2077,7 @@ int cgiMain(void) {
 			else if (strcmp(INPUT1_LOW_STRING,inputstring) == 0)
 			{
 				channel = CHANNEL_INPUT_1_LOW;
-			}			
+			}
 			else if (strcmp(INPUT2_HIGH_STRING,inputstring) == 0)
 			{
 				channel = CHANNEL_INPUT_2;
@@ -1989,15 +2085,15 @@ int cgiMain(void) {
 			else if (strcmp(INPUT2_LOW_STRING,inputstring) == 0)
 			{
 				channel = CHANNEL_INPUT_2_LOW;
-			}		
+			}
 
-			
+
 			fprintf(cgiOut, "Content-Disposition:attachment;filename=encode.sdp\n\n");
 
 		//	snprintf(buff,sizeof(buff),"ip=%s,port=%d,type=%d\n",ip,videoport,type);
 
 			//need channel num
-			webGetSdpInfo(buff , sizeof(buff),channel,ip,videoport,audioport);  
+			webGetSdpInfo(buff , sizeof(buff),channel,ip,videoport,audioport);
 
 			total_len = strlen(buff);
 
@@ -2008,7 +2104,7 @@ int cgiMain(void) {
 				if(w_len <= 0)
 					break;
 			}
-		
+
 			break;
 		}
 #endif
@@ -2016,7 +2112,7 @@ int cgiMain(void) {
 		{
 			char serialNo[256]={0};
 			cgiFormString("serialNumber", serialNo, 256);
-			//WebSetSerialNo(serialNo,256);
+			WebSetSerialNo(serialNo,256);
 			fprintf(cgiOut, "%d", RESULT_SUCCESS);
 			break;
 		}
@@ -2036,10 +2132,20 @@ int cgiMain(void) {
 
 		case ACTION_MOVIEMODEL_SET1: {
 			int hdmi = 0;
+			int retv = 1;
+			int rets = 1;
 			cgiFormInteger("hdmi", &hdmi, 1);
-			WebSetHDMIRes(hdmi);
+			ret = WebSetHDMIRes(hdmi);
 			// do something
-			fprintf(cgiOut, "%d", RESULT_SUCCESS);
+			if(!ret) {
+				rets = webRebootSystem();
+
+			}
+
+			if( SERVER_HAVERECORD_FAILED == rets) {
+				retv = -1;
+			}
+			fprintf(cgiOut, "%d", retv);
 			break;
 		}
 
@@ -2051,66 +2157,165 @@ int cgiMain(void) {
 			cgiFormInteger("autoModel", &autoModel, 1);
 			info.model  = autoModel;
 			info.res = mergeRes;
+		//	fprintf(cgiOut, "<script type='text/javascript'>alert('autoModel=%d');</script>", autoModel);
 			ret = WebSetSwmsLayout(info);
 
+
 			if(SERVER_RET_USER_INVALIED == ret ){
-				fprintf(cgiOut, "%d", RESULT_FAILURE);				
-			}else{ 
+				fprintf(cgiOut, "%d", RESULT_FAILURE);
+			}else{
 				fprintf(cgiOut, "%d", RESULT_SUCCESS);
 			}
 			break;
 		}
 
 		case ACTION_TRACKINGSET_SET: {
-			int jiwei = 0;
-			char camIP1[16] = {0};
-			char camIP2[16] = {0};
-			char camIP3[16] = {0};
-			char camIP4[16] = {0};
-			cgiFormInteger("jiwei", &jiwei, 1);
-			cgiFormString("camIP1", camIP1, 16);
-			cgiFormString("camIP2", camIP2, 16);
-			cgiFormString("camIP3", camIP3, 16);
-			cgiFormString("camIP4", camIP4, 16);
+			Tracer_Info_t in,out;
+			int rets = 1;
+			int retv = 1;
+			cgiFormInteger("jiwei", &(in.num), 1);
+			cgiFormString("camIP1", in.ip[0], 16);
+			cgiFormString("camIP2", in.ip[1], 16);
+			cgiFormString("camIP3", in.ip[2], 16);
+			cgiFormString("camIP4", in.ip[3], 16);
 
-			// do something
+			ret = WebSetTracerInfo(&in, &out);
+			if(0 == ret){
+				rets = webRebootSystem();
+			}
+			if( SERVER_HAVERECORD_FAILED == rets) {
+				retv = -1;
+			}
 
-			fprintf(cgiOut, "%d", RESULT_SUCCESS);
+			fprintf(cgiOut, "%d", retv);
 			break;
 		}
 
-		case ACTION_DEVICENAME_SET: {
-			char devicename[40] = {0};
+		case ACTION_NETCONTROL_IP_SET: {
+			char zhongkongIP[40] = {0};
 			char tmp[150]= {0};
-			cgiFormString("devicename", devicename, 40);
-//			do something 设置一体机名字
-//			WebSetsysname(devicename);
+			cgiFormString("zhongkongIP", zhongkongIP, 40);
+			//设置网络中控ip
+			WebSetNetControlIp(zhongkongIP,40);
 			getLanguageValue(sys_language,"opt.success",tmp);
 			fprintf(cgiOut, "%s", tmp);
 			break;
 		}
 
 		case ACTION_FTP_SET: {
-//			ftp_info pinfo;
-//			memset(&pinfo,0,sizeof(ftp_info));
+			ftp_info pinfo;
+			memset(&pinfo,0,sizeof(ftp_info));
 			int tmpvalue = 0;
-
+			int rets = 1;
+			int retv = 1;
 			cgiFormInteger("ftpstatus", &tmpvalue, 0);
-//			pinfo.Mode = tmpvalue;
-//			cgiFormInteger("thrftpport", &tmpvalue, 0);
-//			pinfo.THRFTPPort = tmpvalue;
-//			cgiFormString("ftpaddress", (char *)(pinfo.THRFTPAddr), 26);
-//			cgiFormString("ftppath", (char *)(pinfo.THRFTPPath), 512);
-//			cgiFormString("ftpusername", (char *)(pinfo.THRFTPUserName), 256);
-//			cgiFormString("ftppassword", (char *)(pinfo.THRFTPPassword), 256);
-//			WebSetThrFtpinfo(&pinfo);
+			pinfo.Mode = tmpvalue;
+			cgiFormInteger("thrftpport", &tmpvalue, 0);
+			pinfo.THRFTPPort = tmpvalue;
+			cgiFormString("ftpaddress", (char *)(pinfo.THRFTPAddr), 26);
+			cgiFormString("ftppath", (char *)(pinfo.THRFTPPath), 512);
+			cgiFormString("ftpusername", (char *)(pinfo.THRFTPUserName), 256);
+			cgiFormString("ftppassword", (char *)(pinfo.THRFTPPassword), 256);
+			ret = WebSetThrFtpinfo(&pinfo);
 
 			// do something设置FTP参数
+			if(ret == 0 ){
+				rets = webRebootSystem();
+			}
+			if( SERVER_HAVERECORD_FAILED == rets) {
+				retv = -1;
+			}
 
-			fprintf(cgiOut, "%d", RESULT_SUCCESS);
+			fprintf(cgiOut, "%d", retv);
 			break;
 		}
-	
+
+		case ACTION_USB_SHOW: {
+			int num =0;
+			WebGetUSBDiskNum( &num);
+			// 获取USB分区信息，返回值为一个int值，表示分区个数
+			// 李昌禄提供。。。。。
+			fprintf(cgiOut, "%d", num);
+			break;
+		}
+
+		case ACTION_USBSTATUS_GET: {
+			// 获取USB状态是否正常，拷贝U盘在不在，包括空间是否准许拷贝等
+			int part = 0;
+			cgiFormInteger("part", &part, 1);
+
+			//need 用户选择分区信息
+			ret = WebGetUSBStatus(part);//0是正常 -1->U盘未识别  -2->剩余空间不足
+			fprintf(cgiOut, "%d", ret);
+			break;
+		}
+
+		case ACTION_USBCOPY: {
+			// 进行一键拷贝
+			int part = 0;
+			cgiFormInteger("part", &part, 1);
+			ret = WebUSBCopy(part);
+			fprintf(cgiOut, "%d", ret);
+			break;
+		}
+
+		case ACTION_FTPTOOL_DOWNLOAD: {
+			// FTP工具下载
+			char  buff[4096];
+			int total_len = 0;
+			int w_len = 0;
+			FILE *file = NULL;
+			file = fopen("/var/www/html/download/ReachDownload.exe","r");
+			if(file !=NULL){
+				fseek(file,0L,SEEK_END);
+				total_len = ftell(file);
+				fclose(file);
+			}
+
+			fprintf(cgiOut, "Content-Disposition:attachment;filename=ReachDownload.exe");
+			fprintf(cgiOut, "\n\n");
+			fprintf(cgiOut, "Content-Length:%d", total_len);
+			fprintf(cgiOut, "\r\n");
+			fprintf(cgiOut, "Content-Type:application/octet-stream");
+			fprintf(cgiOut, "\r\n");
+
+			web_download_ftptool();
+			break;
+		}
+
+		case PAGE_FILEMGR_FILELIST: {
+			// 获取文件列表，读取xml文件
+			showPage_xml("./file.xml", sys_language);
+			break;
+		}
+
+		case ACTION_GETCOPYSTATUS:
+		{
+			if(0 == access("/var/tmp/success",F_OK))
+			{
+				fprintf(cgiOut, "%d", RESULT_SUCCESS);
+				unlink("/var/tmp/success");
+			}
+			else if(0 == access("/var/tmp/fail",F_OK))
+			{
+				fprintf(cgiOut, "%d", RESULT_FAILURE);
+				unlink("/var/tmp/fail");
+			}
+
+			break;
+		}
+
+		case ACTION_GETFTPUSERPW: {
+			char webusername[100];
+			char webpassword[100];
+			memset(webusername,0,100);
+			memset(webpassword,0,100);
+			strcpy(webusername,WEBUSERNAME);
+			getLanguageValue("sysinfo.txt","webpassword",webpassword);
+			fprintf(cgiOut, "{\"username\" : \"%s\", \"password\" : \"%s\"}", webusername, webpassword);
+			break;
+		}
+
 		default:
 		{
 			showPage("./login.html",sys_language);
@@ -2120,6 +2325,5 @@ int cgiMain(void) {
 
 }
 	return 0;
-
-}
 	fflush(stdout);
+}

@@ -9,6 +9,7 @@ int32_t r_setpriority(int32_t which, int32_t who, int32_t prio)
 	return setpriority(which, who, prio);
 }
 
+
 void *r_malloc(size_t size)
 {
 	return malloc(size);
@@ -18,6 +19,15 @@ void r_free(void *ptr)
 {
 	free(ptr);
 }
+
+void *debug_malloc(size_t size, const char *file, int line, const char *func)
+{
+	void *p = NULL;
+	p = malloc(size);
+	printf("%s:%d:%s:malloc(%ld): p=0x%lx\n", file, line, func, size, (unsigned long)p);
+	return p;
+}
+
 
 void *r_memset(void *s, int32_t c, size_t n)
 {

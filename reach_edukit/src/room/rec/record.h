@@ -10,10 +10,24 @@
 #include "reach_socket.h"
 #include "Media.h"
 
+#define RECODE_MAX_STREAM			8						//ZL
+
+#define RESOURCES_HARD_DISK_MODE 1						 //zl
+#define RESOURCES_USB_DISK_MODE  2
+
 #define	COURSE_TEMPLATE_DIR		"/usr/local/reach/course_temp"
+#define	COURSE_TEMPLATE_DIR_NEW		"/opt/Rec/course_temp"   // zl
+
 #define	RECORD_DATA_BASE_KEY		20000
 #define	RECORD_MSG_BASE_KEY		30000
+#define RECORD_DATA_BASE_KEY_USB 21000					//zl
+#define RECORD_MSG_BASE_KEY_USB 	31000
+
+#define RECORD_PATH_SUFFIX_MOVIE	"movie"
+#define RECORD_PATH_SIFFIX_RES	"res"
+
 #define	REQ_MSG_BASE_TYPE			30
+#define REQ_MSG_BASE_TYPE_USB		60						//zl
 #define	RECORD_DEFAULT_ROOT_DIR	"/opt/Rec"
 #define 	DEFAULT_MAX_COURSE_DUR	(8 * 3600)
 #define MAX_SPLIT_LEN				(700 * 1000 * 1000)
@@ -60,6 +74,10 @@ typedef struct _record_info {
 	int32_t height;
 	int32_t audio_SampleRate;
 	int32_t audio_BitRate;
+
+	int32_t media_msg_type;
+	
+	
 } record_info_t;
 
 typedef struct _jpeg_record_condition {
@@ -92,6 +110,13 @@ struct _mp4_record {
 	void *handle;
 	pthread_t p;
 	record_info_t record_info;
+
+	// add zl
+	uint64_t audio_base_time;
+	uint64_t audio_chace_time;
+	uint64_t video_base_time;
+	uint64_t video_chace_time;
+	
 	int32_t (*record_start)(mp4_record_t *mr);
 	void (*record_resume)(mp4_record_t *mr);
 	void (*record_pause)(mp4_record_t *mr);
@@ -125,7 +150,7 @@ typedef struct _mp4_course_record_condition {
 	int32_t course_data_fd;
 	int32_t roomid;
 	int32_t mindex_sum;
-	record_info_t rinfo[MAX_STREAMS];
+	record_info_t rinfo[RECODE_MAX_STREAM];
 	int32_t (*get_media_buf_info_callback)(mp4_record_t *mr, parse_data_t *buf_info);
 	void (*release_media_buf_callback)(parse_data_t *buf_info);
 } mp4_course_record_condition_t;
@@ -133,7 +158,7 @@ typedef struct _mp4_course_record_condition {
 
 struct _mp4_course_record {
 	int32_t mindex_sum;
-	mp4_record_t *mr[MAX_STREAMS];
+	mp4_record_t *mr[RECODE_MAX_STREAM];
 	int32_t (*record_start)(mp4_course_record_t *mcr);
 	void (*record_resume)(mp4_course_record_t *mcr);
 	void (*record_pause)(mp4_course_record_t *mcr);
@@ -149,15 +174,27 @@ typedef struct _ContentInfo {
 	int8_t Notes[1028];
 } ContentInfo_t;
 
+typedef struct _Resources_mode              //zl
+{
+	int32_t Resources_Type;
+	int8_t Course_Name[128];
+	
+}Resources_mode_t;
+
+
 typedef struct _course_record_condition {
 	ContentInfo_t cinfo;
+	int8_t RecDatefileTime[32];
 	int8_t record_root_dir[128];
 	int8_t dev_id[64];
 	int32_t room_ctrl_msg_fd;
 	int32_t roomid;
 	int32_t sindex_sum;
 	int32_t max_course_record_duration;	//unit:s
-	record_info_t rinfo[MAX_STREAMS];
+	record_info_t rinfo[RECODE_MAX_STREAM];
+	Resources_mode_t resources_mode;	//zl
+
+	 
 	
 	int32_t (*get_jpeg_buf_info_callback)(jpeg_record_t *jr, parse_data_t *buf_info);
 	void (*release_jpeg_buf_callback)(parse_data_t *buf_info);
@@ -181,18 +218,22 @@ struct _course_record {
 	pthread_t p;
 	int32_t room_ctrl_msg_fd;
 	stream_type_sindex_sum_t s;
-	record_report_info_t rep_info_tmp[MAX_STREAMS];
+	record_report_info_t rep_info_tmp[RECODE_MAX_STREAM];
 	pthread_mutex_t print_mutex;
 	pthread_t print_p;
 	int32_t print_close;
 	int32_t course_data_msgid;
+	int32_t mode_type;				
+	int8_t RecDateTime[32];
 	int32_t (*record_start)(course_record_t *cr);
 	void (*record_resume)(course_record_t *cr);
 	void (*record_pause)(course_record_t *cr);
 	void (*record_close)(course_record_t *cr);
 	record_status_t (*get_record_status)(course_record_t *cr);
 	int8_t* (*get_course_root_dir)(course_record_t *cr);
-	 int8_t* (*get_RecordID)(course_record_t *cr);
+	int8_t* (*get_RecordID)(course_record_t *cr);
+	int32_t (*get_record_time)(course_record_t *cr);					// add zl
+	int8_t* (*get_record_start_time)(course_record_t *cr);				// add zl
 } ;
 
 course_record_t *register_course_record_mode(course_record_condition_t *cond);

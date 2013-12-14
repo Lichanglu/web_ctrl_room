@@ -157,14 +157,15 @@ int32_t  DirDetectFile(int8_t *UpLoadFilePath)
 	return ret;
 }
 
-int main(int arg,char **args)
+
+int main(int argc,char **argv)
 {
 	DIR* ret = NULL;
 	int8_t  cmd[200] = { 0 };
 	int8_t  pwd[300] = {0};
-	if(arg != 2)
+	if(argc < 2)
 	{
-		printf("example: mkupImage [dir].. \n");
+		printf("example: %s [dir] <version>\n", argv[0]);
 		return ;
 	}
 	
@@ -172,20 +173,20 @@ int main(int arg,char **args)
 	
 	
 	printf("path= %s\n",pwd);
-	ret = opendir(args[1]);
+	ret = opendir(argv[1]);
 	if(NULL == ret)
 	{
-		printf("Cannot open directory: %s\n",args[1]);
+		printf("Cannot open directory: %s\n",argv[1]);
 		return;
 	}
 	closedir(ret);
-	if(0 >= DirDetectFile(args[1]))
+	if(0 >= DirDetectFile(argv[1]))
 	{
 		printf("Cannot find file or find failed!!\n");
 		return ;
 	}
 
-	sprintf(cmd, "cd %s ; tar -cvf %s/update.tar *",args[1],pwd);
+	sprintf(cmd, "cd %s ; tar -cvf %s/update.tar *",argv[1],pwd);
 	if(0 != system(cmd))
 	{
 		printf("tar update.tar is failed!!!\n");
@@ -285,8 +286,22 @@ int main(int arg,char **args)
 	fclose(filepack);
 
 	unlink("./update.tar.gz");
-	rename("./update.tar.gz.tmp","./update.bin");
-
+	char update_name[256] = {0};
+	char tar_cmd[256] = {0};
+	char cstrtime[64] = {0}; 
+	localtime_t t;
+	get_localtime(&t);
+	sprintf(cstrtime, "%04d%02d%02d%02d%02d%02d",
+	          t.tm_year, t.tm_mon, t.tm_mday,
+	          t.tm_hour, t.tm_min, t.tm_sec);
+	if(NULL != argv[2]) {
+		sprintf(update_name, "./%s%s%s.bin", basename(argv[1]), cstrtime, argv[2]);
+		rename("./update.tar.gz.tmp",update_name);
+		sprintf(tar_cmd, "tar cfz ./%s%s%s.tgz %s", basename(argv[1]), cstrtime, argv[2], argv[1]);
+		system(tar_cmd);
+	} else {
+		rename("./update.tar.gz.tmp","./update.bin");
+	}
 	#endif
 	printf("create upgrade file update.bin is success!!\n");
 	return 0;

@@ -530,13 +530,13 @@ void *open_new_tcp_task(void *arg)
 	int eth = index;
 	char ip[16] = {0};
 	InitClientData_new(index);
-	ipaddr = get_local_ip("eth0", ip);
+	ipaddr = get_local_ip("eth1", ip);
 	PRINTF("open_new_tcp_task index:[%d] ipaddr:[%x]\n", index, ipaddr);
 RECREATE_TCP_SOCK:
 
 	bzero(&serv_addr, sizeof(struct sockaddr_in));
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(NEW_TCP_SOCK_PORT);
+	serv_addr.sin_port = htons(NEW_TCP_SOCK_PORT + index);
 	serv_addr.sin_addr.s_addr = ipaddr;
 	serv_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 

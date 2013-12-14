@@ -3,14 +3,14 @@
  *
  *       Filename:  common.c
  *
- *    Description:  
+ *    Description:
  *
  *        Version:  1.0
  *        Created:  2012年11月1日 09时12分18秒
- *       Revision:  
+ *       Revision:
  *       Compiler:  gcc
  *
- *         Author:  黄海洪 
+ *         Author:  黄海洪
  *        Company:  深圳锐取信息技术股份有限公司
  *
  * =====================================================================================
@@ -259,7 +259,7 @@ int32_t get_gpio_value(int32_t fd, uint32_t gnum, int32_t *gvalue)
 		fprintf(stderr, "get_gpio_value failed, gpio fd error!");
 		return -1;
 	}
-	
+
 	gpio_st.gpio_num = gnum;
 	ret = ioctl(fd, GET_GPIO, &gpio_st);
 	if(ret < 0){
@@ -419,15 +419,15 @@ int32_t set_send_timeout(int32_t socket, uint32_t time)
 {
 	struct timeval timeout;
 	int32_t ret = 0;
-	
+
 	timeout.tv_sec = time;
 	timeout.tv_usec = 0;
-	
+
 	ret = setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO,& timeout, sizeof(timeout));
 	if(ret == -1){
 		zlog_error(DBGLOG, "set_send_timeout failed!\n");
 	}
-	
+
 	return ret;
 }
 
@@ -435,15 +435,15 @@ int32_t set_recv_timeout(int32_t socket, uint32_t time)
 {
 	 struct timeval timeout;
 	 int32_t ret = 0;
-	 
+
 	 timeout.tv_sec = time;
 	 timeout.tv_usec = 0;
-	 
+
 	 ret = setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 	 if(ret < 0){
 		zlog_error(DBGLOG, "set_recv_timeout failed!\n");
 	 }
-	 
+
 	 return ret;
 }
 
@@ -451,14 +451,14 @@ int32_t set_send_buf(int32_t socket, int32_t length)
 {
 	int32_t buflen = 0;
 	int32_t ret = 0;
-	
+
 	buflen = length;
-	
+
 	ret = r_setsockopt(socket, SOL_SOCKET, SO_SNDBUF, (char *)&buflen , sizeof(buflen));
 	if(ret == -1){
 		zlog_error(DBGLOG, "set_send_buf failed!\n");
 	}
-	
+
 	return ret;
 }
 
@@ -466,14 +466,14 @@ int32_t set_recv_buf(int32_t socket, int32_t length)
 {
 	int32_t buflen = 0;
 	int32_t ret = 0;
-	
+
 	buflen = length;
-	
+
 	ret = r_setsockopt(socket, SOL_SOCKET, SO_RCVBUF, (char *)&buflen , sizeof(buflen));
 	if(ret == -1){
 		zlog_error(DBGLOG, "set_recv_buf failed!\n");
 	}
-	
+
 	return ret;
 }
 
@@ -483,7 +483,7 @@ int32_t tcp_recv_longdata(int32_t sockfd, int8_t* buffer, const int32_t len)
 {
 	int32_t total_recv = 0;
 	int32_t nrecv_len = 0;
-	
+
 	while(total_recv < len){
 		nrecv_len = recv(sockfd, buffer + total_recv, len - total_recv, 0);
 		if(nrecv_len < 1){
@@ -492,15 +492,15 @@ int32_t tcp_recv_longdata(int32_t sockfd, int8_t* buffer, const int32_t len)
 									nrecv_len, errno, strerror(errno));
 			if(errno == EAGAIN)
 				continue;
-			
+
 			return nrecv_len;
 		}
-		
+
 		total_recv += nrecv_len;
 		if(total_recv == len)
 			break;
 	}
-	
+
 	return total_recv;
 }
 
@@ -509,19 +509,19 @@ int32_t tcp_send_longdata(int32_t sockfd, int8_t* buffer, const int32_t len)
 {
 	int32_t total_send = 0;
 	int32_t nsend_len = 0;
-	
+
 	while(total_send < len){
 		nsend_len = send(sockfd, buffer + total_send, len - total_send, 0);
 		if(nsend_len < 1){
 			zlog_error(DBGLOG, "tcp_send_longdata failed, err msg:%s\n", strerror(errno));
 			return -1;
 		}
-		
+
 		total_send += nsend_len;
 		if(len == total_send)
 			break;
 	}
-	
+
 	return total_send;
 }
 
@@ -533,7 +533,7 @@ int32_t reboot_server()
 	sleep(3);
 	r_system((const int8_t *)"reboot -f");
 	usleep(200000);
-	
+
 	return 0;
 }
 
@@ -541,18 +541,18 @@ int32_t reboot_server2()
 {
 	/* TODO: 具体重启方案? */
 	r_system((const int8_t *)"sync");
-	
+
 	printf(" <GOD ++++++++++++++++++++++++++++++ 4> MSG_SYSREBOOT\n");
 	//清空前面板
-	ClearStateLed();
-	
+//	ClearStateLed();
+
 	printf(" <GOD ++++++++++++++++++++++++++ 5> MSG_SYSREBOOT\n");
 	sleep(5);
 	r_system((const int8_t *)"reboot -f");
-	
+
 	printf(" <GOD +++++++++++++++++++++++++ 6> MSG_SYSREBOOT\n");
 	usleep(200000);
-	
+
 	printf(" <GOD ++++++++++++++++++++++++++ 7> MSG_SYSREBOOT\n");
 	return 0;
 }
@@ -565,7 +565,7 @@ int32_t check_recvfile(int8_t *updatefile, int32_t fd, uint32_t filelen)
 	FILE *file = NULL;
 	Package *pack = NULL;
 	uint32_t type = 0;
-		
+
 	if(filelen <= sizeof(Package))
 	{
 		return -1;
@@ -623,7 +623,7 @@ int32_t check_recvfile(int8_t *updatefile, int32_t fd, uint32_t filelen)
 			ulen = filelen;
 		}
 
-		
+
 		ulen = recv(fd, (int8_t *)szData, ulen, 0);
 		if(ulen <= 0)
 		{
@@ -635,7 +635,7 @@ int32_t check_recvfile(int8_t *updatefile, int32_t fd, uint32_t filelen)
 		fwrite(szData,1,ulen,file);
 
 	}
-	
+
 	printf("---->len1111 [%u]\n",filelen);
 	fclose(file);
 
@@ -688,7 +688,7 @@ int32_t get_gateway(int8_t *gateway)
 		printf("Read From Socket Failed...\n");
 		return -1;
 	}
-	
+
 	/* Parse and print the response */
 	rtInfo = (struct route_info *)malloc(1024);
 	for(; NLMSG_OK(nlMsg, len); nlMsg = NLMSG_NEXT(nlMsg, len)) {
@@ -700,7 +700,7 @@ int32_t get_gateway(int8_t *gateway)
 	memcpy(&value, &addr, 4);
 	dwGateWay = value;
 	free(rtInfo);
-	
+
 	close(sock);
 	return dwGateWay;
 }
@@ -716,14 +716,14 @@ void parseRoutes(struct nlmsghdr *nlHdr, struct route_info *rtInfo, int8_t *gate
  //2007-12-10
   struct in_addr dst;
   struct in_addr gate;
- 
+
   tempBuf = (char *)malloc(100);
   rtMsg = (struct rtmsg *)NLMSG_DATA(nlHdr);
   // If the route is not for AF_INET or does not belong to main routing table
   //then return.
   if((rtMsg->rtm_family != AF_INET) || (rtMsg->rtm_table != RT_TABLE_MAIN))
   return;
- 
+
   rtAttr = (struct rtattr *)RTM_RTA(rtMsg);
   rtLen = RTM_PAYLOAD(nlHdr);
   for(;RTA_OK(rtAttr,rtLen);rtAttr = RTA_NEXT(rtAttr,rtLen)){
@@ -770,17 +770,17 @@ int32_t ip_get_proc(int8_t *dev)
 		char buffer[20] = {0};
 		dest = gate = 0;
 		sscanf(buf, "%s%lx%lx",buffer,&dest, &gate);
-		if (dest == 0 && gate != 0 && (0 == strcmp(buffer,(char *)dev))) 
+		if (dest == 0 && gate != 0 && (0 == strcmp(buffer,(char *)dev)))
 		{
 			gateway = gate;
 			struct in_addr *addr = (struct in_addr *)&gateway;
 			printf("    GateWay:%s\n", inet_ntoa(*addr));
-			
+
 			break;
 		}
 	}
 	fclose(fp);
-	
+
 	return gateway;
 }
 
@@ -887,7 +887,7 @@ int32_t ntp_time_sync(int8_t *ipaddr)
 	sprintf((char *)cmd, "/usr/local/bin/ntpdate %s && hwclock --systohc", ipaddr);
 	zlog_debug(OPELOG, "cmd: %s\n", cmd);
 	r_system((const int8_t *)cmd);
-
+	r_system("/etc/init.d/save-rtc.sh");
 	return 0;
 }
 

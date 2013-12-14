@@ -318,6 +318,8 @@ int32_t msg_ctrl_run_service(int32_t roomId)
 		nslog(NS_ERROR, "[%s] msg_ctrl_init_env error", __func__);
 		cleanup(ROOM_RETURN_FAIL);
 	}
+
+	
 #if 1
 	//注册直播模块
 	msgCtrlEnv->live_handle  = register_room_lives_module(roomId);
@@ -343,11 +345,40 @@ int32_t msg_ctrl_run_service(int32_t roomId)
 
 			msgCtrlEnv->handle->set_live_status(&msgCtrlEnv->handle->stream_hand[i], DISCONNECT);
 			msgCtrlEnv->handle->set_rec_status(&msgCtrlEnv->handle->stream_hand[i], DISCONNECT);
+			msgCtrlEnv->handle->set_usb_rec_status(&msgCtrlEnv->handle->stream_hand[i], DISCONNECT);  // zl
 		}
 	}
 #endif
 
 	rCtrlGblSetRun(&msgCtrlEnv->glb);
+
+	
+	#if 1	// add zl  
+	int8_t record_file_cmd[512] = {0};
+	if(access(COURSE_TEMPLATE_DIR_NEW, F_OK) != 0)
+	{
+		nslog(NS_INFO,"THERE IS NO A RECORD_TEMP_FILE!\n");
+	}
+	else
+	{	
+		nslog(NS_INFO,"THERE IS A RECORD_TEMP_FILE!\n");
+		r_snprintf(record_file_cmd,511,"rm -rf %s",COURSE_TEMPLATE_DIR_NEW);
+		nslog(NS_INFO,"RECORD_CMD : %s\n",record_file_cmd);
+		if(r_system(record_file_cmd) != 0)
+		{
+			nslog(NS_ERROR, "course_init_cmd : [%s] is failed : [%s]!!!", record_file_cmd, strerror(errno));
+			cleanup(ROOM_RETURN_FAIL);
+		}
+	}
+	r_memset(record_file_cmd,0,512);
+	r_snprintf(record_file_cmd,511,"cp -rf %s %s/",COURSE_TEMPLATE_DIR,RECORD_DEFAULT_ROOT_DIR);
+	nslog(NS_INFO,"RECORD_CMD : %s\n",record_file_cmd);
+	if(r_system(record_file_cmd) != 0)
+	{
+		nslog(NS_ERROR, "course_init_cmd : [%s] is failed : [%s]!!!", record_file_cmd, strerror(errno));
+		cleanup(ROOM_RETURN_FAIL);
+	}
+	#endif
 
 	//创建消息处理线程
 	ret = msg_ctrl_create_threads(msgCtrlEnv);

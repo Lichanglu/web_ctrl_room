@@ -21,8 +21,7 @@
 #include "params.h"
 #include "media_msg.h"
 #include "reach_udp_snd.h"
-
-
+#define AVIIF_KEYFRAME						0x00000010
 char AUDIONAME[2][AUDIO_DEVICE_NAME_LENGTH] = { "default:CARD=mcasp0", "default:CARD=EVM"};
 
 
@@ -223,7 +222,7 @@ static void *AudioBitsDataOutProcess(audio_struct *audioinst)
 
 	//Int32 return_code = 0;
 	Int32 i = 0;
-	udp_send_module_handle *sendhand = (udp_send_module_handle *)(gEduKit->sendhand);
+	udp_send_module_handle *sendhand = (udp_send_module_handle *)(gEduKit->sendhand[0]);
 
 
 	if(audioinst == NULL || sendhand == NULL) {
@@ -239,6 +238,7 @@ static void *AudioBitsDataOutProcess(audio_struct *audioinst)
 	memset(&frame_info, 0, sizeof(frame_info_t));
 
 
+	int x = 0;
 
 	while(TRUE) {
 		ret = audio_outdata_get_full_buf(&(audioinst[i].paenchandle->outdata_user_handle), &pa_outbuf);
@@ -248,22 +248,35 @@ static void *AudioBitsDataOutProcess(audio_struct *audioinst)
 			break;
 		}
 
-		pa_outbuf->sample_rate = 48000;
-		pa_outbuf->bit_rate = 96000;
+		pa_outbuf->sample_rate = 44100;
+		pa_outbuf->bit_rate = 128000;
 		frame_info.m_hight = pa_outbuf->sample_rate;
 		frame_info.m_frame_length = pa_outbuf->fill_length;
 		frame_info.time_tick = getCurrentTime_zl();
 		//printf("[AudioBitsDataOutProcess] time_tick:[%u]\n", frame_info.time_tick);
 		frame_info.is_blue = 0;
-		frame_info.m_dw_flags = 1;
+		frame_info.m_dw_flags = AVIIF_KEYFRAME;
 		frame_info.m_frame_rate = 0;
 		frame_info.m_data_codec = AAC_CODEC_TYPE;
 		memcpy(sendhand->udp_hand.src_data, pa_outbuf->addr, pa_outbuf->buf_size);
-		UdpSend_rtp_data(sendhand, &frame_info);
 
-		//awrite_file("./xx001.aac", pa_outbuf[i]->addr, pa_outbuf[i]->buf_size);
+		if(pa_outbuf->buf_size != 4096) {
+			UdpSend_rtp_data(sendhand, &frame_info);
+		}
+
+#if 0
+
+		if(pa_outbuf->buf_size != 4096 && x < 3000) {
+			printf("write audio x=%d\n", x++);
+			awrite_file("./xx001.aac", pa_outbuf->addr, pa_outbuf->buf_size);
+		}
+
+#endif
+
 		//²âÊÔ´úÂë£¬·¢ËÍencodemange
-		SendAudioToClient110(pa_outbuf->buf_size, pa_outbuf->addr, 0, 2, 16);
+		if(pa_outbuf->buf_size != 4096) {
+			SendAudioToClient110(pa_outbuf->buf_size, pa_outbuf->addr, 1, 2, 16);
+		}
 
 		ret = audio_outdata_put_empty_buf(&(audioinst[i].paenchandle->outdata_user_handle), pa_outbuf);
 
@@ -290,7 +303,7 @@ Int32 reach_audio_enc_process(EduKitLinkStruct_t *pstruct)
 	//pthread_mutex_init(&gavolume.mutex, NULL);
 
 	memset(&audio_param, 0, sizeof(AudioEncodeParam));
-	audio_param.BitRate = 96000;
+	audio_param.BitRate = 128000;
 	audio_param.Channel = 2;
 	audio_param.Codec = 0x53544441;
 	audio_param.InputMode = 0;
@@ -299,7 +312,7 @@ Int32 reach_audio_enc_process(EduKitLinkStruct_t *pstruct)
 	audio_param.Mute = 0;
 	audio_param.RVolume = 20;
 	audio_param.SampleBit = 16;
-	audio_param.SampleRate = 48000;
+	audio_param.SampleRate = 44100;
 
 
 	paread_params.bufsize = 4096;

@@ -20,6 +20,15 @@
 #include "reach_udp_recv.h"
 #include "reach_udp_snd.h"
 
+#if 0
+//如修改 请同步修改
+#define STU_CHID			0
+#define STUSIDE_CHID		1
+#define TEACH_CHID		2
+#define VGA_CHID			3
+#define JPEG_CHID			4
+#endif
+
 #define	ENCODER_MANAGER
 
 #define	AVIIF_KEYFRAME 		(0x000010L)
@@ -29,7 +38,7 @@ extern int32_t gmax_room_thread;
 extern EduKitLinkStruct_t	*gEduKit;
 extern int g_input1_have_signal;
 extern int g_input2_have_signal;
-
+extern zlog_category_t     *ptrackzlog;
 extern int g_SignalSate[2];
 
 extern void SendDataToClient2(int nLen, unsigned char *pData, int nFlag, unsigned char index, int width, int height);
@@ -479,48 +488,56 @@ static void test_fwrite_jpeg(int n, char *buf, int buflen)
 void *inHostStreamUdpSendProcess(bits_user_param *param)
 {
 	Int32 status = -1;
-	uint32_t t[4] = {0};
-	Int32 idr_header_length = 0;
-	Int32 idr_header_length0 = 0;
-	Int32 idr_header_length1 = 0;
+	uint32_t t[5] = {0};
+	uint32_t time = 0;
 
-	Int32 length[4] = {0};
-	Int32 framecount[4] = {0};
+	Int32 length[5] = {0};
+	Int32 framecount[5] = {0};
+	Int32 printc = 0;
 	Bitstream_Buf	*pFullBuf;
-	UInt8 *p = NULL;
-
+	Int32 height = 0;
 	if(param == NULL) {
 		fprintf(stderr, "InHostStreamProcess: param is NULL!\n");
 		return NULL;
 	}
 
-
 	OSA_QueHndl *full_que = &(param->bits_full_que);
 	OSA_QueHndl *empty_que = &(param->bits_empty_que);
-	udp_send_module_handle *pUdpSend = param->appdata;
-	nslog(NS_INFO, "[inHostStreamUdpSendProcess] port:[%x] ip:[%s] user_data:[%p]\n",
-	      pUdpSend->udp_hand.snd_video_port,
-	      pUdpSend->udp_hand.snd_ip,
-	      pUdpSend->udp_hand.src_data);
-	unsigned char h264Header[0x40] = {0};
-	unsigned char h264Header0[0x40] = {0};
-	unsigned char h264Header1[0x40] = {0};
+	udp_send_module_handle *pUdpSend[3];
+	pUdpSend[0] = (udp_send_module_handle *)(gEduKit->sendhand[0]);
+	pUdpSend[1] = (udp_send_module_handle *)(gEduKit->sendhand[1]);
+#ifdef HAVE_JPEG
+	pUdpSend[2] = (udp_send_module_handle *)(gEduKit->sendhand[2]);
+#endif
 
+	nslog(NS_INFO, "[inHostStreamUdpSendProcess] port:[%x] ip:[%s] user_data:[%p]\n",
+	      pUdpSend[0]->udp_hand.snd_video_port,
+	      pUdpSend[0]->udp_hand.snd_ip,
+	      pUdpSend[0]->udp_hand.src_data);
+	nslog(NS_INFO, "[inHostStreamUdpSendProcess1] port:[%x] ip:[%s] user_data:[%p]\n",
+	      pUdpSend[1]->udp_hand.snd_video_port,
+	      pUdpSend[1]->udp_hand.snd_ip,
+	      pUdpSend[1]->udp_hand.src_data);
+#ifdef HAVE_JPEG
+	nslog(NS_INFO, "[inHostStreamUdpSendProcess2] port:[%x] ip:[%s] user_data:[%p]\n",
+	      pUdpSend[2]->udp_hand.snd_video_port,
+	      pUdpSend[2]->udp_hand.snd_ip,
+	      pUdpSend[2]->udp_hand.src_data);
+#endif
 
 	unsigned int filenum = 0;
 	unsigned int totalM = 0;
-	LiveVideoParam videoParam;
 	frame_info_t frame_info;
-	char *hTempBuf0 = (char *)malloc(MAX_FRAME_LEN);
-	char *hTempBuf1 = (char *)malloc(MAX_FRAME_LEN);
 
 	int x = 0;
+
+	int y = 0;
 
 	while(TRUE == param->run_status) {
 		status = OSA_queGet(full_que, (Int32 *)(&pFullBuf), OSA_TIMEOUT_FOREVER);
 		OSA_assert(status == 0);
 
-
+		//printf("pFullBuf->channelNum===%d\n",pFullBuf->channelNum);
 #if 1
 		length[pFullBuf->channelNum] += pFullBuf->fillLength;
 
@@ -528,26 +545,35 @@ void *inHostStreamUdpSendProcess(bits_user_param *param)
 			framecount[pFullBuf->channelNum]++;
 		}
 
-		if(getostime() - t[pFullBuf->channelNum] >= 5000) {
-			nslog(NS_WARN, "\n##### ch%d: %d x %d	video bitrate = %d kb/s, framerate = %d fps\n",
-			      pFullBuf->channelNum,
-			      pFullBuf->frameWidth, pFullBuf->frameHeight,
-			      length[pFullBuf->channelNum] / 1 / 1024 * 8 / 5,
-			      framecount[pFullBuf->channelNum] / 5);
-			printf( "\n##### ch%d: %d x %d	video bitrate = %d kb/s, framerate = %d fps\n",
-			      pFullBuf->channelNum,
-			      pFullBuf->frameWidth, pFullBuf->frameHeight,
-			      length[pFullBuf->channelNum] / 1 / 1024 * 8 / 5,
-			      framecount[pFullBuf->channelNum] / 5);
+		if(getostime() - t[pFullBuf->channelNum] >= 1000) {
+			if(30 == printc) {
+				nslog(NS_WARN, "\n ch%d: %d x %d	video bitrate = %d kb/s, framerate = %d fps\n",
+				      pFullBuf->channelNum,
+				      pFullBuf->frameWidth, pFullBuf->frameHeight,
+				      length[pFullBuf->channelNum] / 1 / 1024 * 8 ,
+				      framecount[pFullBuf->channelNum]);
+				printc = 0;
+			}
 
+			printc ++;
 			framecount[pFullBuf->channelNum] = 0;
 			length[pFullBuf->channelNum] = 0;
 			t[pFullBuf->channelNum] = getostime();
+
+
 		}
+
 
 #endif
 
-		if(pFullBuf->channelNum == 0) {
+		//VGA
+
+		if(VGA_CHID == pFullBuf->channelNum) {
+		//	if(896 == pFullBuf->frameHeight) {
+		//		height = 900;
+		//	}
+		//	height = pFullBuf->frameHeight;
+			memset(&frame_info, 0, sizeof(frame_info));
 			frame_info.m_width = pFullBuf->frameWidth;
 			frame_info.m_hight = pFullBuf->frameHeight;
 			frame_info.m_frame_length = pFullBuf->fillLength;
@@ -556,119 +582,80 @@ void *inHostStreamUdpSendProcess(bits_user_param *param)
 			frame_info.m_dw_flags = 0;
 			frame_info.m_frame_rate = 25;
 			frame_info.m_data_codec = H264_CODEC_TYPE;
-			p = (UInt8 *)(pFullBuf->addr);
 
-			if(TRUE == pFullBuf->isKeyFrame) {
-				frame_info.m_dw_flags = AVIIF_KEYFRAME;
+			frame_info.m_dw_flags = (pFullBuf->isKeyFrame) ? AVIIF_KEYFRAME : 0;
+			memcpy(pUdpSend[0]->udp_hand.src_data, (unsigned char *)(pFullBuf->addr), pFullBuf->fillLength);
+			UdpSend_rtp_data(pUdpSend[0], &frame_info);
 
-				if(isIDR(p)) {
-					idr_header_length = ParseIDRHeader((unsigned char *)(pFullBuf->addr));
-					memcpy(h264Header, (unsigned char *)(pFullBuf->addr), idr_header_length);
-
-					memcpy(pUdpSend->udp_hand.src_data, (unsigned char *)(pFullBuf->addr), pFullBuf->fillLength);
-
-					UdpSend_rtp_data(pUdpSend, &frame_info);
+			memcpy(pUdpSend[1]->udp_hand.src_data, (unsigned char *)(pFullBuf->addr), pFullBuf->fillLength);
+			UdpSend_rtp_data(pUdpSend[1], &frame_info);
 #ifdef ENC110
-					SendDataToClient110(pFullBuf->fillLength, (unsigned char *)(pUdpSend->udp_hand.src_data),
-					                    1, 2, pFullBuf->frameWidth, pFullBuf->frameHeight);
+			SendDataToClient110(pFullBuf->fillLength, (unsigned char *)(pUdpSend[0]->udp_hand.src_data),
+			                    pFullBuf->isKeyFrame, 2, pFullBuf->frameWidth, pFullBuf->frameHeight);
 #endif
 
-				} else {
-					memcpy(pUdpSend->udp_hand.src_data, h264Header, idr_header_length);
-					memcpy(pUdpSend->udp_hand.src_data + idr_header_length, (unsigned char *)(pFullBuf->addr), pFullBuf->fillLength);
-					frame_info.m_frame_length = frame_info.m_frame_length + idr_header_length;
-					UdpSend_rtp_data(pUdpSend, &frame_info);
-#ifdef ENC110
-					SendDataToClient110(pFullBuf->fillLength + idr_header_length, (unsigned char *)(pUdpSend->udp_hand.src_data),
-					                    1, 2, pFullBuf->frameWidth, pFullBuf->frameHeight);
-#endif
-				}
-			} else {
-				memcpy(pUdpSend->udp_hand.src_data, (unsigned char *)(pFullBuf->addr), pFullBuf->fillLength);
-				UdpSend_rtp_data(pUdpSend, &frame_info);
+		}
 
+#if 1 /////////////////////////////////////////////////////////////
+
+		//SD0
+		if(STU_CHID == pFullBuf->channelNum) {
 #ifdef ENC110
-				SendDataToClient110(pFullBuf->fillLength, (unsigned char *)(pUdpSend->udp_hand.src_data),
-				                    1, 2, pFullBuf->frameWidth, pFullBuf->frameHeight);
+			SendDataToClient110(pFullBuf->fillLength, (unsigned char *)(pFullBuf->addr),
+			                    pFullBuf->isKeyFrame, 0, pFullBuf->frameWidth, pFullBuf->frameHeight);
 #endif
-			}
+		}
+
+		//SD1
+		if(STUSIDE_CHID == pFullBuf->channelNum) {
+#ifdef ENC110
+			SendDataToClient110(pFullBuf->fillLength, (unsigned char *)(pFullBuf->addr),
+			                    pFullBuf->isKeyFrame, 3, pFullBuf->frameWidth, pFullBuf->frameHeight);
+#endif
 		}
 
 
-		if(pFullBuf->channelNum == 1) {
-			//LiveVideoParam videoParam;
-
-			//		get_video_hw(0, &width, &height);
-			videoParam.nWidth = pFullBuf->frameWidth;
-			videoParam.nHight = pFullBuf->frameHeight;
-
-			p = (UInt8 *)(pFullBuf->addr);
-
-			if(pFullBuf->isKeyFrame == TRUE) {
-				if(p[4] == 0x27 || p[4] == 0x67 || p[4] == 0x47) {
-					idr_header_length1 = ParseIDRHeader((unsigned char *)(pFullBuf->addr));
-					memcpy(h264Header1, (unsigned char *)(pFullBuf->addr), idr_header_length1);
-
+		//老师
+		if(TEACH_CHID == pFullBuf->channelNum) {
 #ifdef ENC110
-					SendDataToClient110(pFullBuf->fillLength, (unsigned char *)(pFullBuf->addr),
-					                    1, 0, pFullBuf->frameWidth, pFullBuf->frameHeight);
+			SendDataToClient110(pFullBuf->fillLength, (unsigned char *)(pFullBuf->addr),
+			                    pFullBuf->isKeyFrame, 1, pFullBuf->frameWidth, pFullBuf->frameHeight);
 #endif
-
-				} else {
-					memcpy(hTempBuf1, h264Header1, idr_header_length1);
-					memcpy(hTempBuf1 + idr_header_length1, (unsigned char *)(pFullBuf->addr), pFullBuf->fillLength);
-#ifdef ENC110
-					SendDataToClient110(pFullBuf->fillLength + idr_header_length1, (unsigned char *)hTempBuf1,
-					                    1, 0, pFullBuf->frameWidth, pFullBuf->frameHeight);
-#endif
-				}
-			} else {
-#ifdef ENC110
-				SendDataToClient110(pFullBuf->fillLength, (unsigned char *)(pFullBuf->addr),
-				                    0, 0, pFullBuf->frameWidth, pFullBuf->frameHeight);
-#endif
-			}
 		}
 
-		if(pFullBuf->channelNum == 2) {
+#endif ////////////////////////////////////////////////////////////////////////
 
-			//	fwrite(pFullBuf->addr,pFullBuf->fillLength,1,fp);
-			p = (UInt8 *)(pFullBuf->addr);
-
-			if(pFullBuf->isKeyFrame == TRUE) {
-				if(p[4] == 0x27 || p[4] == 0x67 || p[4] == 0x47) {
-					idr_header_length0 = ParseIDRHeader((unsigned char *)(pFullBuf->addr));
-					memcpy(h264Header0, (unsigned char *)(pFullBuf->addr), idr_header_length0);
-
-
-#ifdef ENC110
-					SendDataToClient110(pFullBuf->fillLength, (unsigned char *)(pFullBuf->addr),
-					                    1, 1, pFullBuf->frameWidth, pFullBuf->frameHeight);
-#endif
-
-				} else {
-					memcpy(hTempBuf0, h264Header0, idr_header_length0);
-					memcpy(hTempBuf0 + idr_header_length0, (unsigned char *)(pFullBuf->addr), pFullBuf->fillLength);
-
-#ifdef ENC110
-					SendDataToClient110(pFullBuf->fillLength + idr_header_length0, (unsigned char *)hTempBuf0,
-					                    1, 1, pFullBuf->frameWidth, pFullBuf->frameHeight);
-#endif
-				}
-			} else {
-
-#ifdef ENC110
-				SendDataToClient110(pFullBuf->fillLength, (unsigned char *)(pFullBuf->addr),
-				                    0, 1, pFullBuf->frameWidth, pFullBuf->frameHeight);
-#endif
-			}
-		}
-
-		if(3 == pFullBuf->channelNum) {
+		if(JPEG_CHID == pFullBuf->channelNum) {
+			//	printf("--------------hahahahaaahh==========\n");
 #ifdef HAVE_JPEG
-			printf("---------3---len=%d---w=%d--------------\n", pFullBuf->fillLength, pFullBuf->frameWidth);
-			test_fwrite_jpeg(x++, (unsigned char *)(pFullBuf->addr), pFullBuf->fillLength);
+
+			if(getPPTDataInfoStatus() == 1) {
+				memset(&frame_info, 0, sizeof(frame_info));
+
+				frame_info.m_data_codec = JPEG_CODEC_TYPE;
+				frame_info.m_width = pFullBuf->frameWidth;
+				frame_info.m_hight = pFullBuf->frameHeight;
+				frame_info.m_frame_length = pFullBuf->fillLength;
+				frame_info.time_tick = getCurrentTime();//pFullBuf->timeStamp;
+				frame_info.is_blue = getVGADetect() ? 0 : 1;
+				frame_info.m_dw_flags = 0;
+				frame_info.m_frame_rate = 25;
+
+				setPPTDataInfoStatus(0);
+				printf("[inHostStreamUdpSendProcess]-[%d]len=[%d]w=[%d]\n", y, pFullBuf->fillLength, pFullBuf->frameWidth);
+				//test_fwrite_jpeg(x++, (unsigned char *)(pFullBuf->addr), pFullBuf->fillLength);
+
+				memcpy(pUdpSend[2]->udp_hand.src_data, (unsigned char *)(pFullBuf->addr), pFullBuf->fillLength);
+				//memcpy(pUdpSend[2]->udp_hand.src_data + idr_header_length, (unsigned char *)(pFullBuf->addr), pFullBuf->fillLength);
+				UdpSend_rtp_data(pUdpSend[2], &frame_info);
+			}
+
 #endif
+		}
+
+
+		if(getostime() - time > 100) {
+			;//printf("time out = %d\n",getostime() - time);
 		}
 
 		status = OSA_quePut(empty_que, (Int32)pFullBuf, OSA_TIMEOUT_NONE);
@@ -831,13 +818,14 @@ static Int32 getVideoStreamPutVpss(udp_recv_stream_info_t *p_stream_info, char *
 static int FindH264StartNAL1(unsigned char *pp)
 {
 	/*is for 00 00 00 01 Nal header*/
-	if(pp[0]!=0 || pp[1]!=0 || pp[2] !=0 || pp[3] != 1)
+	if(pp[0] != 0 || pp[1] != 0 || pp[2] != 0 || pp[3] != 1) {
 		return 0;
-	else
+	} else {
 		return 1;
+	}
 }
 
-Int32 ReadH264File(FILE *file, unsigned char * buffer, int *idr)
+Int32 ReadH264File(FILE *file, unsigned char *buffer, int *idr)
 {
 
 	int len = 0;
@@ -846,120 +834,106 @@ Int32 ReadH264File(FILE *file, unsigned char * buffer, int *idr)
 	unsigned char h2641 = 0;
 	unsigned char h2642 = 0;
 	unsigned char h2643 = 1;
-//	printf("sssss\n");
-	len = fread(buffer,1,4,file);
-	if(len != 4)
-	{
-		fseek(file, 0,SEEK_SET);
+	//	printf("sssss\n");
+	len = fread(buffer, 1, 4, file);
+
+	if(len != 4) {
+		fseek(file, 0, SEEK_SET);
 		return 0;
+	} else {
+
 	}
-	else
-	{
-	
-	}
-//	printf("sssss111\n");
-	if(1 == FindH264StartNAL1(buffer))
-	{
+
+	//	printf("sssss111\n");
+	if(1 == FindH264StartNAL1(buffer)) {
 		framelen = 4;
 		printf("first Frame IDR");
-	}
-	else
-	{
-		memcpy(&buffer[4], &buffer[0],4);
-		
+	} else {
+		memcpy(&buffer[4], &buffer[0], 4);
+
 		buffer[0] = 0x0;
 		buffer[1] = 0x0;
 		buffer[2] = 0x0;
 		buffer[3] = 0x1;
-		
+
 		framelen = 8;
 	}
-	
+
 	char *p = &buffer[framelen];
-	while(1)
-	{
-	
-		len = fread(p,1,1,file);
-		if(len != 1)
-		{
-			fseek(file, 0,SEEK_SET);
+
+	while(1) {
+
+		len = fread(p, 1, 1, file);
+
+		if(len != 1) {
+			fseek(file, 0, SEEK_SET);
 			return 0;
 		}
-		
+
 		h2640 = p[-3];
 		h2641 = p[-2];
 		h2642 = p[-1];
 		h2643 = p[0];
 		framelen ++;
-		
+
 		//printf("%x %x %x %x \n",h2640,h2641,h2642,h2643);
-		if((h2640 == 0x0 )&&(h2641 == 0x0 )&&(h2642 == 0x0 )&&(h2643 == 0x1 ))
-		{
+		if((h2640 == 0x0) && (h2641 == 0x0) && (h2642 == 0x0) && (h2643 == 0x1)) {
 			//	printf("find one frame\n");
-			
+
 			framelen	= framelen - 4;
 			break;
 		}
-		
+
 		p++;
 	}
-	
-	if(buffer[4] == 0x27)
-	{
+
+	if(buffer[4] == 0x27) {
 		int curlen = 0;
 		int curidr = 0;
 		*idr = 1;
-		
-		curlen = ReadH264File(file, buffer + framelen,&curidr);
-		if(curlen <= 0)
-		{
+
+		curlen = ReadH264File(file, buffer + framelen, &curidr);
+
+		if(curlen <= 0) {
 			return 0;
-		}
-		else
-		{
+		} else {
 			framelen	= framelen + curlen;
 		}
 	}
-	
-	if(buffer[4] == 0x28)
-	{
+
+	if(buffer[4] == 0x28) {
 		int curidr = 0;
 		int curlen = 0;
 		*idr = 1;
-		
-		curlen = ReadH264File(file, buffer + framelen,&curidr);
-		if(curlen <= 0)
-		{
+
+		curlen = ReadH264File(file, buffer + framelen, &curidr);
+
+		if(curlen <= 0) {
 			return 0;
-		}
-		else
-		{
+		} else {
 			framelen = framelen + curlen;
 		}
 	}
 
-	if(buffer[4] == 0x6)
-	{
+	if(buffer[4] == 0x6) {
 		int curidr = 0;
 		int curlen = 0;
 		*idr = 1;
-		
-		curlen = ReadH264File(file, buffer + framelen,&curidr);
-		if(curlen <= 0)
-		{
+
+		curlen = ReadH264File(file, buffer + framelen, &curidr);
+
+		if(curlen <= 0) {
 			return 0;
-		}
-		else
-		{
+		} else {
 			framelen = framelen + curlen;
 		}
 	}
-	
+
 	//printf("%x %x %x %x %x %x %x %x\n",buffer[0],buffer[1],buffer[2],buffer[3],buffer[framelen-4]\
 	//,buffer[framelen -3],buffer[framelen -2],buffer[framelen -1]);
-	
+
 	return framelen;
-	
+
 }
 Void *UdpRecvFrame_drvTsk(Void *prm)
 {
@@ -978,6 +952,8 @@ Void *UdpRecvFrame_drvTsk(Void *prm)
 	udp_recv_handle *phandle;
 	phandle = udp_stream_recv_init(&src);
 
+
+	//??????
 	if(NULL == phandle) {
 		udp_stream_recv_deinit(phandle);
 		printf("[UdpRecvFrame_drvTsk] udp_stream_recv_init is NULL!!!\n");
@@ -992,58 +968,56 @@ Void *UdpRecvFrame_drvTsk(Void *prm)
 	Bitstream_Buf		*pEmptyBuf = NULL;
 	unsigned int count = 0;
 	int status = 0;
-	
-	FILE *file = fopen("teacher.h264","r");
-	if(file == NULL)
-	{
+
+	FILE *file = fopen("teacher.h264", "r");
+
+	if(file == NULL) {
 		assert(0);
 	}
-	
-	while(1)
-	{
+
+	while(1) {
 		int idr = 0;
-		usleep(1000*40);
+		usleep(1000 * 40);
 		int len = 0;
 		status = OSA_queGet(&param->bits_empty_que, (Int32 *)(&pEmptyBuf), OSA_TIMEOUT_FOREVER);
 		OSA_assert(status == 0);
 		OSA_assert(pEmptyBuf != NULL);
-		len = ReadH264File(file, pEmptyBuf->addr,&idr);
-		if(len == 0)
-		{
-			len = ReadH264File(file, pEmptyBuf->addr,&idr);
+		len = ReadH264File(file, pEmptyBuf->addr, &idr);
+
+		if(len == 0) {
+			len = ReadH264File(file, pEmptyBuf->addr, &idr);
 			assert(len != 0);
-		}
-		else
-		{
+		} else {
 			pEmptyBuf->fillLength = len;
-			
-				//printf("pEmptyBuf->fillLength == %d\n",pEmptyBuf->fillLength);
+
+			//printf("pEmptyBuf->fillLength == %d\n",pEmptyBuf->fillLength);
 		}
 
 		pEmptyBuf->channelNum = recvhand->index;
 		pEmptyBuf->frameWidth = 1280;
 		pEmptyBuf->frameHeight = 720;
 		pEmptyBuf->timeStamp = 0;
-		pEmptyBuf->isKeyFrame =idr;
+		pEmptyBuf->isKeyFrame = idr;
 		pEmptyBuf->seqId = count;
 		pEmptyBuf->doNotDisplay = 1;
-		if(count == 0)
+
+		if(count == 0) {
 			pEmptyBuf->inputFileChanged = 1;
-		else
+		} else {
 			pEmptyBuf->inputFileChanged = 0;
+		}
 
 		length += pEmptyBuf->fillLength;
 		framecount++;
-		
-		
-		if(getostime() - t >= 5000)
-		{
+
+
+		if(getostime() - t >= 5000) {
 			fprintf(stderr, "\n DEC ch%d: %d x %d	video bitrate = %d kb/s, framerate = %d fps\n",
 			        pEmptyBuf->channelNum,
 			        pEmptyBuf->frameWidth, pEmptyBuf->frameHeight,
 			        length / 1 / 1024 * 8 / 5,
 			        framecount / 5);
-			        
+
 			framecount = 0;
 			length = 0;
 			t = getostime();
@@ -1055,7 +1029,7 @@ Void *UdpRecvFrame_drvTsk(Void *prm)
 		count++;
 	}
 
-	
+
 
 #endif
 	printf("[UdpRecvFrame_drvTsk] recvhand->index:[%d] end ...\n", recvhand->index);
@@ -1105,21 +1079,29 @@ void *OutHostStreamProcess(bits_user_param *param)
 //强制请求I帧
 int app_video_request_iframe(int channel)
 {
+	if(gEduKit->Start) {
+		enc_force_iframe(gEduKit->encoderLink.encLink.link_id, channel);
+	}
 
-	enc_force_iframe(gEduKit->encoderLink.encLink.link_id, channel);
 	return 0;
 }
 
 int setVideoEncodeParam(int chId, VideoEncodeParam *vinfo)
 {
-	enc_set_fps(gEduKit->encoderLink.encLink.link_id, chId, vinfo->nFrameRate, vinfo->sBitrate * 1000);
+	if(gEduKit->Start) {
+		enc_set_fps(gEduKit->encoderLink.encLink.link_id, chId, vinfo->nFrameRate, vinfo->sBitrate * 1000);
+	}
 }
 
 int getVideoEncodeParam(int chId, VideoEncodeParam *vinfo)
 {
 	EncLink_GetDynParams vParams;
 	vParams.chId = chId;
-	enc_get_dynparams(gEduKit->encoderLink.encLink.link_id, &vParams);
+
+	if(gEduKit->Start) {
+		enc_get_dynparams(gEduKit->encoderLink.encLink.link_id, &vParams);
+	}
+
 	vinfo->IFrameinterval = vParams.intraFrameInterval;
 	vinfo->nFrameRate = vParams.targetFps / 1000;
 	vinfo->sBitrate = vParams.targetBitRate / 1000;
